@@ -1,0 +1,498 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+  <title>Forecast Sampler: Table</title>
+  <link rel='stylesheet' type='text/css' href='forecast.css'/>
+  <link rel='stylesheet' type='text/css' href='forecast_table.css' />
+</head>
+<body>
+
+<h1>Forecast Table</h1>
+<p>
+Display forecast data in a table format by including the table template.
+</p>
+
+
+<div class='fc_table'>
+
+
+
+
+
+
+
+
+
+
+
+
+<script type='text/javascript'>
+function toggle_hours(control, id) {
+  elem = document.getElementById(id + '.hours');
+  if(elem) {
+    if(elem.style.display != 'none') {
+      elem.style.display = 'none';
+    } else {
+      elem.style.display = 'inline';
+    }
+  }
+}
+</script>
+
+
+
+
+
+
+  <div class='legend'>
+    <table>
+      <tr>
+        <td class='col-date'></td>
+        <td class='col-outlook'></td>
+        <td class='col-temp'><img src='icons/thermometer-red.png' class='legend-img' alt='T' title='temperature' /><br/><span class='units'>&#176;F</span></td>
+        <td class='col-wind' style='text-align:center'><img src='icons/flag.png' class='legend-img' alt='W' title='wind' /><br/><span class='units'> knots</span></td>
+        <td class='col-tides'><img src='icons/water.png' class='legend-img' alt='tide' title='tides' /><br/><span class='units'> feet</span></td>
+        <td class='col-pop'><img src='icons/pop.png' class='legend-img' alt='PoP' title='probability of precipitation' /><br/><span class='units'> in</span></td>
+        <td class='col-precip'></td>
+        <td class='col-obvis'></td>
+      </tr>
+    </table>
+  </div>
+
+
+
+
+  <div id='Aeris.2025.07.06' class='summary'>
+    <table>
+      <tr>
+        <td class='col-date' onclick="toggle_hours(this, 'Aeris.2025.07.06')">
+          <span class='day'>Sun</span><br/>
+          <span class='date'>06 Jul</span>
+        </td>
+        <td class='col-outlook'>
+          <img class='outlook-img' src='icons/SC.png' alt='SC' title='Scattered' />
+        </td>
+        <td class='col-temp'><span class='temphi'>58</span><br/><span class='templo'>54</span></td>
+        <td class='col-wind'
+            style='vertical-align:middle; text-align:center; background: url()
+            ,url(icons/S.png)
+            ,url(icons/SW.png)
+            ,url(icons/SW.png)
+            ,url(icons/SW.png)
+            ; background-repeat:no-repeat; background-position:center; background-size:48px;'
+            >
+          6-12
+          <span class='windgust'>16</span>
+        </td>
+        <td class='col-tides'>
+          <table cellspacing='0' cellpadding='0' width='100%'>
+            <tr>
+              <td style='font-size:100%'>04:03</td><td class='tide-hilo' style='font-size:100%'>L</td><td style='font-size:100%; text-align:right;'>0.4</td>
+            </tr>
+            <tr>
+              <td style='font-size:100%'>10:54</td><td class='tide-hilo' style='font-size:100%'>H</td><td style='font-size:100%; text-align:right;'>4.1</td>
+            </tr>
+            <tr>
+              <td style='font-size:100%'>14:47</td><td class='tide-hilo' style='font-size:100%'>L</td><td style='font-size:100%; text-align:right;'>3.2</td>
+            </tr>
+            <tr>
+              <td style='font-size:100%'>21:16</td><td class='tide-hilo' style='font-size:100%'>H</td><td style='font-size:100%; text-align:right;'>6.2</td>
+            </tr>
+          </table>
+        </td>
+        <td class='col-pop'>
+<br/>
+<br/>
+        </td>
+        <td class='col-precip'>
+        </td>
+        <td class='col-obvis'>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <div id='Aeris.2025.07.07' class='summary'>
+    <table>
+      <tr>
+        <td class='col-date' onclick="toggle_hours(this, 'Aeris.2025.07.07')">
+          <span class='day'>Mon</span><br/>
+          <span class='date'>07 Jul</span>
+        </td>
+        <td class='col-outlook'>
+          <img class='outlook-img' src='icons/BK.png' alt='BK' title='Broken Clouds' />
+        </td>
+        <td class='col-temp'><span class='temphi'>58</span><br/><span class='templo'>54</span></td>
+        <td class='col-wind'
+            style='vertical-align:middle; text-align:center; background: url()
+            ,url(icons/SW.png)
+            ,url(icons/SW.png)
+            ; background-repeat:no-repeat; background-position:center; background-size:48px;'
+            >
+          7-12
+          <span class='windgust'>17</span>
+        </td>
+        <td class='col-tides'>
+          <table cellspacing='0' cellpadding='0' width='100%'>
+            <tr>
+              <td style='font-size:100%'>04:45</td><td class='tide-hilo' style='font-size:100%'>L</td><td style='font-size:100%; text-align:right;'>-0.0</td>
+            </tr>
+            <tr>
+              <td style='font-size:100%'>11:44</td><td class='tide-hilo' style='font-size:100%'>H</td><td style='font-size:100%; text-align:right;'>4.4</td>
+            </tr>
+            <tr>
+              <td style='font-size:100%'>15:40</td><td class='tide-hilo' style='font-size:100%'>L</td><td style='font-size:100%; text-align:right;'>3.4</td>
+            </tr>
+            <tr>
+              <td style='font-size:100%'>21:54</td><td class='tide-hilo' style='font-size:100%'>H</td><td style='font-size:100%; text-align:right;'>6.3</td>
+            </tr>
+          </table>
+        </td>
+        <td class='col-pop'>
+          1%
+<br/>
+<br/>
+        </td>
+        <td class='col-precip'>
+        </td>
+        <td class='col-obvis'>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <div id='Aeris.2025.07.08' class='summary'>
+    <table>
+      <tr>
+        <td class='col-date' onclick="toggle_hours(this, 'Aeris.2025.07.08')">
+          <span class='day'>Tue</span><br/>
+          <span class='date'>08 Jul</span>
+        </td>
+        <td class='col-outlook'>
+          <img class='outlook-img' src='icons/SC.png' alt='SC' title='Scattered' />
+        </td>
+        <td class='col-temp'><span class='temphi'>60</span><br/><span class='templo'>56</span></td>
+        <td class='col-wind'
+            style='vertical-align:middle; text-align:center; background: url()
+            ,url(icons/SW.png)
+            ,url(icons/SW.png)
+            ; background-repeat:no-repeat; background-position:center; background-size:48px;'
+            >
+          5-10
+          <span class='windgust'>16</span>
+        </td>
+        <td class='col-tides'>
+          <table cellspacing='0' cellpadding='0' width='100%'>
+            <tr>
+              <td style='font-size:100%'>05:25</td><td class='tide-hilo' style='font-size:100%'>L</td><td style='font-size:100%; text-align:right;'>-0.4</td>
+            </tr>
+            <tr>
+              <td style='font-size:100%'>12:29</td><td class='tide-hilo' style='font-size:100%'>H</td><td style='font-size:100%; text-align:right;'>4.6</td>
+            </tr>
+            <tr>
+              <td style='font-size:100%'>16:31</td><td class='tide-hilo' style='font-size:100%'>L</td><td style='font-size:100%; text-align:right;'>3.5</td>
+            </tr>
+            <tr>
+              <td style='font-size:100%'>22:33</td><td class='tide-hilo' style='font-size:100%'>H</td><td style='font-size:100%; text-align:right;'>6.5</td>
+            </tr>
+          </table>
+        </td>
+        <td class='col-pop'>
+          1%
+<br/>
+<br/>
+        </td>
+        <td class='col-precip'>
+        </td>
+        <td class='col-obvis'>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <div id='Aeris.2025.07.09' class='summary'>
+    <table>
+      <tr>
+        <td class='col-date' onclick="toggle_hours(this, 'Aeris.2025.07.09')">
+          <span class='day'>Wed</span><br/>
+          <span class='date'>09 Jul</span>
+        </td>
+        <td class='col-outlook'>
+          <img class='outlook-img' src='icons/SC.png' alt='SC' title='Scattered' />
+        </td>
+        <td class='col-temp'><span class='temphi'>57</span><br/><span class='templo'>56</span></td>
+        <td class='col-wind'
+            style='vertical-align:middle; text-align:center; background: url()
+            ,url(icons/SW.png)
+            ; background-repeat:no-repeat; background-position:center; background-size:48px;'
+            >
+          4-5
+          <span class='windgust'>7</span>
+        </td>
+        <td class='col-tides'>
+          <table cellspacing='0' cellpadding='0' width='100%'>
+            <tr>
+              <td style='font-size:100%'>06:02</td><td class='tide-hilo' style='font-size:100%'>L</td><td style='font-size:100%; text-align:right;'>-0.7</td>
+            </tr>
+            <tr>
+              <td style='font-size:100%'>13:11</td><td class='tide-hilo' style='font-size:100%'>H</td><td style='font-size:100%; text-align:right;'>4.8</td>
+            </tr>
+            <tr>
+              <td style='font-size:100%'>17:18</td><td class='tide-hilo' style='font-size:100%'>L</td><td style='font-size:100%; text-align:right;'>3.5</td>
+            </tr>
+            <tr>
+              <td style='font-size:100%'>23:11</td><td class='tide-hilo' style='font-size:100%'>H</td><td style='font-size:100%; text-align:right;'>6.5</td>
+            </tr>
+          </table>
+        </td>
+        <td class='col-pop'>
+<br/>
+<br/>
+        </td>
+        <td class='col-precip'>
+        </td>
+        <td class='col-obvis'>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+
+  
+
+
+
+
+
+
+
+
+
+  <div class='sources'>
+    <p>
+      Aeris forecast
+ for 37.859015,-122.315981
+ issued on 06-Jul-2025 00:45.
+      <br/>Tides for Berkeley issued on 05-Jul-2025 23:40
+     <br/>Report generated in 0.198 seconds.
+    </p>
+  </div>
+
+
+</div>
+
+</body>
+</html>

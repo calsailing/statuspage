@@ -1,0 +1,2731 @@
+<!--prettier-ignore-->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+<!--prettier-ignore-->
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<style>
+.gauge-label
+{font-family:"IBM Plex Sans"!important;
+}
+.gauge-text text{font-family:"IBM Plex Sans"!important;}
+
+@media only screen and (min-device-width : 320px) and (max-device-width : 480px)  { 
+g.infolayer{
+zoom:75%;
+}
+}
+header.section-header{
+margin-top: var(--cds-spacing-07, 0.5rem)!important;
+}
+
+.gauge{
+padding: 0.1rem!important;
+padding-bottom: 0.3rem!important;
+    zoom: 120%!important;
+}
+.tick-label{
+font-size:0.8em!important;
+}
+.tick-current path{
+stroke:#ad0c00;
+}
+.needle-triangle path{
+fill:#ad0c00;
+}
+.gauge-label{
+font-size:1.2em!important;
+}
+</style>
+
+<link
+  href="/dist/main.css"
+  rel="preload"
+  as="style"
+  onload="this.onload=null;this.rel='stylesheet'"
+/>
+<noscript
+  ><link rel="stylesheet" href="/dist/main.css"
+/></noscript>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/webcomponentsjs/2.6.0/webcomponents-loader.min.js"></script>
+<!-- <script>
+  window.WebComponents = window.WebComponents || {};
+  window.WebComponents.root = "node_modules/@webcomponents/webcomponentsjs/";
+</script> -->
+<script src="/plotly-custom-build.min.js" defer></script>
+
+<link
+  rel="icon"
+  type="image/x-icon"
+  href="https://www.cal-sailing.org/templates/ja_edenite_ii/images/csc/favicon.ico?v=2113102023"
+/>
+<meta
+  name="description"
+  content='Cal Sailing Club - Current Conditions'
+/>
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#161616" />
+<link rel="apple-touch-icon" href="https://status.cal-sailing.org/apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-title" content="CSC Conditions">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+<script>
+  // Check that service workers are supported
+  if ("serviceWorker" in navigator) {
+    // Use the window load event to keep the page load performant
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register(
+        "/service-worker.js"
+      );
+    });
+  }
+</script>
+<!--prettier-ignore-->
+<script>
+  /*prettier-ignore*/
+  window.weewxWdcConfig = {
+    diagramWindDirOrdinals: 1,
+    ordinalCompass: ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'],
+    windRoseColors: ["#f3cec9", "#e7a4b6", "#cd7eaf", "#a262a9", "#6f4d96", "#3d3b72"],
+    units: {'group_altitude': 'foot', 'group_amp': 'amp', 'group_concentration': 'microgram_per_meter_cubed', 'group_data': 'byte', 'group_db': 'dB', 'group_degree_day': 'degree_F_day', 'group_deltatime': 'second', 'group_direction': 'degree_compass', 'group_distance': 'mile', 'group_energy': 'watt_hour', 'group_energy2': 'watt_second', 'group_fraction': 'ppm', 'group_frequency': 'hertz', 'group_illuminance': 'lux', 'group_length': 'inch', 'group_moisture': 'centibar', 'group_percent': 'percent', 'group_power': 'watt', 'group_pressure': 'mbar', 'group_pressure_rate': 'inHq_per_hour', 'group_radiation': 'watt_per_meter_squared', 'group_rain': 'inch', 'group_rainrate': 'inch_per_hour', 'group_speed': 'knot', 'group_speed2': 'knot', 'group_temperature': 'degree_F', 'group_uv': 'uv_index', 'group_volt': 'volt', 'group_volume': 'gallon', 'group_boolean': 'boolean', 'group_count': 'count', 'group_elapsed': 'second', 'group_interval': 'minute', 'group_time': 'unix_epoch', 'group_angle': 'degree_angle', 'group_pressurerate': 'inHg_per_hour'},
+    dwdForecastTable: {},
+    basePath: "/",
+    translations: {
+      "Daily": "Daily",
+      "Hourly": "Hourly",
+      "Forecast_for": "Forecast for",
+      "Forecast_from": "Forecast from",
+      "Issued_on": "Issued on",
+      "Station_name": "Station name",
+      "POP": "Probability of precipitation",
+      "obs_cloud_cover": "Cloud cover",
+      "obs_sunshine_dur": "Rel. Sunshine duration",
+      "obs_dew_point": "Dew Point",
+      "obs_barometer": "Barometer",
+      "obs_wind_speed": "Wind Speed",
+      "obs_precipitation": "Precipitation",
+      "no_warnings": "no warnings at this time",
+      "Verhaltenshinweise": "Behavioral Advice",
+      "source": "Source",
+      "Select_a_day": "Select a day",
+      "Archive_day": "Archive day",
+      "stats_helper_text": "Choose a day to view a statistics page. You can also filter/search for a date by start typing, eg:",
+      "Format_is": "Format is",
+    },
+    locale: "en-US",
+    time: 1748761521.594518
+  };
+</script>
+
+<!--prettier-ignore-->
+<style>
+  *:not(:defined) {
+    display: none;
+  }
+
+      .diagram {
+        height: 220px;
+      }
+      @media screen and (min-width: 672px) {
+        .diagram {
+          height: 325px;
+        }
+      }
+      @media screen and (min-width: 1056px) {
+        .diagram {
+          height: 325px;
+        }
+      }
+      @media screen and (min-width: 1312px) {
+        .diagram {
+          height: 250px;
+        }
+      }
+      @media screen and (min-width: 1920px) {
+        .diagram {
+          height: 250px;
+        }
+      }
+
+      body.theme-classic .diagram {
+        height: 220px;
+      }
+      @media screen and (min-width: 672px) {
+        body.theme-classic .diagram {
+          height: 300px;
+        }
+      }
+      @media screen and (min-width: 1056px) {
+        body.theme-classic .diagram {
+          height: 250px;
+        }
+      }
+      @media screen and (min-width: 1312px) {
+        body.theme-classic .diagram {
+          height: 225px;
+        }
+      }
+      @media screen and (min-width: 1920px) {
+        body.theme-classic .diagram {
+          height: 225px;
+        }
+      }
+</style>
+
+<!-- You can add Google Analytics here or use T3 Injection feature -->
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-79920224-2"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-79920224-2');
+  gtag('config', 'AW-659342775');
+</script>
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-HFZMBJTKP9"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-HFZMBJTKP9');
+</script>
+    <title>Cal Sailing Club - Monthly Weather Conditions</title>
+  </head>
+
+  <body class="theme-alternative">
+<!--prettier-ignore-->
+
+<script
+  type="module"
+  src="https://1.www.s81c.com/common/carbon/web-components/version/v1.27.0/ui-shell.min.js"
+></script>
+<script
+  type="module"
+  src="https://1.www.s81c.com/common/carbon/web-components/version/v1.21.0/button.min.js"
+></script>
+
+<bx-header aria-label="Cal Sailing Club - 01-Jun-2025 00:00">
+  <bx-header-menu-button
+    button-label-active="Close menu"
+    button-label-inactive="Open menu"
+  ></bx-header-menu-button>
+  <bx-header-name href="http://www.cal-sailing.org" prefix="">
+    <!--prettier-ignore-->
+    <img class="logo" src="https://status.cal-sailing.org/CSC-Logo.png" alt="Logo" />
+    <!--prettier-ignore-->
+
+    <span part="prefix" class="bx--header__name--prefix"></span>
+    Cal Sailing Club
+  </bx-header-name>
+  <bx-header-nav menu-bar-label="Cal Sailing Club Status - 01-Jun-2025 00:00">
+    <bx-header-nav-item href="/index.html"
+      >Today</bx-header-nav-item
+    >
+    <bx-header-nav-item href="/yesterday.html"
+      >Yesterday</bx-header-nav-item
+    >
+    <bx-header-nav-item href="/week.html"
+      >Week</bx-header-nav-item
+    >
+    <bx-header-nav-item href="/month.html"
+      >Month</bx-header-nav-item
+    >
+    <bx-header-nav-item href="/year.html"
+      >Year</bx-header-nav-item
+    >
+  </bx-header-nav>
+  <div id="header-global">
+    <bx-btn kind="ghost" data-id="theme-toggle"
+      ><svg
+        class="hidden"
+        data-id="theme-toggle-light-icon"
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 32 32"
+      >
+        <defs>
+          <style>
+            .cls-1 {
+              fill: none;
+            }
+          </style>
+        </defs>
+        <rect x="15" y="2" width="2" height="5" />
+        <rect
+          x="21.6675"
+          y="6.8536"
+          width="4.958"
+          height="1.9998"
+          transform="translate(1.5191 19.3744) rotate(-45)"
+        />
+        <rect x="25" y="15" width="5" height="2" />
+        <rect
+          x="23.1466"
+          y="21.6675"
+          width="1.9998"
+          height="4.958"
+          transform="translate(-10.0018 24.1465) rotate(-45)"
+        />
+        <rect x="15" y="25" width="2" height="5" />
+        <rect
+          x="5.3745"
+          y="23.1466"
+          width="4.958"
+          height="1.9998"
+          transform="translate(-14.7739 12.6256) rotate(-45)"
+        />
+        <rect x="2" y="15" width="5" height="2" />
+        <rect
+          x="6.8536"
+          y="5.3745"
+          width="1.9998"
+          height="4.958"
+          transform="translate(-3.253 7.8535) rotate(-45)"
+        />
+        <path
+          d="M16,12a4,4,0,1,1-4,4,4.0045,4.0045,0,0,1,4-4m0-2a6,6,0,1,0,6,6,6,6,0,0,0-6-6Z"
+        />
+        <rect
+          data-name="&lt;Transparent Rectangle&gt;"
+          class="cls-1"
+          width="32"
+          height="32"
+        />
+      </svg>
+
+      <svg
+        class="hidden"
+        data-id="theme-toggle-dark-icon"
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 32 32"
+      >
+        <defs>
+          <style>
+            .cls-1 {
+              fill: none;
+            }
+          </style>
+        </defs>
+        <title>asleep</title>
+        <path
+          d="M13.5025,5.4136A15.0755,15.0755,0,0,0,25.096,23.6082a11.1134,11.1134,0,0,1-7.9749,3.3893c-.1385,0-.2782.0051-.4178,0A11.0944,11.0944,0,0,1,13.5025,5.4136M14.98,3a1.0024,1.0024,0,0,0-.1746.0156A13.0959,13.0959,0,0,0,16.63,28.9973c.1641.006.3282,0,.4909,0a13.0724,13.0724,0,0,0,10.702-5.5556,1.0094,1.0094,0,0,0-.7833-1.5644A13.08,13.08,0,0,1,15.8892,4.38,1.0149,1.0149,0,0,0,14.98,3Z"
+        />
+        <rect
+          data-name="&lt;Transparent Rectangle&gt;"
+          class="cls-1"
+          width="32"
+          height="32"
+        />
+      </svg>
+    </bx-btn>
+  </div>
+</bx-header>
+<bx-side-nav aria-label="Side navigation" collapse-mode="responsive">
+  <bx-side-nav-items>
+    <bx-side-nav-link
+      class="show-small"
+      href="/index.html"
+      ><span>Today</span></bx-side-nav-link
+    >
+    <bx-side-nav-link
+      class="show-small"
+      href="/yesterday.html"
+      ><span>Yesterday</span></bx-side-nav-link
+    >
+    <bx-side-nav-link class="show-small" href="/week.html"
+      ><span>Week</span></bx-side-nav-link
+    >
+    <bx-side-nav-link
+      class="show-small"
+      href="/month.html"
+      ><span>Month</span></bx-side-nav-link
+    >
+    <bx-side-nav-link class="show-small" href="/year.html"
+      ><span>Year</span></bx-side-nav-link
+    >
+    <bx-side-nav-divider class="show-small"></bx-side-nav-divider>
+    <bx-side-nav-link href="/celestial.html">
+      <svg
+        slot="title-icon"
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        viewBox="0 0 32 32"
+      >
+        <defs>
+          <style>
+            .cls-1 {
+              fill: none;
+            }
+          </style>
+        </defs>
+        <title>asleep</title>
+        <path
+          d="M13.5025,5.4136A15.0755,15.0755,0,0,0,25.096,23.6082a11.1134,11.1134,0,0,1-7.9749,3.3893c-.1385,0-.2782.0051-.4178,0A11.0944,11.0944,0,0,1,13.5025,5.4136M14.98,3a1.0024,1.0024,0,0,0-.1746.0156A13.0959,13.0959,0,0,0,16.63,28.9973c.1641.006.3282,0,.4909,0a13.0724,13.0724,0,0,0,10.702-5.5556,1.0094,1.0094,0,0,0-.7833-1.5644A13.08,13.08,0,0,1,15.8892,4.38,1.0149,1.0149,0,0,0,14.98,3Z"
+        />
+        <rect
+          id="_Transparent_Rectangle_"
+          data-name="&lt;Transparent Rectangle&gt;"
+          class="cls-1"
+          width="32"
+          height="32"
+        />
+      </svg>
+      <span>Celestial</span>
+    </bx-side-nav-link>
+    <bx-side-nav-link href="/statistics.html">
+      <svg
+        slot="title-icon"
+        width="16"
+        height="16"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 32 32"
+      >
+        <defs>
+          <style>
+            .cls-1 {
+              fill: none;
+            }
+          </style>
+        </defs>
+        <title>analytics</title>
+        <path d="M4,2H2V28a2,2,0,0,0,2,2H30V28H4Z" />
+        <path
+          d="M30,9H23v2h3.59L19,18.59l-4.29-4.3a1,1,0,0,0-1.42,0L6,21.59,7.41,23,14,16.41l4.29,4.3a1,1,0,0,0,1.42,0L28,12.41V16h2Z"
+        />
+        <rect
+          id="_Transparent_Rectangle_"
+          data-name="&lt;Transparent Rectangle&gt;"
+          class="cls-1"
+          width="32"
+          height="32"
+        />
+      </svg>
+      <span>Statistics</span>
+    </bx-side-nav-link>
+
+    <!--prettier-ignore-->
+    <bx-side-nav-link href="/sensor-status.html">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 32 32"
+        slot="title-icon"
+        width="16"
+        height="16"
+      >
+        <defs>
+          <style>
+            .cls-1 {
+              fill: none;
+            }
+          </style>
+        </defs>
+        <title>Sensor Status</title>
+        <rect x="15" y="12" width="2" height="18" />
+        <path d="M11.33,18.22a7,7,0,0,1,0-10.44l1.34,1.49a5,5,0,0,0,0,7.46Z" />
+        <path
+          d="M20.67,18.22l-1.34-1.49a5,5,0,0,0,0-7.46l1.34-1.49a7,7,0,0,1,0,10.44Z"
+        />
+        <path d="M8.4,21.8a11,11,0,0,1,0-17.6L9.6,5.8a9,9,0,0,0,0,14.4Z" />
+        <path
+          d="M23.6,21.8l-1.2-1.6a9,9,0,0,0,0-14.4l1.2-1.6a11,11,0,0,1,0,17.6Z"
+        />
+        <rect
+          data-name="&lt;Transparent Rectangle&gt;"
+          class="cls-1"
+          width="32"
+          height="32"
+        />
+      </svg>
+      <span>Sensor Status</span>
+    </bx-side-nav-link>
+
+    <!--prettier-ignore-->
+
+    <!--prettier-ignore-->
+    <bx-side-nav-link href="/externals.html">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        slot="title-icon"
+        width="16"
+        height="16"
+        viewBox="0 0 32 32"
+      >
+        <defs>
+          <style>
+            .cls-1 {
+              fill: none;
+            }
+          </style>
+        </defs>
+        <polygon
+          points="17 22 17 14 13 14 13 16 15 16 15 22 12 22 12 24 20 24 20 22 17 22"
+        />
+        <path d="M16,8a1.5,1.5,0,1,0,1.5,1.5A1.5,1.5,0,0,0,16,8Z" />
+        <path
+          d="M16,30A14,14,0,1,1,30,16,14,14,0,0,1,16,30ZM16,4A12,12,0,1,0,28,16,12,12,0,0,0,16,4Z"
+        />
+        <rect class="cls-1" width="32" height="32" />
+      </svg>
+      <span>Webcams & Radar</span>
+    </bx-side-nav-link>
+
+    <bx-side-nav-divider></bx-side-nav-divider>
+    <bx-side-nav-link class="sidebar-heading"
+      ><span>Archive & NOAA Reports</span></bx-side-nav-link
+    >
+    <!--prettier-ignore-->
+    <bx-side-nav-menu title="Years">
+      <bx-side-nav-menu-item
+        href="/year-2024.html"
+      >
+        <b>2024</b>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item
+        href="/year-2025.html"
+      >
+        <b>2025</b>
+      </bx-side-nav-menu-item>
+    </bx-side-nav-menu>
+    <!--prettier-ignore-->
+    <!--prettier-ignore-->
+    <bx-side-nav-menu title="2024">
+      <!--prettier-ignore-->
+      <bx-side-nav-menu-item href="/month-2024-01.html">
+        <span>January</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2024-02.html">
+        <span>February</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2024-03.html">
+        <span>March</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2024-04.html">
+        <span>April</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2024-05.html">
+        <span>May</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2024-06.html">
+        <span>June</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2024-07.html">
+        <span>July</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2024-08.html">
+        <span>August</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2024-09.html">
+        <span>September</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2024-10.html">
+        <span>October</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2024-11.html">
+        <span>November</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2024-12.html">
+        <span>December</span>
+      </bx-side-nav-menu-item>
+    </bx-side-nav-menu>
+    <!--prettier-ignore-->
+    <!--prettier-ignore-->
+    <bx-side-nav-menu title="2025">
+      <!--prettier-ignore-->
+      <bx-side-nav-menu-item href="/month-2025-01.html">
+        <span>January</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2025-02.html">
+        <span>February</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2025-03.html">
+        <span>March</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2025-04.html">
+        <span>April</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2025-05.html">
+        <span>May</span>
+      </bx-side-nav-menu-item>
+    </bx-side-nav-menu>
+    <!--prettier-ignore-->
+  </bx-side-nav-items>
+</bx-side-nav>
+
+<script>
+  // Add 'active' class to nav-items.
+  const bxSideNavLinks = document.querySelectorAll(
+    "bx-side-nav-link, bx-side-nav-menu-item"
+  );
+
+  bxSideNavLinks.forEach((element) => {
+    if (
+      element.getAttribute("href") &&
+      window.location.pathname.includes(
+        // Remove leading slash.
+        element.getAttribute("href").replace(/^\/+/, "")
+      )
+    ) {
+      element.setAttribute("active", true);
+    }
+  });
+</script>
+
+<script>
+  var themeToggleDarkIcon = document.querySelectorAll(
+    '[data-id="theme-toggle-dark-icon"]'
+  );
+  var themeToggleLightIcon = document.querySelectorAll(
+    '[data-id="theme-toggle-light-icon"]'
+  );
+
+  // Change the icons inside the button based on previous settings
+  if (
+    localStorage.getItem("weewx.weewx_wdc.color-theme") === "dark" ||
+    (!("weewx.weewx_wdc.color-theme" in localStorage) &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches)
+  ) {
+    document.documentElement.classList.add("dark");
+    themeToggleLightIcon.forEach(function (element) {
+      element.classList.remove("hidden");
+    });
+  } else {
+    themeToggleDarkIcon.forEach(function (element) {
+      element.classList.remove("hidden");
+    });
+  }
+
+  var themeToggleBtn = document.querySelectorAll('[data-id="theme-toggle"]');
+
+  themeToggleBtn.forEach(function (element) {
+    element.addEventListener("click", function () {
+      // toggle icons inside button
+      themeToggleDarkIcon.forEach(function (element) {
+        element.classList.toggle("hidden");
+      });
+      themeToggleLightIcon.forEach(function (element) {
+        element.classList.toggle("hidden");
+      });
+
+      // if set via local storage previously
+      if (localStorage.getItem("weewx.weewx_wdc.color-theme")) {
+        if (localStorage.getItem("weewx.weewx_wdc.color-theme") === "light") {
+          document.documentElement.classList.add("dark");
+          localStorage.setItem("weewx.weewx_wdc.color-theme", "dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+          localStorage.setItem("weewx.weewx_wdc.color-theme", "light");
+        }
+
+        // if NOT set via local storage previously
+      } else {
+        if (document.documentElement.classList.contains("dark")) {
+          document.documentElement.classList.remove("dark");
+          localStorage.setItem("weewx.weewx_wdc.color-theme", "light");
+        } else {
+          document.documentElement.classList.add("dark");
+          localStorage.setItem("weewx.weewx_wdc.color-theme", "dark");
+        }
+      }
+    });
+  });
+</script>
+
+<!--prettier-ignore-->
+
+    <main class="main bx--content">
+      <section>
+        <div class="bx--grid bx--grid--full-width">
+          <div class="bx--row">
+            <header class="bx--col page-header">
+              <h1>Monthly Weather Conditions</h1>
+              <!-- prettier-ignore -->
+              <h2>01-May-2025 00:00 - 31-May-2025 23:59</h2>
+              <h3>
+                <a
+                  class="noaa-report-link"
+                  target="_blank"
+                  href="/NOAA/NOAA-2025-05.txt"
+                >
+                  NOAA Report
+                </a>
+              </h3>
+            </header>
+          </div>
+
+          <!--prettier-ignore-->
+<!--prettier-ignore-->
+
+
+
+
+<!--prettier-ignore-->
+<!--prettier-ignore-->
+<div class="bx--row">
+
+</div>
+
+<div class="bx--row">
+  <!--prettier-ignore-->
+
+
+
+
+<!--prettier-ignore-->
+
+
+
+<script
+  type="module"
+  src="https://1.www.s81c.com/common/carbon/web-components/version/v1.27.0/tooltip.min.js"
+></script>
+
+
+<div class="bx--col-sm-4 bx--col-md-4 bx--col-lg-6 bx--col-xlg-3 bx--col-max-2 stat-tile-wrap-outTemp">
+  <!--prettier-ignore-->
+  <div
+  class="bx--tile stat-tile"
+  data-test="outTemp"
+  data-observation="outTemp"
+  data-unit="&#176;F"
+  data-rounding="0"
+  >
+    <!-- Main row -->
+    <div class="bx--row">
+
+
+      <div class="bx--col">
+        <p class="label">Outside Temperature</p>
+        <!--prettier-ignore-->
+        <p class="value">
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="32"
+  height="32"
+  viewBox="0 0 32 32"
+>
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <title>Outside Temperature</title>
+  <path
+    d="M13,17.26V6A4,4,0,0,0,5,6V17.26a7,7,0,1,0,8,0ZM9,4a2,2,0,0,1,2,2v7H7V6A2,2,0,0,1,9,4ZM9,28a5,5,0,0,1-2.5-9.33l.5-.28V15h4v3.39l.5.28A5,5,0,0,1,9,28Z"
+    transform="translate(0 0)"
+  />
+  <rect x="20" y="4" width="10" height="2" />
+  <rect x="20" y="10" width="7" height="2" />
+  <rect x="20" y="16" width="10" height="2" />
+  <rect x="20" y="22" width="7" height="2" />
+  <rect class="cls-1" width="32" height="32" />
+</svg>
+
+          <!--prettier-ignore-->
+          <span class="stat-title-obs-value">
+                56&#176;F
+
+            <!--prettier-ignore-->
+            <span>Avg.</span>
+            <!--prettier-ignore-->
+            <!--prettier-ignore-->
+          </span>
+        </p>
+      </div>
+    </div>
+    <!-- /Main row -->
+
+    <!--prettier-ignore-->
+        <div class="bx--row">
+          <div class="bx--col value-min" data-test="min">
+            <p class="stat-label">
+              <!--prettier-ignore-->
+              <bx-tooltip-definition
+                alignment="center"
+                body-text="05/02/25 01:47:55"
+                direction="top"
+              >
+                Monthly Min
+              </bx-tooltip-definition>
+              <!--prettier-ignore-->
+            </p>
+            <!--prettier-ignore-->
+            <p class="stat-value">
+              <span class="value" style="display: inline;">50&#176;F</span>
+            </p>
+          </div>
+            <div class="bx--col value-max" data-test="max">
+              <p class="stat-label">
+                <!--prettier-ignore-->
+                <bx-tooltip-definition
+                  alignment="center"
+                  body-text="05/05/25 16:30:43"
+                  direction="top"
+                >
+                  Monthly Max
+                </bx-tooltip-definition>
+                <!--prettier-ignore-->
+              </p>
+              <!--prettier-ignore-->
+              <p class="stat-value">
+                <span class="value" style="display: inline;">79&#176;F</span>
+
+
+              </p>
+            </div>
+        </div>
+  </div>
+</div>
+
+
+
+
+
+<!--prettier-ignore-->
+
+
+
+<script
+  type="module"
+  src="https://1.www.s81c.com/common/carbon/web-components/version/v1.27.0/tooltip.min.js"
+></script>
+
+
+<div class="bx--col-sm-4 bx--col-md-4 bx--col-lg-6 bx--col-xlg-3 bx--col-max-2 stat-tile-wrap-outHumidity">
+  <!--prettier-ignore-->
+  <div
+  class="bx--tile stat-tile"
+  data-test="outHumidity"
+  data-observation="outHumidity"
+  data-unit="%"
+  data-rounding="0"
+  >
+    <!-- Main row -->
+    <div class="bx--row">
+
+
+      <div class="bx--col">
+        <p class="label">Outside Humidity</p>
+        <!--prettier-ignore-->
+        <p class="value">
+<svg
+  id="icon"
+  xmlns="http://www.w3.org/2000/svg"
+  width="32"
+  height="32"
+  viewBox="0 0 32 32"
+>
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <title>Outside Humidity</title>
+  <path
+    d="M23.4761,13.9932,16.8472,3.4365a1.04,1.04,0,0,0-1.6944,0L8.4941,14.0444A9.9861,9.9861,0,0,0,7,19a9,9,0,0,0,18,0A10.0632,10.0632,0,0,0,23.4761,13.9932ZM16,26.0005a7.0089,7.0089,0,0,1-7-7,7.978,7.978,0,0,1,1.2183-3.9438l.935-1.4888L21.2271,23.6411A6.9772,6.9772,0,0,1,16,26.0005Z"
+  />
+  <rect
+    id="_Transparent_Rectangle_"
+    data-name="&lt;Transparent Rectangle&gt;"
+    class="cls-1"
+    width="32"
+    height="32"
+  />
+</svg>
+
+          <!--prettier-ignore-->
+          <span class="stat-title-obs-value">
+                85%
+
+            <!--prettier-ignore-->
+            <span>Avg.</span>
+            <!--prettier-ignore-->
+            <!--prettier-ignore-->
+          </span>
+        </p>
+      </div>
+    </div>
+    <!-- /Main row -->
+
+    <!--prettier-ignore-->
+        <div class="bx--row">
+          <div class="bx--col value-min" data-test="min">
+            <p class="stat-label">
+              <!--prettier-ignore-->
+              <bx-tooltip-definition
+                alignment="center"
+                body-text="05/05/25 05:19:54"
+                direction="top"
+              >
+                Monthly Min
+              </bx-tooltip-definition>
+              <!--prettier-ignore-->
+            </p>
+            <!--prettier-ignore-->
+            <p class="stat-value">
+              <span class="value" style="display: inline;">0%</span>
+            </p>
+          </div>
+            <div class="bx--col value-max" data-test="max">
+              <p class="stat-label">
+                <!--prettier-ignore-->
+                <bx-tooltip-definition
+                  alignment="center"
+                  body-text="05/26/25 10:32:04"
+                  direction="top"
+                >
+                  Monthly Max
+                </bx-tooltip-definition>
+                <!--prettier-ignore-->
+              </p>
+              <!--prettier-ignore-->
+              <p class="stat-value">
+                <span class="value" style="display: inline;">100%</span>
+
+
+              </p>
+            </div>
+        </div>
+  </div>
+</div>
+
+
+
+
+
+<!--prettier-ignore-->
+
+
+
+<script
+  type="module"
+  src="https://1.www.s81c.com/common/carbon/web-components/version/v1.27.0/tooltip.min.js"
+></script>
+
+
+<div class="bx--col-sm-4 bx--col-md-4 bx--col-lg-6 bx--col-xlg-3 bx--col-max-2 stat-tile-wrap-barometer">
+  <!--prettier-ignore-->
+  <div
+  class="bx--tile stat-tile"
+  data-test="barometer"
+  data-observation="barometer"
+  data-unit=" mbar"
+  data-rounding="1"
+  >
+    <!-- Main row -->
+    <div class="bx--row">
+
+
+      <div class="bx--col">
+        <p class="label">Barometer</p>
+        <!--prettier-ignore-->
+        <p class="value">
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="32"
+  height="32"
+  viewBox="0 0 32 32"
+>
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <title>Barometer</title>
+  <path
+    d="M17.5053,16l8.1591-7.2529A1,1,0,0,0,25,7H22V2H20V9h2.37L16,14.6621,9.63,9H12V2H10V7H7a1,1,0,0,0-.6646,1.7471L14.4945,16,6.3353,23.2529A1,1,0,0,0,7,25h3v5h2V23H9.63L16,17.3379,22.37,23H20v7h2V25h3a1,1,0,0,0,.6645-1.7471Z"
+  />
+  <rect
+    id="_Transparent_Rectangle_"
+    data-name="&lt;Transparent Rectangle&gt;"
+    class="cls-1"
+    width="32"
+    height="32"
+  />
+</svg>
+
+          <!--prettier-ignore-->
+          <span class="stat-title-obs-value">
+                1013.4 mbar
+
+            <!--prettier-ignore-->
+            <span>Avg.</span>
+            <!--prettier-ignore-->
+            <!--prettier-ignore-->
+          </span>
+        </p>
+      </div>
+    </div>
+    <!-- /Main row -->
+
+    <!--prettier-ignore-->
+        <div class="bx--row">
+          <div class="bx--col value-min" data-test="min">
+            <p class="stat-label">
+              <!--prettier-ignore-->
+              <bx-tooltip-definition
+                alignment="center"
+                body-text="05/05/25 16:43:45"
+                direction="top"
+              >
+                Monthly Min
+              </bx-tooltip-definition>
+              <!--prettier-ignore-->
+            </p>
+            <!--prettier-ignore-->
+            <p class="stat-value">
+              <span class="value" style="display: inline;">1004.2 mbar</span>
+            </p>
+          </div>
+            <div class="bx--col value-max" data-test="max">
+              <p class="stat-label">
+                <!--prettier-ignore-->
+                <bx-tooltip-definition
+                  alignment="center"
+                  body-text="05/08/25 10:51:48"
+                  direction="top"
+                >
+                  Monthly Max
+                </bx-tooltip-definition>
+                <!--prettier-ignore-->
+              </p>
+              <!--prettier-ignore-->
+              <p class="stat-value">
+                <span class="value" style="display: inline;">1019.0 mbar</span>
+
+
+              </p>
+            </div>
+        </div>
+  </div>
+</div>
+
+
+
+
+
+<!--prettier-ignore-->
+
+
+
+<script
+  type="module"
+  src="https://1.www.s81c.com/common/carbon/web-components/version/v1.27.0/tooltip.min.js"
+></script>
+
+
+<div class="bx--col-sm-4 bx--col-md-4 bx--col-lg-6 bx--col-xlg-3 bx--col-max-2 stat-tile-wrap-windSpeed">
+  <!--prettier-ignore-->
+  <div
+  class="bx--tile stat-tile"
+  data-test="windSpeed"
+  data-observation="windSpeed"
+  data-unit=" knots"
+  data-rounding="0"
+  >
+    <!-- Main row -->
+    <div class="bx--row">
+
+
+      <div class="bx--col">
+        <p class="label">Wind Speed</p>
+        <!--prettier-ignore-->
+        <p class="value">
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="32"
+  height="32"
+  viewBox="0 0 32 32"
+>
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <title>Wind Speed</title>
+  <path d="M21,15H8V13H21a3,3,0,1,0-3-3H16a5,5,0,1,1,5,5Z" />
+  <path
+    d="M23,28a5.0057,5.0057,0,0,1-5-5h2a3,3,0,1,0,3-3H4V18H23a5,5,0,0,1,0,10Z"
+  />
+  <rect
+    data-name="&lt;Transparent Rectangle&gt;"
+    class="cls-1"
+    width="32"
+    height="32"
+  />
+</svg>
+
+          <!--prettier-ignore-->
+          <span class="stat-title-obs-value">
+                11 knots
+
+                  <span class="stat-wind-dir stat-detail">
+<!--prettier-ignore-->
+
+
+<svg
+  data-name="Layer 1"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 32 32"
+  style="transform: rotate(326deg)"
+>
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <path
+    d="M25,2,23.5859,3.4141,26.1719,6h-5.09a16.93,16.93,0,0,0-6.3139,1.2158L10.4893,8.9272A14.93,14.93,0,0,1,4.9185,10H2v2H4.9185a16.93,16.93,0,0,0,6.3139-1.2158l4.2783-1.7114A14.93,14.93,0,0,1,21.0815,8h5.09l-2.586,2.5859L25,12l5-5Z"
+    transform="translate(0 0)"
+  />
+  <path
+    d="M21,11l-1.4141,1.4141L22.1719,15H18.9014a16.9422,16.9422,0,0,0-5.9693,1.0825l-2.5664.9624A14.9456,14.9456,0,0,1,5.0986,18H2v2H5.0986a16.9422,16.9422,0,0,0,5.9693-1.0825l2.5664-.9624A14.9456,14.9456,0,0,1,18.9014,17h3.2705l-2.586,2.5859L21,21l5-5Z"
+    transform="translate(0 0)"
+  />
+  <path
+    d="M17,20l-1.4141,1.4141L18.1719,24H16.5967a16.9879,16.9879,0,0,0-5.3765.8721l-1.0727.3584A14.9852,14.9852,0,0,1,5.4033,26H2v2H5.4033a16.9879,16.9879,0,0,0,5.3765-.8721l1.0727-.3584A14.9852,14.9852,0,0,1,16.5967,26h1.5752l-2.586,2.5859L17,30l5-5Z"
+    transform="translate(0 0)"
+  />
+  <rect
+    data-name="&lt;Transparent Rectangle&gt;"
+    class="cls-1"
+    width="32"
+    height="32"
+  />
+</svg>
+                    SW
+                  </span>
+            <!--prettier-ignore-->
+            <span>Avg.</span>
+            <!--prettier-ignore-->
+            <!--prettier-ignore-->
+          </span>
+        </p>
+      </div>
+    </div>
+    <!-- /Main row -->
+
+    <!--prettier-ignore-->
+        <div class="bx--row">
+            <div class="bx--col value-max" data-test="max">
+              <p class="stat-label">
+                <!--prettier-ignore-->
+                <bx-tooltip-definition
+                  alignment="center"
+                  body-text="05/17/25 13:25:00"
+                  direction="top"
+                >
+                  Monthly Max
+                </bx-tooltip-definition>
+                <!--prettier-ignore-->
+              </p>
+              <!--prettier-ignore-->
+              <p class="stat-value">
+                <span class="value" style="display: inline;">35 knots</span>
+
+
+                  <span class="stat-wind-dir stat-detail">, N</span>
+              </p>
+            </div>
+        </div>
+  </div>
+</div>
+
+
+
+
+
+<!--prettier-ignore-->
+
+
+
+<script
+  type="module"
+  src="https://1.www.s81c.com/common/carbon/web-components/version/v1.27.0/tooltip.min.js"
+></script>
+
+
+<div class="bx--col-sm-4 bx--col-md-4 bx--col-lg-6 bx--col-xlg-3 bx--col-max-2 stat-tile-wrap-windGust">
+  <!--prettier-ignore-->
+  <div
+  class="bx--tile stat-tile"
+  data-test="windGust"
+  data-observation="windGust"
+  data-unit=" knots"
+  data-rounding="0"
+  >
+    <!-- Main row -->
+    <div class="bx--row">
+
+
+      <div class="bx--col">
+        <p class="label">Gust Speed</p>
+        <!--prettier-ignore-->
+        <p class="value">
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="32"
+  height="32"
+  viewBox="0 0 32 32"
+>
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <title>Gust Speed</title>
+  <path
+    d="M13,30a5.0057,5.0057,0,0,1-5-5h2a3,3,0,1,0,3-3H4V20h9a5,5,0,0,1,0,10Z"
+  />
+  <path
+    d="M25,25a5.0057,5.0057,0,0,1-5-5h2a3,3,0,1,0,3-3H2V15H25a5,5,0,0,1,0,10Z"
+  />
+  <path d="M21,12H6V10H21a3,3,0,1,0-3-3H16a5,5,0,1,1,5,5Z" />
+  <rect
+    data-name="&lt;Transparent Rectangle&gt;"
+    class="cls-1"
+    width="32"
+    height="32"
+  />
+</svg>
+
+          <!--prettier-ignore-->
+          <span class="stat-title-obs-value">
+                13 knots
+
+                  <span class="stat-wind-dir stat-detail">
+<!--prettier-ignore-->
+
+
+<svg
+  data-name="Layer 1"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 32 32"
+  style="transform: rotate(311deg)"
+>
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <path
+    d="M25,2,23.5859,3.4141,26.1719,6h-5.09a16.93,16.93,0,0,0-6.3139,1.2158L10.4893,8.9272A14.93,14.93,0,0,1,4.9185,10H2v2H4.9185a16.93,16.93,0,0,0,6.3139-1.2158l4.2783-1.7114A14.93,14.93,0,0,1,21.0815,8h5.09l-2.586,2.5859L25,12l5-5Z"
+    transform="translate(0 0)"
+  />
+  <path
+    d="M21,11l-1.4141,1.4141L22.1719,15H18.9014a16.9422,16.9422,0,0,0-5.9693,1.0825l-2.5664.9624A14.9456,14.9456,0,0,1,5.0986,18H2v2H5.0986a16.9422,16.9422,0,0,0,5.9693-1.0825l2.5664-.9624A14.9456,14.9456,0,0,1,18.9014,17h3.2705l-2.586,2.5859L21,21l5-5Z"
+    transform="translate(0 0)"
+  />
+  <path
+    d="M17,20l-1.4141,1.4141L18.1719,24H16.5967a16.9879,16.9879,0,0,0-5.3765.8721l-1.0727.3584A14.9852,14.9852,0,0,1,5.4033,26H2v2H5.4033a16.9879,16.9879,0,0,0,5.3765-.8721l1.0727-.3584A14.9852,14.9852,0,0,1,16.5967,26h1.5752l-2.586,2.5859L17,30l5-5Z"
+    transform="translate(0 0)"
+  />
+  <rect
+    data-name="&lt;Transparent Rectangle&gt;"
+    class="cls-1"
+    width="32"
+    height="32"
+  />
+</svg>
+                    SSW
+                  </span>
+            <!--prettier-ignore-->
+            <span>Avg.</span>
+            <!--prettier-ignore-->
+            <!--prettier-ignore-->
+          </span>
+        </p>
+      </div>
+    </div>
+    <!-- /Main row -->
+
+    <!--prettier-ignore-->
+        <div class="bx--row">
+            <div class="bx--col value-max" data-test="max">
+              <p class="stat-label">
+                <!--prettier-ignore-->
+                <bx-tooltip-definition
+                  alignment="center"
+                  body-text="05/23/25 15:30:53"
+                  direction="top"
+                >
+                  Monthly Max
+                </bx-tooltip-definition>
+                <!--prettier-ignore-->
+              </p>
+              <!--prettier-ignore-->
+              <p class="stat-value">
+                <span class="value" style="display: inline;">35 knots</span>
+
+
+                  <span class="stat-wind-dir stat-detail">, N</span>
+                <!--Empty block for usage in MQTT-->
+              </p>
+            </div>
+        </div>
+  </div>
+</div>
+
+
+
+
+
+<!--prettier-ignore-->
+
+
+
+<script
+  type="module"
+  src="https://1.www.s81c.com/common/carbon/web-components/version/v1.27.0/tooltip.min.js"
+></script>
+
+
+<div class="bx--col-sm-4 bx--col-md-4 bx--col-lg-6 bx--col-xlg-3 bx--col-max-2 stat-tile-wrap-rain">
+  <!--prettier-ignore-->
+  <div
+  class="bx--tile stat-tile"
+  data-test="rain"
+  data-observation="rain"
+  data-unit=" in"
+  data-rounding="2"
+    data-unit-rain-rate=" in/h"
+  >
+    <!-- Main row -->
+    <div class="bx--row">
+
+
+      <div class="bx--col">
+        <p class="label">Rain</p>
+        <!--prettier-ignore-->
+        <p class="value">
+<svg
+  data-name="Layer 1"
+  xmlns="http://www.w3.org/2000/svg"
+  width="32"
+  height="32"
+  viewBox="0 0 32 32"
+>
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <path
+    d="M28,4a2.0023,2.0023,0,0,0-2,2V8H24a3.4376,3.4376,0,0,1-3.0513-2.3164A1.007,1.007,0,0,0,20,5a.9894.9894,0,0,0-.9468.6787A3.44,3.44,0,0,1,16,8a3.4376,3.4376,0,0,1-3.0513-2.3164A1.007,1.007,0,0,0,12,5a.971.971,0,0,0-.9468.6787A3.44,3.44,0,0,1,8,8H6V6A2.0023,2.0023,0,0,0,4,4H2V6H4V26a2.0023,2.0023,0,0,0,2,2H26a2.0023,2.0023,0,0,0,2-2V6h2V4ZM6,26V22h4V20H6V16h4V14H6V10H8a4.9316,4.9316,0,0,0,4-1.9873,5.0192,5.0192,0,0,0,8,0A4.9316,4.9316,0,0,0,24,10h2V26Z"
+    transform="translate(0 0)"
+  />
+  <rect
+    data-name="&lt;Transparent Rectangle&gt;"
+    class="cls-1"
+    width="32"
+    height="32"
+  />
+</svg>
+
+          <!--prettier-ignore-->
+          <span class="stat-title-obs-value">
+                1.47 in
+            <!--prettier-ignore-->
+            <!--prettier-ignore-->
+            <span>Total</span>
+            <!--prettier-ignore-->
+          </span>
+        </p>
+      </div>
+    </div>
+    <!-- /Main row -->
+
+    <!--prettier-ignore-->
+          <div class="bx--row">
+                <div class="bx--col" data-test="rain-days">
+                  <p class="stat-label">Rain days</p>
+                  <p class="stat-value">
+                    <!--prettier-ignore-->
+                    9
+                  </p>
+                </div>
+            <div class="bx--col value-rain-rate-max" data-test="rain-rate-max">
+              <p class="stat-label">
+                <bx-tooltip-definition
+                  alignment="center"
+                  body-text="05/17/25 11:36:51"
+                  direction="top"
+                >
+                  Max Rain Rate
+                </bx-tooltip-definition>
+                <!--prettier-ignore-->
+              </p>
+              <!--prettier-ignore-->
+              <p class="stat-value">
+                <span class="value" style="display: inline;">1.45 in/h</span>
+              </p>
+            </div>
+          </div>
+  </div>
+</div>
+
+
+
+
+
+<!--prettier-ignore-->
+
+
+
+<script
+  type="module"
+  src="https://1.www.s81c.com/common/carbon/web-components/version/v1.27.0/tooltip.min.js"
+></script>
+
+
+<div class="bx--col-sm-4 bx--col-md-4 bx--col-lg-6 bx--col-xlg-3 bx--col-max-2 stat-tile-wrap-dewpoint">
+  <!--prettier-ignore-->
+  <div
+  class="bx--tile stat-tile"
+  data-test="dewpoint"
+  data-observation="dewpoint"
+  data-unit="&#176;F"
+  data-rounding="0"
+  >
+    <!-- Main row -->
+    <div class="bx--row">
+
+
+      <div class="bx--col">
+        <p class="label">Dew Point</p>
+        <!--prettier-ignore-->
+        <p class="value">
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="32"
+  height="32"
+  viewBox="0 0 32 32"
+>
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <title>Dew Point</title>
+  <path
+    d="M24,10a4,4,0,1,1,4-4A4.0045,4.0045,0,0,1,24,10Zm0-6a2,2,0,1,0,2,2A2.0021,2.0021,0,0,0,24,4Z"
+  />
+  <path
+    d="M14.5,30A5.4962,5.4962,0,0,1,9,24.52c0-3.4426,4.3442-21.0141,4.5293-21.76a1,1,0,0,1,1.9414,0C15.6558,3.5059,20,21.0774,20,24.52A5.4962,5.4962,0,0,1,14.5,30Zm0-22.7561C13.0391,13.38,11,22.4089,11,24.52a3.5,3.5,0,0,0,7,0C18,22.4089,15.9609,13.38,14.5,7.2439Z"
+  />
+  <rect
+    data-name="&lt;Transparent Rectangle&gt;"
+    class="cls-1"
+    width="32"
+    height="32"
+  />
+</svg>
+
+          <!--prettier-ignore-->
+          <span class="stat-title-obs-value">
+                50&#176;F
+
+            <!--prettier-ignore-->
+            <span>Avg.</span>
+            <!--prettier-ignore-->
+            <!--prettier-ignore-->
+          </span>
+        </p>
+      </div>
+    </div>
+    <!-- /Main row -->
+
+    <!--prettier-ignore-->
+        <div class="bx--row">
+          <div class="bx--col value-min" data-test="min">
+            <p class="stat-label">
+              <!--prettier-ignore-->
+              <bx-tooltip-definition
+                alignment="center"
+                body-text="05/05/25 06:30:53"
+                direction="top"
+              >
+                Monthly Min
+              </bx-tooltip-definition>
+              <!--prettier-ignore-->
+            </p>
+            <!--prettier-ignore-->
+            <p class="stat-value">
+              <span class="value" style="display: inline;">-37&#176;F</span>
+            </p>
+          </div>
+            <div class="bx--col value-max" data-test="max">
+              <p class="stat-label">
+                <!--prettier-ignore-->
+                <bx-tooltip-definition
+                  alignment="center"
+                  body-text="05/29/25 15:41:01"
+                  direction="top"
+                >
+                  Monthly Max
+                </bx-tooltip-definition>
+                <!--prettier-ignore-->
+              </p>
+              <!--prettier-ignore-->
+              <p class="stat-value">
+                <span class="value" style="display: inline;">59&#176;F</span>
+
+
+              </p>
+            </div>
+        </div>
+  </div>
+</div>
+
+
+
+
+
+<!--prettier-ignore-->
+
+
+
+<script
+  type="module"
+  src="https://1.www.s81c.com/common/carbon/web-components/version/v1.27.0/tooltip.min.js"
+></script>
+
+
+<div class="bx--col-sm-4 bx--col-md-4 bx--col-lg-6 bx--col-xlg-3 bx--col-max-2 stat-tile-wrap-UV">
+  <!--prettier-ignore-->
+  <div
+  class="bx--tile stat-tile"
+  data-test="UV"
+  data-observation="UV"
+  data-unit=""
+  data-rounding="1"
+  >
+    <!-- Main row -->
+    <div class="bx--row">
+
+
+      <div class="bx--col">
+        <p class="label">UV Index</p>
+        <!--prettier-ignore-->
+        <p class="value">
+<svg
+  data-name="Layer 1"
+  xmlns="http://www.w3.org/2000/svg"
+  width="32"
+  height="32"
+  viewBox="0 0 32 32"
+>
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <path
+    d="M13,30H9a2.0027,2.0027,0,0,1-2-2V20H9v8h4V20h2v8A2.0027,2.0027,0,0,1,13,30Z"
+    transform="translate(0 0)"
+  />
+  <polygon
+    points="25 20 23.25 20 21 29.031 18.792 20 17 20 19.5 30 22.5 30 25 20"
+  />
+  <rect x="15" y="2" width="2" height="5" />
+  <rect
+    x="21.6675"
+    y="6.8536"
+    width="4.958"
+    height="1.9998"
+    transform="translate(1.5191 19.3744) rotate(-45)"
+  />
+  <rect x="25" y="15" width="5" height="2" />
+  <rect x="2" y="15" width="5" height="2" />
+  <rect
+    x="6.8536"
+    y="5.3745"
+    width="1.9998"
+    height="4.958"
+    transform="translate(-3.253 7.8535) rotate(-45)"
+  />
+  <path
+    d="M22,17H20V16a4,4,0,0,0-8,0v1H10V16a6,6,0,0,1,12,0Z"
+    transform="translate(0 0)"
+  />
+  <rect
+    data-name="&lt;Transparent Rectangle&gt;"
+    class="cls-1"
+    width="32"
+    height="32"
+  />
+</svg>
+
+          <!--prettier-ignore-->
+          <span class="stat-title-obs-value">
+                8.8
+            <!--prettier-ignore-->
+            <!--prettier-ignore-->
+            <!--prettier-ignore-->
+            <span>Max</span>
+          </span>
+        </p>
+      </div>
+    </div>
+    <!-- /Main row -->
+
+    <!--prettier-ignore-->
+        <div class="bx--row">
+            <div class="bx--col value-max" data-test="max">
+              <p class="stat-label">
+                <!--prettier-ignore-->
+                <bx-tooltip-definition
+                  alignment="center"
+                  body-text="05/28/25 11:41:24"
+                  direction="top"
+                >
+                  Monthly Max
+                </bx-tooltip-definition>
+                <!--prettier-ignore-->
+              </p>
+              <!--prettier-ignore-->
+              <p class="stat-value">
+                <span class="value" style="display: inline;">8.8</span>
+
+
+              </p>
+            </div>
+        </div>
+  </div>
+</div>
+
+
+
+
+
+<!--prettier-ignore-->
+
+
+
+<script
+  type="module"
+  src="https://1.www.s81c.com/common/carbon/web-components/version/v1.27.0/tooltip.min.js"
+></script>
+
+
+<div class="bx--col-sm-4 bx--col-md-4 bx--col-lg-6 bx--col-xlg-3 bx--col-max-2 stat-tile-wrap-cloudbase">
+  <!--prettier-ignore-->
+  <div
+  class="bx--tile stat-tile"
+  data-test="cloudbase"
+  data-observation="cloudbase"
+  data-unit=" feet"
+  data-rounding="0"
+  >
+    <!-- Main row -->
+    <div class="bx--row">
+
+
+      <div class="bx--col">
+        <p class="label">Cloud Base</p>
+        <!--prettier-ignore-->
+        <p class="value">
+<svg
+  data-name="Layer 1"
+  xmlns="http://www.w3.org/2000/svg"
+  width="32"
+  height="32"
+  viewBox="0 0 32 32"
+>
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <rect x="2" y="28" width="9" height="2" />
+  <rect x="21" y="28" width="9" height="2" />
+  <polygon
+    points="17 26.167 17 17.832 19.586 20.414 21 19 16 14 11 19 12.413 20.415 15 17.832 15 26.167 12.413 23.584 11 25 16 30 21 25 19.586 23.586 17 26.167"
+  />
+  <path
+    d="M23,16H21V14h2a3,3,0,0,0,0-6c-.0938.0144-.1538.0219-.2153.0263l-.8037.0572L21.7544,7.31a5.9927,5.9927,0,0,0-11.1758-.8655l-.2832.5994-.8423-.0455A3.5008,3.5008,0,0,0,9.5,14H11v2H9.5A5.5,5.5,0,0,1,9.07,5.0166,7.9909,7.9909,0,0,1,23.42,6.0175,5,5,0,0,1,23,16Z"
+    transform="translate(0 0)"
+  />
+  <rect class="cls-1" width="32" height="32" />
+</svg>
+
+          <!--prettier-ignore-->
+          <span class="stat-title-obs-value">
+                1358 feet
+
+            <!--prettier-ignore-->
+            <span>Avg.</span>
+            <!--prettier-ignore-->
+            <!--prettier-ignore-->
+          </span>
+        </p>
+      </div>
+    </div>
+    <!-- /Main row -->
+
+    <!--prettier-ignore-->
+        <div class="bx--row">
+          <div class="bx--col value-min" data-test="min">
+            <p class="stat-label">
+              <!--prettier-ignore-->
+              <bx-tooltip-definition
+                alignment="center"
+                body-text="05/26/25 10:45:03"
+                direction="top"
+              >
+                Monthly Min
+              </bx-tooltip-definition>
+              <!--prettier-ignore-->
+            </p>
+            <!--prettier-ignore-->
+            <p class="stat-value">
+              <span class="value" style="display: inline;">13 feet</span>
+            </p>
+          </div>
+            <div class="bx--col value-max" data-test="max">
+              <p class="stat-label">
+                <!--prettier-ignore-->
+                <bx-tooltip-definition
+                  alignment="center"
+                  body-text="05/05/25 15:08:45"
+                  direction="top"
+                >
+                  Monthly Max
+                </bx-tooltip-definition>
+                <!--prettier-ignore-->
+              </p>
+              <!--prettier-ignore-->
+              <p class="stat-value">
+                <span class="value" style="display: inline;">24574 feet</span>
+
+
+              </p>
+            </div>
+        </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <!--prettier-ignore-->
+</div>
+
+<!--prettier-ignore-->
+
+<!--prettier-ignore-->
+
+
+<!--prettier-ignore-->
+<div class="bx--row">
+<!--prettier-ignore-->
+
+<!--prettier-ignore-->
+<header class="bx--col section-header">
+    <h2>May 2025</h2>
+</header>
+</div>
+
+<!-- prettier-ignore -->
+<div class="bx--row">
+
+
+
+<!--prettier-ignore-->
+
+<!--prettier-ignore-->
+
+
+
+
+<!--prettier-ignore-->
+
+
+
+
+<div class="bx--col-sm-4 bx--col-md-8 bx--col-lg-12 bx--col-xlg-6 bx--col-max-6">
+  <div class="bx--tile diagram-tile combined" data-test="windGust-windSpeed">
+    <div class="bx--row">
+      <div class="bx--col">
+        <!--prettier-ignore-->
+        <p class="label">
+
+                <span>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="32"
+  height="32"
+  viewBox="0 0 32 32"
+>
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <title>Gust Speed</title>
+  <path
+    d="M13,30a5.0057,5.0057,0,0,1-5-5h2a3,3,0,1,0,3-3H4V20h9a5,5,0,0,1,0,10Z"
+  />
+  <path
+    d="M25,25a5.0057,5.0057,0,0,1-5-5h2a3,3,0,1,0,3-3H2V15H25a5,5,0,0,1,0,10Z"
+  />
+  <path d="M21,12H6V10H21a3,3,0,1,0-3-3H16a5,5,0,1,1,5,5Z" />
+  <rect
+    data-name="&lt;Transparent Rectangle&gt;"
+    class="cls-1"
+    width="32"
+    height="32"
+  />
+</svg>
+                </span>
+                <span>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="32"
+  height="32"
+  viewBox="0 0 32 32"
+>
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <title>Wind Speed</title>
+  <path d="M21,15H8V13H21a3,3,0,1,0-3-3H16a5,5,0,1,1,5,5Z" />
+  <path
+    d="M23,28a5.0057,5.0057,0,0,1-5-5h2a3,3,0,1,0,3-3H4V18H23a5,5,0,0,1,0,10Z"
+  />
+  <rect
+    data-name="&lt;Transparent Rectangle&gt;"
+    class="cls-1"
+    width="32"
+    height="32"
+  />
+</svg>
+                </span>
+
+          Wind speed / Gust speed
+        </p>
+        <!--prettier-ignore-->
+        <div class="value">
+
+
+
+          <script>
+            /* prettier-ignore */
+            var windGustSeries00 = [[1746082800, 1746093600, 18.1], [1746093600, 1746104400, 13.2], [1746104400, 1746115200, 10.0], [1746115200, 1746126000, 15.6], [1746126000, 1746136800, 19.4], [1746136800, 1746147600, 17.7], [1746147600, 1746158400, 17.5], [1746158400, 1746169200, 14.6], [1746169200, 1746180000, 14.1], [1746180000, 1746190800, 14.1], [1746190800, 1746201600, 15.7], [1746201600, 1746212400, 19.7], [1746212400, 1746223200, 24.5], [1746223200, 1746234000, 26.2], [1746234000, 1746244800, 16.9], [1746244800, 1746255600, 9.8], [1746255600, 1746266400, 10.1], [1746266400, 1746277200, 18.1], [1746277200, 1746288000, 9.1], [1746288000, 1746298800, 7.0], [1746298800, 1746309600, 9.8], [1746309600, 1746320400, 11.7], [1746320400, 1746331200, 9.7], [1746331200, 1746342000, 8.1], [1746342000, 1746352800, 7.0], [1746352800, 1746363600, 2.6], [1746363600, 1746374400, 4.8], [1746374400, 1746385200, 5.6], [1746385200, 1746396000, 12.6], [1746396000, 1746406800, 11.9], [1746406800, 1746417600, 7.2], [1746417600, 1746428400, 6.6], [1746428400, 1746439200, 5.0], [1746439200, 1746450000, 9.7], [1746450000, 1746460800, 9.4], [1746460800, 1746471600, 14.9], [1746471600, 1746482400, 12.9], [1746482400, 1746493200, 14.4], [1746493200, 1746504000, 10.1], [1746504000, 1746514800, 11.5], [1746514800, 1746525600, 22.3], [1746525600, 1746536400, 21.5], [1746536400, 1746547200, 12.7], [1746547200, 1746558000, 16.4], [1746558000, 1746568800, 26.1], [1746568800, 1746579600, 26.8], [1746579600, 1746590400, 22.5], [1746590400, 1746601200, 17.7], [1746601200, 1746612000, 15.5], [1746612000, 1746622800, 15.5], [1746622800, 1746633600, 15.9], [1746633600, 1746644400, 15.7], [1746644400, 1746655200, 16.1], [1746655200, 1746666000, 18.8], [1746666000, 1746676800, 15.4], [1746676800, 1746687600, 12.1], [1746687600, 1746698400, 8.2], [1746698400, 1746709200, 7.4], [1746709200, 1746720000, 8.1], [1746720000, 1746730800, 8.5], [1746730800, 1746741600, 12.5], [1746741600, 1746752400, 15.1], [1746752400, 1746763200, 14.8], [1746763200, 1746774000, 8.1], [1746774000, 1746784800, 7.3], [1746784800, 1746795600, 5.2], [1746795600, 1746806400, 5.5], [1746806400, 1746817200, 8.0], [1746817200, 1746828000, 12.8], [1746828000, 1746838800, 16.0], [1746838800, 1746849600, 12.7], [1746849600, 1746860400, 10.6], [1746860400, 1746871200, 8.2], [1746871200, 1746882000, 8.9], [1746882000, 1746892800, 7.8], [1746892800, 1746903600, 9.3], [1746903600, 1746914400, 13.4], [1746914400, 1746925200, 16.5], [1746925200, 1746936000, 18.9], [1746936000, 1746946800, 10.4], [1746946800, 1746957600, 6.7], [1746957600, 1746968400, 9.1], [1746968400, 1746979200, 8.5], [1746979200, 1746990000, 21.9], [1746990000, 1747000800, 26.5], [1747000800, 1747011600, 25.5], [1747011600, 1747022400, 16.7], [1747022400, 1747033200, 11.5], [1747033200, 1747044000, 15.3], [1747044000, 1747054800, 17.3], [1747054800, 1747065600, 12.4], [1747065600, 1747076400, 15.9], [1747076400, 1747087200, 16.6], [1747087200, 1747098000, 19.0], [1747098000, 1747108800, 14.5], [1747108800, 1747119600, 12.2], [1747119600, 1747130400, 9.5], [1747130400, 1747141200, 7.7], [1747141200, 1747152000, 3.1], [1747152000, 1747162800, 6.4], [1747162800, 1747173600, 16.4], [1747173600, 1747184400, 19.4], [1747184400, 1747195200, 14.0], [1747195200, 1747206000, 8.7], [1747206000, 1747216800, 9.7], [1747216800, 1747227600, 8.8], [1747227600, 1747238400, 9.3], [1747238400, 1747249200, 11.0], [1747249200, 1747260000, 17.6], [1747260000, 1747270800, 16.0], [1747270800, 1747281600, 13.8], [1747281600, 1747292400, 10.4], [1747292400, 1747303200, 7.6], [1747303200, 1747314000, 5.8], [1747314000, 1747324800, 6.1], [1747324800, 1747335600, 9.8], [1747335600, 1747346400, 17.7], [1747346400, 1747357200, 16.9], [1747357200, 1747368000, 12.5], [1747368000, 1747378800, 9.7], [1747378800, 1747389600, 10.8], [1747389600, 1747400400, 11.9], [1747400400, 1747411200, 9.7], [1747411200, 1747422000, 9.4], [1747422000, 1747432800, 13.9], [1747432800, 1747443600, 14.9], [1747443600, 1747454400, 13.7], [1747454400, 1747465200, 13.7], [1747465200, 1747476000, 14.9], [1747476000, 1747486800, 17.6], [1747486800, 1747497600, 14.6], [1747497600, 1747508400, 22.0], [1747508400, 1747519200, 29.2], [1747519200, 1747530000, null], [1747530000, 1747540800, 6.5], [1747540800, 1747551600, 10.6], [1747551600, 1747562400, 10.6], [1747562400, 1747573200, 8.3], [1747573200, 1747584000, 4.6], [1747584000, 1747594800, 7.2], [1747594800, 1747605600, 15.1], [1747605600, 1747616400, 13.4], [1747616400, 1747627200, 7.0], [1747627200, 1747638000, 7.2], [1747638000, 1747648800, 5.2], [1747648800, 1747659600, 5.2], [1747659600, 1747670400, 4.1], [1747670400, 1747681200, 6.6], [1747681200, 1747692000, 10.3], [1747692000, 1747702800, 14.7], [1747702800, 1747713600, 10.6], [1747713600, 1747724400, 7.3], [1747724400, 1747735200, 7.6], [1747735200, 1747746000, 9.3], [1747746000, 1747756800, 7.9], [1747756800, 1747767600, 8.8], [1747767600, 1747778400, 12.7], [1747778400, 1747789200, 12.1], [1747789200, 1747800000, 9.6], [1747800000, 1747810800, 10.5], [1747810800, 1747821600, 7.3], [1747821600, 1747832400, 6.5], [1747832400, 1747843200, 6.6], [1747843200, 1747854000, 8.6], [1747854000, 1747864800, 16.2], [1747864800, 1747875600, 13.3], [1747875600, 1747886400, 17.2], [1747886400, 1747897200, 10.3], [1747897200, 1747908000, 10.0], [1747908000, 1747918800, 11.3], [1747918800, 1747929600, 11.6], [1747929600, 1747940400, 9.8], [1747940400, 1747951200, 15.4], [1747951200, 1747962000, null], [1747962000, 1747972800, 24.4], [1747972800, 1747983600, 16.3], [1747983600, 1747994400, 13.5], [1747994400, 1748005200, 14.8], [1748005200, 1748016000, 16.3], [1748016000, 1748026800, 14.3], [1748026800, 1748037600, 14.4], [1748037600, 1748048400, 19.2], [1748048400, 1748059200, 16.0], [1748059200, 1748070000, 13.2], [1748070000, 1748080800, 12.6], [1748080800, 1748091600, 12.7], [1748091600, 1748102400, 16.5], [1748102400, 1748113200, 17.5], [1748113200, 1748124000, 13.0], [1748124000, 1748134800, 19.9], [1748134800, 1748145600, 23.1], [1748145600, 1748156400, 20.7], [1748156400, 1748167200, 14.1], [1748167200, 1748178000, null], [1748178000, 1748188800, 9.8], [1748188800, 1748199600, 18.3], [1748199600, 1748210400, 23.9], [1748210400, 1748221200, null], [1748221200, 1748232000, 22.6], [1748232000, 1748242800, 17.1], [1748242800, 1748253600, 15.2], [1748253600, 1748264400, 13.2], [1748264400, 1748275200, 9.1], [1748275200, 1748286000, 16.2], [1748286000, 1748296800, 22.7], [1748296800, 1748307600, 23.5], [1748307600, 1748318400, 15.6], [1748318400, 1748329200, 12.5], [1748329200, 1748340000, 9.9], [1748340000, 1748350800, 9.0], [1748350800, 1748361600, 10.4], [1748361600, 1748372400, 12.5], [1748372400, 1748383200, 19.6], [1748383200, 1748394000, 19.7], [1748394000, 1748404800, 18.9], [1748404800, 1748415600, 18.0], [1748415600, 1748426400, 14.1], [1748426400, 1748437200, 16.1], [1748437200, 1748448000, 10.8], [1748448000, 1748458800, 17.9], [1748458800, 1748469600, 19.2], [1748469600, 1748480400, 25.4], [1748480400, 1748491200, 20.3], [1748491200, 1748502000, 13.5], [1748502000, 1748512800, 10.1], [1748512800, 1748523600, 9.8], [1748523600, 1748534400, 9.5], [1748534400, 1748545200, 9.0], [1748545200, 1748556000, 10.0], [1748556000, 1748566800, 9.5], [1748566800, 1748577600, 13.7], [1748577600, 1748588400, 9.3], [1748588400, 1748599200, 7.5], [1748599200, 1748610000, 7.1], [1748610000, 1748620800, 5.8], [1748620800, 1748631600, 6.8], [1748631600, 1748642400, 15.4], [1748642400, 1748653200, 15.4], [1748653200, 1748664000, 17.8], [1748664000, 1748674800, 11.2], [1748674800, 1748685600, 10.3], [1748685600, 1748696400, 9.6], [1748696400, 1748707200, 7.3], [1748707200, 1748718000, 11.1], [1748718000, 1748728800, 14.4], [1748728800, 1748739600, 16.9], [1748739600, 1748750400, 16.0], [1748750400, 1748761200, 14.0]];
+          </script>
+
+          <!--prettier-ignore-->
+
+
+          <script>
+            /* prettier-ignore */
+            var windSpeedSeries01 = [[1746082800, 1746093600, 15.1], [1746093600, 1746104400, 10.9], [1746104400, 1746115200, 8.0], [1746115200, 1746126000, 13.3], [1746126000, 1746136800, 17.5], [1746136800, 1746147600, 15.4], [1746147600, 1746158400, 14.0], [1746158400, 1746169200, 12.0], [1746169200, 1746180000, 12.0], [1746180000, 1746190800, 12.2], [1746190800, 1746201600, 13.2], [1746201600, 1746212400, 17.2], [1746212400, 1746223200, 20.0], [1746223200, 1746234000, 21.1], [1746234000, 1746244800, 14.0], [1746244800, 1746255600, 7.7], [1746255600, 1746266400, 8.1], [1746266400, 1746277200, 15.2], [1746277200, 1746288000, 6.8], [1746288000, 1746298800, 5.6], [1746298800, 1746309600, 8.0], [1746309600, 1746320400, 8.4], [1746320400, 1746331200, 7.0], [1746331200, 1746342000, 5.6], [1746342000, 1746352800, 5.2], [1746352800, 1746363600, 1.3], [1746363600, 1746374400, 3.1], [1746374400, 1746385200, 3.9], [1746385200, 1746396000, 11.0], [1746396000, 1746406800, 9.7], [1746406800, 1746417600, 5.6], [1746417600, 1746428400, 5.1], [1746428400, 1746439200, 3.7], [1746439200, 1746450000, 6.2], [1746450000, 1746460800, 5.7], [1746460800, 1746471600, 8.2], [1746471600, 1746482400, 8.4], [1746482400, 1746493200, 11.6], [1746493200, 1746504000, 7.7], [1746504000, 1746514800, 9.1], [1746514800, 1746525600, 18.6], [1746525600, 1746536400, 18.1], [1746536400, 1746547200, 10.9], [1746547200, 1746558000, 14.2], [1746558000, 1746568800, 21.4], [1746568800, 1746579600, 22.3], [1746579600, 1746590400, 18.8], [1746590400, 1746601200, 14.4], [1746601200, 1746612000, 13.0], [1746612000, 1746622800, 12.8], [1746622800, 1746633600, 13.2], [1746633600, 1746644400, 12.8], [1746644400, 1746655200, 13.8], [1746655200, 1746666000, 16.1], [1746666000, 1746676800, 12.9], [1746676800, 1746687600, 10.2], [1746687600, 1746698400, 6.5], [1746698400, 1746709200, 5.3], [1746709200, 1746720000, 6.1], [1746720000, 1746730800, 7.3], [1746730800, 1746741600, 11.0], [1746741600, 1746752400, 13.0], [1746752400, 1746763200, 12.3], [1746763200, 1746774000, 6.7], [1746774000, 1746784800, 6.1], [1746784800, 1746795600, 4.2], [1746795600, 1746806400, 4.4], [1746806400, 1746817200, 6.8], [1746817200, 1746828000, 10.9], [1746828000, 1746838800, 12.7], [1746838800, 1746849600, 10.8], [1746849600, 1746860400, 8.7], [1746860400, 1746871200, 6.8], [1746871200, 1746882000, 7.4], [1746882000, 1746892800, 6.3], [1746892800, 1746903600, 7.9], [1746903600, 1746914400, 11.7], [1746914400, 1746925200, 13.9], [1746925200, 1746936000, 15.3], [1746936000, 1746946800, 8.1], [1746946800, 1746957600, 5.1], [1746957600, 1746968400, 7.0], [1746968400, 1746979200, 6.7], [1746979200, 1746990000, 17.7], [1746990000, 1747000800, 21.6], [1747000800, 1747011600, 22.0], [1747011600, 1747022400, 14.1], [1747022400, 1747033200, 9.6], [1747033200, 1747044000, 12.6], [1747044000, 1747054800, 14.1], [1747054800, 1747065600, 9.3], [1747065600, 1747076400, 13.3], [1747076400, 1747087200, 14.6], [1747087200, 1747098000, 16.4], [1747098000, 1747108800, 12.7], [1747108800, 1747119600, 10.7], [1747119600, 1747130400, 7.5], [1747130400, 1747141200, 6.2], [1747141200, 1747152000, 1.5], [1747152000, 1747162800, 5.5], [1747162800, 1747173600, 14.3], [1747173600, 1747184400, 17.3], [1747184400, 1747195200, 12.3], [1747195200, 1747206000, 6.6], [1747206000, 1747216800, 7.8], [1747216800, 1747227600, 6.8], [1747227600, 1747238400, 7.7], [1747238400, 1747249200, 9.5], [1747249200, 1747260000, 15.3], [1747260000, 1747270800, 13.4], [1747270800, 1747281600, 11.7], [1747281600, 1747292400, 8.4], [1747292400, 1747303200, 6.1], [1747303200, 1747314000, 4.5], [1747314000, 1747324800, 4.9], [1747324800, 1747335600, 8.7], [1747335600, 1747346400, 15.5], [1747346400, 1747357200, 13.3], [1747357200, 1747368000, 10.0], [1747368000, 1747378800, 8.0], [1747378800, 1747389600, 8.4], [1747389600, 1747400400, 9.1], [1747400400, 1747411200, 7.3], [1747411200, 1747422000, 7.7], [1747422000, 1747432800, 12.0], [1747432800, 1747443600, 12.0], [1747443600, 1747454400, 11.1], [1747454400, 1747465200, 11.0], [1747465200, 1747476000, 12.7], [1747476000, 1747486800, 13.5], [1747486800, 1747497600, 13.2], [1747497600, 1747508400, 19.8], [1747508400, 1747519200, 26.2], [1747519200, 1747530000, null], [1747530000, 1747540800, 5.3], [1747540800, 1747551600, 8.2], [1747551600, 1747562400, 8.2], [1747562400, 1747573200, 6.5], [1747573200, 1747584000, 2.9], [1747584000, 1747594800, 6.0], [1747594800, 1747605600, 13.6], [1747605600, 1747616400, 11.5], [1747616400, 1747627200, 5.2], [1747627200, 1747638000, 5.3], [1747638000, 1747648800, 4.1], [1747648800, 1747659600, 4.0], [1747659600, 1747670400, 2.8], [1747670400, 1747681200, 5.8], [1747681200, 1747692000, 8.8], [1747692000, 1747702800, 13.0], [1747702800, 1747713600, 8.9], [1747713600, 1747724400, 5.5], [1747724400, 1747735200, 5.9], [1747735200, 1747746000, 7.2], [1747746000, 1747756800, 6.0], [1747756800, 1747767600, 7.8], [1747767600, 1747778400, 11.5], [1747778400, 1747789200, 10.1], [1747789200, 1747800000, 8.1], [1747800000, 1747810800, 8.0], [1747810800, 1747821600, 5.5], [1747821600, 1747832400, 4.9], [1747832400, 1747843200, 4.8], [1747843200, 1747854000, 7.5], [1747854000, 1747864800, 13.8], [1747864800, 1747875600, 11.5], [1747875600, 1747886400, 14.0], [1747886400, 1747897200, 8.3], [1747897200, 1747908000, 8.3], [1747908000, 1747918800, 8.8], [1747918800, 1747929600, 8.9], [1747929600, 1747940400, 7.7], [1747940400, 1747951200, 12.3], [1747951200, 1747962000, null], [1747962000, 1747972800, 18.1], [1747972800, 1747983600, 13.4], [1747983600, 1747994400, 10.7], [1747994400, 1748005200, 11.6], [1748005200, 1748016000, 12.8], [1748016000, 1748026800, 11.8], [1748026800, 1748037600, 11.8], [1748037600, 1748048400, 16.6], [1748048400, 1748059200, 12.1], [1748059200, 1748070000, 10.1], [1748070000, 1748080800, 9.5], [1748080800, 1748091600, 9.9], [1748091600, 1748102400, 13.2], [1748102400, 1748113200, 14.3], [1748113200, 1748124000, 10.6], [1748124000, 1748134800, 15.5], [1748134800, 1748145600, 12.0], [1748145600, 1748156400, 16.8], [1748156400, 1748167200, 11.4], [1748167200, 1748178000, null], [1748178000, 1748188800, 7.7], [1748188800, 1748199600, 15.5], [1748199600, 1748210400, 19.1], [1748210400, 1748221200, null], [1748221200, 1748232000, 19.7], [1748232000, 1748242800, 14.5], [1748242800, 1748253600, 13.1], [1748253600, 1748264400, 11.4], [1748264400, 1748275200, 7.7], [1748275200, 1748286000, 14.2], [1748286000, 1748296800, 18.8], [1748296800, 1748307600, 19.7], [1748307600, 1748318400, 12.9], [1748318400, 1748329200, 10.1], [1748329200, 1748340000, 8.2], [1748340000, 1748350800, 7.2], [1748350800, 1748361600, 8.6], [1748361600, 1748372400, 10.9], [1748372400, 1748383200, 16.8], [1748383200, 1748394000, 16.9], [1748394000, 1748404800, 16.3], [1748404800, 1748415600, 14.4], [1748415600, 1748426400, 10.7], [1748426400, 1748437200, 13.0], [1748437200, 1748448000, 8.0], [1748448000, 1748458800, 14.9], [1748458800, 1748469600, 16.1], [1748469600, 1748480400, 19.9], [1748480400, 1748491200, 16.8], [1748491200, 1748502000, 11.5], [1748502000, 1748512800, 7.5], [1748512800, 1748523600, 7.5], [1748523600, 1748534400, 7.5], [1748534400, 1748545200, 7.4], [1748545200, 1748556000, 8.4], [1748556000, 1748566800, 8.0], [1748566800, 1748577600, 11.9], [1748577600, 1748588400, 8.1], [1748588400, 1748599200, 6.6], [1748599200, 1748610000, 6.1], [1748610000, 1748620800, 4.9], [1748620800, 1748631600, 5.7], [1748631600, 1748642400, 12.7], [1748642400, 1748653200, 12.3], [1748653200, 1748664000, 14.9], [1748664000, 1748674800, 10.0], [1748674800, 1748685600, 10.0], [1748685600, 1748696400, 9.2], [1748696400, 1748707200, 6.3], [1748707200, 1748718000, 9.5], [1748718000, 1748728800, 12.2], [1748728800, 1748739600, 15.0], [1748739600, 1748750400, 13.4], [1748750400, 1748761200, 12.2]];
+          </script>
+
+          <!--prettier-ignore-->
+
+          <div
+            class="diagram combined"
+            data-labels="['Gust Speed', 'Wind Speed']"
+            data-value="['windGustSeries00', 'windSpeedSeries01']"
+            data-color="['#fe0909', '#545497']"
+            data-unit="[' knots', ' knots']"
+            data-observations="['windGust', 'windSpeed']"
+            data-combinedkeys="['gust', 'speed']"
+            data-diagram="['line', 'line']"
+            data-context="month"
+            data-aggregate-type="['Avg.', 'Avg.']"
+            data-nivo-props="{'lineWidth': '2', 'pointSize': '0', 'isInteractive': 'True', 'enablePoints': 'True', 'enableCrosshair': 'True', 'yScaleOffset': '5', 'enableArea': 'False', 'areaOpacity': '0.07', 'curve': 'linear', 'legendPosition': 'bottom', 'label': 'Wind speed / Gust speed', 'rounding': '1', 'yScaleMin': '0', 'obs': {'gust': {'observation': 'windGust', 'color': '#fe0909', 'enableArea': 'False', 'areaOpacity': '0'}, 'speed': {'observation': 'windSpeed', 'color': '#545497', 'enableArea': 'True', 'areaOpacity': '0.5'}}, 'aggregate_interval': '10800', 'bottom_date_time_format': '%m/%d', 'tooltip_date_time_format': '%x %X'}"
+          ></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!--prettier-ignore-->
+
+
+<div class="bx--col-sm-4 bx--col-md-8 bx--col-lg-12 bx--col-xlg-6 bx--col-max-6">
+  <div class="bx--tile diagram-tile" data-test="windDir">
+    <div class="bx--row">
+      <div class="bx--col">
+        <!--prettier-ignore-->
+        <p class="label">
+<svg
+  data-name="Layer 1"
+  xmlns="http://www.w3.org/2000/svg"
+  width="32"
+  height="32"
+  viewBox="0 0 32 32"
+>
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <path
+    d="M25,2,23.5859,3.4141,26.1719,6h-5.09a16.93,16.93,0,0,0-6.3139,1.2158L10.4893,8.9272A14.93,14.93,0,0,1,4.9185,10H2v2H4.9185a16.93,16.93,0,0,0,6.3139-1.2158l4.2783-1.7114A14.93,14.93,0,0,1,21.0815,8h5.09l-2.586,2.5859L25,12l5-5Z"
+    transform="translate(0 0)"
+  />
+  <path
+    d="M21,11l-1.4141,1.4141L22.1719,15H18.9014a16.9422,16.9422,0,0,0-5.9693,1.0825l-2.5664.9624A14.9456,14.9456,0,0,1,5.0986,18H2v2H5.0986a16.9422,16.9422,0,0,0,5.9693-1.0825l2.5664-.9624A14.9456,14.9456,0,0,1,18.9014,17h3.2705l-2.586,2.5859L21,21l5-5Z"
+    transform="translate(0 0)"
+  />
+  <path
+    d="M17,20l-1.4141,1.4141L18.1719,24H16.5967a16.9879,16.9879,0,0,0-5.3765.8721l-1.0727.3584A14.9852,14.9852,0,0,1,5.4033,26H2v2H5.4033a16.9879,16.9879,0,0,0,5.3765-.8721l1.0727-.3584A14.9852,14.9852,0,0,1,16.5967,26h1.5752l-2.586,2.5859L17,30l5-5Z"
+    transform="translate(0 0)"
+  />
+  <rect
+    data-name="&lt;Transparent Rectangle&gt;"
+    class="cls-1"
+    width="32"
+    height="32"
+  />
+</svg>
+          Wind Direction
+        </p>
+        <div class="value">
+          <!--prettier-ignore-->
+
+          <!--TODO: Implement custom context logic from combined-diagram-tile template-->
+          <!--prettier-ignore-->
+
+          <script>
+            /* prettier-ignore */
+            var windDirSeries1 = [[1746082800, 1746126000, 247], [1746126000, 1746169200, 246], [1746169200, 1746212400, 231], [1746212400, 1746255600, 242], [1746255600, 1746298800, 233], [1746298800, 1746342000, 256], [1746342000, 1746385200, 134], [1746385200, 1746428400, 251], [1746428400, 1746471600, 340], [1746471600, 1746514800, 282], [1746514800, 1746558000, 252], [1746558000, 1746601200, 256], [1746601200, 1746644400, 245], [1746644400, 1746687600, 252], [1746687600, 1746730800, 218], [1746730800, 1746774000, 254], [1746774000, 1746817200, 253], [1746817200, 1746860400, 259], [1746860400, 1746903600, 246], [1746903600, 1746946800, 242], [1746946800, 1746990000, 220], [1746990000, 1747033200, 243], [1747033200, 1747076400, 221], [1747076400, 1747119600, 252], [1747119600, 1747162800, 257], [1747162800, 1747206000, 244], [1747206000, 1747249200, 166], [1747249200, 1747292400, 231], [1747292400, 1747335600, 204], [1747335600, 1747378800, 239], [1747378800, 1747422000, 151], [1747422000, 1747465200, 224], [1747465200, 1747508400, 228], [1747508400, 1747551600, 246], [1747551600, 1747594800, 143], [1747594800, 1747638000, 249], [1747638000, 1747681200, 201], [1747681200, 1747724400, 243], [1747724400, 1747767600, 159], [1747767600, 1747810800, 228], [1747810800, 1747854000, 192], [1747854000, 1747897200, 241], [1747897200, 1747940400, 144], [1747940400, 1747983600, 238], [1747983600, 1748026800, 225], [1748026800, 1748070000, 220], [1748070000, 1748113200, 165], [1748113200, 1748156400, 216], [1748156400, 1748199600, 236], [1748199600, 1748242800, 299], [1748242800, 1748286000, 248], [1748286000, 1748329200, 235], [1748329200, 1748372400, 204], [1748372400, 1748415600, 239], [1748415600, 1748458800, 220], [1748458800, 1748502000, 247], [1748502000, 1748545200, 152], [1748545200, 1748588400, 234], [1748588400, 1748631600, 226], [1748631600, 1748674800, 250], [1748674800, 1748718000, 253], [1748718000, 1748761200, 250]];
+          </script>
+
+          <!--prettier-ignore-->
+          <div
+            class="diagram"
+            data-labels="['Wind Direction']"
+            data-color="['#161616']"
+            data-value="windDirSeries1"
+            data-unit="['&#176;']"
+            data-observations="['windDir']"
+            data-combinedkeys="['windDir']"
+            data-diagram="['line']"
+            data-context="month"
+            data-aggregate-type="['vecdir']"
+            data-nivo-props="{'lineWidth': '0', 'pointSize': '4', 'isInteractive': 'True', 'enablePoints': 'True', 'enableCrosshair': 'True', 'yScaleOffset': '3', 'enableArea': 'False', 'areaOpacity': '0.07', 'curve': 'basis', 'legendPosition': 'top left', 'yScaleMin': '0', 'yScaleMax': '360', 'type': 'line', 'color': '#161616', 'aggregate_interval': '43200', 'bottom_date_time_format': '%m/%d', 'tooltip_date_time_format': '%x %X'}"
+          ></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="bx--col-sm-4 bx--col-md-8 bx--col-lg-12 bx--col-xlg-6 bx--col-max-6">
+  <div class="bx--tile diagram-tile" data-test="windrose">
+    <div class="bx--row">
+      <div class="bx--col">
+        <p class="label">
+<svg
+  data-name="Layer 1"
+  xmlns="http://www.w3.org/2000/svg"
+  width="32"
+  height="32"
+  viewBox="0 0 32 32"
+>
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <path
+    d="M25,2,23.5859,3.4141,26.1719,6h-5.09a16.93,16.93,0,0,0-6.3139,1.2158L10.4893,8.9272A14.93,14.93,0,0,1,4.9185,10H2v2H4.9185a16.93,16.93,0,0,0,6.3139-1.2158l4.2783-1.7114A14.93,14.93,0,0,1,21.0815,8h5.09l-2.586,2.5859L25,12l5-5Z"
+    transform="translate(0 0)"
+  />
+  <path
+    d="M21,11l-1.4141,1.4141L22.1719,15H18.9014a16.9422,16.9422,0,0,0-5.9693,1.0825l-2.5664.9624A14.9456,14.9456,0,0,1,5.0986,18H2v2H5.0986a16.9422,16.9422,0,0,0,5.9693-1.0825l2.5664-.9624A14.9456,14.9456,0,0,1,18.9014,17h3.2705l-2.586,2.5859L21,21l5-5Z"
+    transform="translate(0 0)"
+  />
+  <path
+    d="M17,20l-1.4141,1.4141L18.1719,24H16.5967a16.9879,16.9879,0,0,0-5.3765.8721l-1.0727.3584A14.9852,14.9852,0,0,1,5.4033,26H2v2H5.4033a16.9879,16.9879,0,0,0,5.3765-.8721l1.0727-.3584A14.9852,14.9852,0,0,1,16.5967,26h1.5752l-2.586,2.5859L17,30l5-5Z"
+    transform="translate(0 0)"
+  />
+  <rect
+    data-name="&lt;Transparent Rectangle&gt;"
+    class="cls-1"
+    width="32"
+    height="32"
+  />
+</svg>
+          Wind Direction
+        </p>
+        <div class="value">
+
+          <script>
+            var windRoseSeries2 = [{'r': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'hovertemplate': '%{theta}, %{r}%', 'theta': ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'], 'name': '<= 3', 'type': 'barpolar'}, {'r': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'hovertemplate': '%{theta}, %{r}%', 'theta': ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'], 'name': '3 - 6', 'type': 'barpolar'}, {'r': [0, 0, 0, 0, 0, 0, 2, 0, 3, 2, 0, 3, 0, 0, 0, 0], 'hovertemplate': '%{theta}, %{r}%', 'theta': ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'], 'name': '6 - 10', 'type': 'barpolar'}, {'r': [0, 0, 0, 0, 0, 0, 6, 5, 0, 3, 6, 6, 0, 0, 2, 0], 'hovertemplate': '%{theta}, %{r}%', 'theta': ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'], 'name': '11 - 15', 'type': 'barpolar'}, {'r': [0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 29, 3, 2, 0, 0, 0], 'hovertemplate': '%{theta}, %{r}%', 'theta': ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'], 'name': '16 - 21', 'type': 'barpolar'}, {'r': [0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 10, 3, 2, 0, 0, 0], 'hovertemplate': '%{theta}, %{r}%', 'theta': ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'], 'name': '>= 21', 'type': 'barpolar'}]
+          </script>
+
+          <div
+            class="diagram plotly windrose"
+            data-labels="['windRose']"
+            data-color="['#161616']"
+            data-value="windRoseSeries2"
+            data-unit=" knots"
+            data-obs="windRose"
+            data-diagram="line"
+            data-context="month"
+            data-aggregate-type="['avg']"
+            data-nivo-props="{'lineWidth': '2', 'pointSize': '2', 'isInteractive': 'True', 'enablePoints': 'True', 'enableCrosshair': 'True', 'yScaleOffset': '3', 'enableArea': 'False', 'areaOpacity': '0.07', 'curve': 'catmullRom', 'legendPosition': 'top left', 'aggregate_interval': '43200', 'bottom_date_time_format': '%m/%d', 'tooltip_date_time_format': '%x %X'}"
+            data-show-legend-unit="False"
+            data-show-beaufort="False"
+          ></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!--prettier-ignore-->
+
+<!--prettier-ignore-->
+
+
+
+
+<!--prettier-ignore-->
+
+
+
+
+<div class="bx--col-sm-4 bx--col-md-8 bx--col-lg-12 bx--col-xlg-6 bx--col-max-6">
+  <div class="bx--tile diagram-tile combined" data-test="outTemp-outTemp-outTemp">
+    <div class="bx--row">
+      <div class="bx--col">
+        <!--prettier-ignore-->
+        <p class="label">
+
+                <span>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="32"
+  height="32"
+  viewBox="0 0 32 32"
+>
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <title>Outside Temperature</title>
+  <path
+    d="M13,17.26V6A4,4,0,0,0,5,6V17.26a7,7,0,1,0,8,0ZM9,4a2,2,0,0,1,2,2v7H7V6A2,2,0,0,1,9,4ZM9,28a5,5,0,0,1-2.5-9.33l.5-.28V15h4v3.39l.5.28A5,5,0,0,1,9,28Z"
+    transform="translate(0 0)"
+  />
+  <rect x="20" y="4" width="10" height="2" />
+  <rect x="20" y="10" width="7" height="2" />
+  <rect x="20" y="16" width="10" height="2" />
+  <rect x="20" y="22" width="7" height="2" />
+  <rect class="cls-1" width="32" height="32" />
+</svg>
+                </span>
+
+          Temperature Min/Max/Avg
+        </p>
+        <!--prettier-ignore-->
+        <div class="value">
+
+
+
+          <script>
+            /* prettier-ignore */
+            var outTempSeries30 = [[1746082800, 1746126000, 51], [1746126000, 1746169200, 50], [1746169200, 1746212400, 49], [1746212400, 1746255600, 52], [1746255600, 1746298800, 52], [1746298800, 1746342000, 54], [1746342000, 1746385200, 51], [1746385200, 1746428400, 54], [1746428400, 1746471600, 57], [1746471600, 1746514800, 56], [1746514800, 1746558000, 53], [1746558000, 1746601200, 53], [1746601200, 1746644400, 52], [1746644400, 1746687600, 50], [1746687600, 1746730800, 50], [1746730800, 1746774000, 52], [1746774000, 1746817200, 54], [1746817200, 1746860400, 53], [1746860400, 1746903600, 52], [1746903600, 1746946800, 55], [1746946800, 1746990000, 52], [1746990000, 1747033200, 53], [1747033200, 1747076400, 52], [1747076400, 1747119600, 54], [1747119600, 1747162800, 52], [1747162800, 1747206000, 55], [1747206000, 1747249200, 53], [1747249200, 1747292400, 53], [1747292400, 1747335600, 54], [1747335600, 1747378800, 55], [1747378800, 1747422000, 53], [1747422000, 1747465200, 53], [1747465200, 1747508400, 51], [1747508400, 1747551600, 55], [1747551600, 1747594800, 53], [1747594800, 1747638000, 57], [1747638000, 1747681200, 57], [1747681200, 1747724400, 58], [1747724400, 1747767600, 55], [1747767600, 1747810800, 56], [1747810800, 1747854000, 54], [1747854000, 1747897200, 55], [1747897200, 1747940400, 54], [1747940400, 1747983600, 53], [1747983600, 1748026800, 51], [1748026800, 1748070000, 53], [1748070000, 1748113200, 51], [1748113200, 1748156400, 52], [1748156400, 1748199600, 52], [1748199600, 1748242800, 53], [1748242800, 1748286000, 53], [1748286000, 1748329200, 53], [1748329200, 1748372400, 53], [1748372400, 1748415600, 52], [1748415600, 1748458800, 52], [1748458800, 1748502000, 54], [1748502000, 1748545200, 53], [1748545200, 1748588400, 58], [1748588400, 1748631600, 54], [1748631600, 1748674800, 56], [1748674800, 1748718000, 55], [1748718000, 1748761200, 57]];
+          </script>
+
+          <!--prettier-ignore-->
+
+
+          <script>
+            /* prettier-ignore */
+            var outTempSeries31 = [[1746082800, 1746126000, 53], [1746126000, 1746169200, 51], [1746169200, 1746212400, 50], [1746212400, 1746255600, 54], [1746255600, 1746298800, 53], [1746298800, 1746342000, 56], [1746342000, 1746385200, 52], [1746385200, 1746428400, 57], [1746428400, 1746471600, 65], [1746471600, 1746514800, 66], [1746514800, 1746558000, 55], [1746558000, 1746601200, 54], [1746601200, 1746644400, 54], [1746644400, 1746687600, 53], [1746687600, 1746730800, 51], [1746730800, 1746774000, 55], [1746774000, 1746817200, 55], [1746817200, 1746860400, 56], [1746860400, 1746903600, 54], [1746903600, 1746946800, 56], [1746946800, 1746990000, 54], [1746990000, 1747033200, 54], [1747033200, 1747076400, 55], [1747076400, 1747119600, 55], [1747119600, 1747162800, 53], [1747162800, 1747206000, 56], [1747206000, 1747249200, 54], [1747249200, 1747292400, 55], [1747292400, 1747335600, 54], [1747335600, 1747378800, 56], [1747378800, 1747422000, 54], [1747422000, 1747465200, 57], [1747465200, 1747508400, 54], [1747508400, 1747551600, 57], [1747551600, 1747594800, 55], [1747594800, 1747638000, 62], [1747638000, 1747681200, 58], [1747681200, 1747724400, 60], [1747724400, 1747767600, 56], [1747767600, 1747810800, 59], [1747810800, 1747854000, 55], [1747854000, 1747897200, 57], [1747897200, 1747940400, 56], [1747940400, 1747983600, 55], [1747983600, 1748026800, 52], [1748026800, 1748070000, 54], [1748070000, 1748113200, 52], [1748113200, 1748156400, 53], [1748156400, 1748199600, 53], [1748199600, 1748242800, 54], [1748242800, 1748286000, 54], [1748286000, 1748329200, 55], [1748329200, 1748372400, 53], [1748372400, 1748415600, 53], [1748415600, 1748458800, 53], [1748458800, 1748502000, 55], [1748502000, 1748545200, 56], [1748545200, 1748588400, 60], [1748588400, 1748631600, 55], [1748631600, 1748674800, 57], [1748674800, 1748718000, 56], [1748718000, 1748761200, 58]];
+          </script>
+
+          <!--prettier-ignore-->
+
+
+          <script>
+            /* prettier-ignore */
+            var outTempSeries32 = [[1746082800, 1746126000, 53], [1746126000, 1746169200, 51], [1746169200, 1746212400, 50], [1746212400, 1746255600, 55], [1746255600, 1746298800, 54], [1746298800, 1746342000, 60], [1746342000, 1746385200, 54], [1746385200, 1746428400, 60], [1746428400, 1746471600, 74], [1746471600, 1746514800, 79], [1746514800, 1746558000, 56], [1746558000, 1746601200, 55], [1746601200, 1746644400, 55], [1746644400, 1746687600, 54], [1746687600, 1746730800, 52], [1746730800, 1746774000, 57], [1746774000, 1746817200, 56], [1746817200, 1746860400, 59], [1746860400, 1746903600, 56], [1746903600, 1746946800, 57], [1746946800, 1746990000, 56], [1746990000, 1747033200, 55], [1747033200, 1747076400, 57], [1747076400, 1747119600, 55], [1747119600, 1747162800, 54], [1747162800, 1747206000, 57], [1747206000, 1747249200, 55], [1747249200, 1747292400, 57], [1747292400, 1747335600, 55], [1747335600, 1747378800, 56], [1747378800, 1747422000, 58], [1747422000, 1747465200, 60], [1747465200, 1747508400, 57], [1747508400, 1747551600, 58], [1747551600, 1747594800, 57], [1747594800, 1747638000, 64], [1747638000, 1747681200, 60], [1747681200, 1747724400, 61], [1747724400, 1747767600, 58], [1747767600, 1747810800, 62], [1747810800, 1747854000, 58], [1747854000, 1747897200, 59], [1747897200, 1747940400, 57], [1747940400, 1747983600, 59], [1747983600, 1748026800, 54], [1748026800, 1748070000, 55], [1748070000, 1748113200, 53], [1748113200, 1748156400, 55], [1748156400, 1748199600, 53], [1748199600, 1748242800, 55], [1748242800, 1748286000, 55], [1748286000, 1748329200, 57], [1748329200, 1748372400, 54], [1748372400, 1748415600, 54], [1748415600, 1748458800, 53], [1748458800, 1748502000, 57], [1748502000, 1748545200, 60], [1748545200, 1748588400, 63], [1748588400, 1748631600, 57], [1748631600, 1748674800, 59], [1748674800, 1748718000, 57], [1748718000, 1748761200, 59]];
+          </script>
+
+          <!--prettier-ignore-->
+
+          <div
+            class="diagram combined"
+            data-labels="['Outside Temperature', 'Outside Temperature', 'Outside Temperature']"
+            data-value="['outTempSeries30', 'outTempSeries31', 'outTempSeries32']"
+            data-color="['#0198E1', '#666666', '#8B0000']"
+            data-unit="['&#176;F', '&#176;F', '&#176;F']"
+            data-observations="['outTemp', 'outTemp', 'outTemp']"
+            data-combinedkeys="['outTemp_min', 'outTemp_average', 'outTemp_max']"
+            data-diagram="['line', 'line', 'line']"
+            data-context="month"
+            data-aggregate-type="['Min', 'Avg.', 'Max']"
+            data-nivo-props="{'lineWidth': '2', 'pointSize': '2', 'isInteractive': 'True', 'enablePoints': 'True', 'enableCrosshair': 'True', 'yScaleOffset': '0.5', 'enableArea': 'False', 'areaOpacity': '0.07', 'curve': 'catmullRom', 'legendPosition': 'top left', 'label': 'Temperature Min/Max/Avg', 'markerValue': '0', 'markerColor': '#00BFFF', 'obs': {'outTemp_min': {'observation': 'outTemp', 'aggregate_type': 'min', 'color': '#0198E1'}, 'outTemp_average': {'observation': 'outTemp', 'aggregate_type': 'avg', 'color': '#666666'}, 'outTemp_max': {'observation': 'outTemp', 'aggregate_type': 'max', 'color': '#8B0000'}}, 'aggregate_interval': '43200', 'bottom_date_time_format': '%m/%d', 'tooltip_date_time_format': '%x %X'}"
+          ></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!--prettier-ignore-->
+
+<!--prettier-ignore-->
+
+
+
+
+<!--prettier-ignore-->
+
+
+
+
+<div class="bx--col-sm-4 bx--col-md-8 bx--col-lg-12 bx--col-xlg-6 bx--col-max-6">
+  <div class="bx--tile diagram-tile combined" data-test="outTemp-dewpoint">
+    <div class="bx--row">
+      <div class="bx--col">
+        <!--prettier-ignore-->
+        <p class="label">
+
+                <span>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="32"
+  height="32"
+  viewBox="0 0 32 32"
+>
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <title>Outside Temperature</title>
+  <path
+    d="M13,17.26V6A4,4,0,0,0,5,6V17.26a7,7,0,1,0,8,0ZM9,4a2,2,0,0,1,2,2v7H7V6A2,2,0,0,1,9,4ZM9,28a5,5,0,0,1-2.5-9.33l.5-.28V15h4v3.39l.5.28A5,5,0,0,1,9,28Z"
+    transform="translate(0 0)"
+  />
+  <rect x="20" y="4" width="10" height="2" />
+  <rect x="20" y="10" width="7" height="2" />
+  <rect x="20" y="16" width="10" height="2" />
+  <rect x="20" y="22" width="7" height="2" />
+  <rect class="cls-1" width="32" height="32" />
+</svg>
+                </span>
+                <span>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="32"
+  height="32"
+  viewBox="0 0 32 32"
+>
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <title>Dew Point</title>
+  <path
+    d="M24,10a4,4,0,1,1,4-4A4.0045,4.0045,0,0,1,24,10Zm0-6a2,2,0,1,0,2,2A2.0021,2.0021,0,0,0,24,4Z"
+  />
+  <path
+    d="M14.5,30A5.4962,5.4962,0,0,1,9,24.52c0-3.4426,4.3442-21.0141,4.5293-21.76a1,1,0,0,1,1.9414,0C15.6558,3.5059,20,21.0774,20,24.52A5.4962,5.4962,0,0,1,14.5,30Zm0-22.7561C13.0391,13.38,11,22.4089,11,24.52a3.5,3.5,0,0,0,7,0C18,22.4089,15.9609,13.38,14.5,7.2439Z"
+  />
+  <rect
+    data-name="&lt;Transparent Rectangle&gt;"
+    class="cls-1"
+    width="32"
+    height="32"
+  />
+</svg>
+                </span>
+
+          Temperature / Dewpoint
+        </p>
+        <!--prettier-ignore-->
+        <div class="value">
+
+
+
+          <script>
+            /* prettier-ignore */
+            var outTempSeries40 = [[1746082800, 1746126000, 53.1], [1746126000, 1746169200, 51.2], [1746169200, 1746212400, 50.1], [1746212400, 1746255600, 54.2], [1746255600, 1746298800, 53.4], [1746298800, 1746342000, 56.6], [1746342000, 1746385200, 52.9], [1746385200, 1746428400, 57.2], [1746428400, 1746471600, 65.5], [1746471600, 1746514800, 66.3], [1746514800, 1746558000, 55.0], [1746558000, 1746601200, 54.8], [1746601200, 1746644400, 54.6], [1746644400, 1746687600, 53.1], [1746687600, 1746730800, 51.8], [1746730800, 1746774000, 55.9], [1746774000, 1746817200, 55.2], [1746817200, 1746860400, 56.7], [1746860400, 1746903600, 54.5], [1746903600, 1746946800, 56.8], [1746946800, 1746990000, 54.4], [1746990000, 1747033200, 54.8], [1747033200, 1747076400, 55.3], [1747076400, 1747119600, 55.3], [1747119600, 1747162800, 53.5], [1747162800, 1747206000, 56.1], [1747206000, 1747249200, 54.2], [1747249200, 1747292400, 55.3], [1747292400, 1747335600, 54.9], [1747335600, 1747378800, 56.2], [1747378800, 1747422000, 55.0], [1747422000, 1747465200, 57.0], [1747465200, 1747508400, 54.3], [1747508400, 1747551600, 57.1], [1747551600, 1747594800, 55.0], [1747594800, 1747638000, 62.0], [1747638000, 1747681200, 58.2], [1747681200, 1747724400, 60.0], [1747724400, 1747767600, 56.6], [1747767600, 1747810800, 59.8], [1747810800, 1747854000, 55.8], [1747854000, 1747897200, 57.6], [1747897200, 1747940400, 56.1], [1747940400, 1747983600, 55.6], [1747983600, 1748026800, 52.7], [1748026800, 1748070000, 54.3], [1748070000, 1748113200, 52.5], [1748113200, 1748156400, 54.0], [1748156400, 1748199600, 53.1], [1748199600, 1748242800, 54.4], [1748242800, 1748286000, 54.4], [1748286000, 1748329200, 55.2], [1748329200, 1748372400, 53.9], [1748372400, 1748415600, 53.4], [1748415600, 1748458800, 53.5], [1748458800, 1748502000, 55.9], [1748502000, 1748545200, 56.3], [1748545200, 1748588400, 60.9], [1748588400, 1748631600, 55.2], [1748631600, 1748674800, 57.7], [1748674800, 1748718000, 56.8], [1748718000, 1748761200, 58.3]];
+          </script>
+
+          <!--prettier-ignore-->
+
+
+          <script>
+            /* prettier-ignore */
+            var dewpointSeries41 = [[1746082800, 1746126000, 51.1], [1746126000, 1746169200, 49.6], [1746169200, 1746212400, 48.5], [1746212400, 1746255600, 52.1], [1746255600, 1746298800, 50.5], [1746298800, 1746342000, 47.6], [1746342000, 1746385200, 46.2], [1746385200, 1746428400, 48.3], [1746428400, 1746471600, 8.0], [1746471600, 1746514800, 20.6], [1746514800, 1746558000, 51.6], [1746558000, 1746601200, 52.1], [1746601200, 1746644400, 50.7], [1746644400, 1746687600, 49.8], [1746687600, 1746730800, 49.9], [1746730800, 1746774000, 53.0], [1746774000, 1746817200, 52.2], [1746817200, 1746860400, 53.2], [1746860400, 1746903600, 51.4], [1746903600, 1746946800, 50.2], [1746946800, 1746990000, 49.3], [1746990000, 1747033200, 50.1], [1747033200, 1747076400, 51.1], [1747076400, 1747119600, 48.7], [1747119600, 1747162800, 48.1], [1747162800, 1747206000, 50.5], [1747206000, 1747249200, 50.3], [1747249200, 1747292400, 51.1], [1747292400, 1747335600, 51.5], [1747335600, 1747378800, 51.1], [1747378800, 1747422000, 50.8], [1747422000, 1747465200, 52.2], [1747465200, 1747508400, 52.0], [1747508400, 1747551600, 52.1], [1747551600, 1747594800, 51.2], [1747594800, 1747638000, 53.5], [1747638000, 1747681200, 52.6], [1747681200, 1747724400, 54.3], [1747724400, 1747767600, 53.1], [1747767600, 1747810800, 52.1], [1747810800, 1747854000, 51.2], [1747854000, 1747897200, 51.8], [1747897200, 1747940400, 50.4], [1747940400, 1747983600, 51.2], [1747983600, 1748026800, 50.3], [1748026800, 1748070000, 51.2], [1748070000, 1748113200, 50.6], [1748113200, 1748156400, 51.6], [1748156400, 1748199600, 51.3], [1748199600, 1748242800, 52.8], [1748242800, 1748286000, 54.0], [1748286000, 1748329200, 54.4], [1748329200, 1748372400, 52.7], [1748372400, 1748415600, 52.7], [1748415600, 1748458800, 52.5], [1748458800, 1748502000, 53.5], [1748502000, 1748545200, 53.3], [1748545200, 1748588400, 57.2], [1748588400, 1748631600, 54.9], [1748631600, 1748674800, 55.9], [1748674800, 1748718000, 55.4], [1748718000, 1748761200, 54.9]];
+          </script>
+
+          <!--prettier-ignore-->
+
+          <div
+            class="diagram combined"
+            data-labels="['Outside Temperature', 'Dew Point']"
+            data-value="['outTempSeries40', 'dewpointSeries41']"
+            data-color="['#8B0000', '#5F9EA0']"
+            data-unit="['&#176;F', '&#176;F']"
+            data-observations="['outTemp', 'dewpoint']"
+            data-combinedkeys="['temp', 'dew']"
+            data-diagram="['line', 'line']"
+            data-context="month"
+            data-aggregate-type="['Avg.', 'Avg.']"
+            data-nivo-props="{'lineWidth': '2', 'pointSize': '2', 'isInteractive': 'True', 'enablePoints': 'True', 'enableCrosshair': 'True', 'yScaleOffset': '3', 'enableArea': 'False', 'areaOpacity': '0.07', 'curve': 'catmullRom', 'legendPosition': 'bottom', 'label': 'Temperature / Dewpoint', 'rounding': '1', 'markerValue': '0', 'markerColor': '#00BFFF', 'obs': {'temp': {'observation': 'outTemp'}, 'dew': {'observation': 'dewpoint', 'color': '#5F9EA0'}}, 'aggregate_interval': '43200', 'bottom_date_time_format': '%m/%d', 'tooltip_date_time_format': '%x %X'}"
+          ></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!--prettier-ignore-->
+
+
+<div class="bx--col-sm-4 bx--col-md-8 bx--col-lg-12 bx--col-xlg-6 bx--col-max-6">
+  <div class="bx--tile diagram-tile" data-test="outHumidity">
+    <div class="bx--row">
+      <div class="bx--col">
+        <!--prettier-ignore-->
+        <p class="label">
+<svg
+  id="icon"
+  xmlns="http://www.w3.org/2000/svg"
+  width="32"
+  height="32"
+  viewBox="0 0 32 32"
+>
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <title>Outside Humidity</title>
+  <path
+    d="M23.4761,13.9932,16.8472,3.4365a1.04,1.04,0,0,0-1.6944,0L8.4941,14.0444A9.9861,9.9861,0,0,0,7,19a9,9,0,0,0,18,0A10.0632,10.0632,0,0,0,23.4761,13.9932ZM16,26.0005a7.0089,7.0089,0,0,1-7-7,7.978,7.978,0,0,1,1.2183-3.9438l.935-1.4888L21.2271,23.6411A6.9772,6.9772,0,0,1,16,26.0005Z"
+  />
+  <rect
+    id="_Transparent_Rectangle_"
+    data-name="&lt;Transparent Rectangle&gt;"
+    class="cls-1"
+    width="32"
+    height="32"
+  />
+</svg>
+          Outside Humidity
+        </p>
+        <div class="value">
+          <!--prettier-ignore-->
+
+          <!--TODO: Implement custom context logic from combined-diagram-tile template-->
+          <!--prettier-ignore-->
+
+          <script>
+            /* prettier-ignore */
+            var outHumiditySeries5 = [[1746082800, 1746126000, 92], [1746126000, 1746169200, 94], [1746169200, 1746212400, 94], [1746212400, 1746255600, 92], [1746255600, 1746298800, 90], [1746298800, 1746342000, 71], [1746342000, 1746385200, 78], [1746385200, 1746428400, 72], [1746428400, 1746471600, 27], [1746471600, 1746514800, 41], [1746514800, 1746558000, 88], [1746558000, 1746601200, 90], [1746601200, 1746644400, 86], [1746644400, 1746687600, 88], [1746687600, 1746730800, 93], [1746730800, 1746774000, 89], [1746774000, 1746817200, 89], [1746817200, 1746860400, 88], [1746860400, 1746903600, 89], [1746903600, 1746946800, 78], [1746946800, 1746990000, 83], [1746990000, 1747033200, 84], [1747033200, 1747076400, 85], [1747076400, 1747119600, 78], [1747119600, 1747162800, 81], [1747162800, 1747206000, 81], [1747206000, 1747249200, 86], [1747249200, 1747292400, 85], [1747292400, 1747335600, 88], [1747335600, 1747378800, 83], [1747378800, 1747422000, 85], [1747422000, 1747465200, 84], [1747465200, 1747508400, 91], [1747508400, 1747551600, 83], [1747551600, 1747594800, 86], [1747594800, 1747638000, 73], [1747638000, 1747681200, 81], [1747681200, 1747724400, 81], [1747724400, 1747767600, 88], [1747767600, 1747810800, 75], [1747810800, 1747854000, 84], [1747854000, 1747897200, 80], [1747897200, 1747940400, 81], [1747940400, 1747983600, 85], [1747983600, 1748026800, 91], [1748026800, 1748070000, 89], [1748070000, 1748113200, 93], [1748113200, 1748156400, 91], [1748156400, 1748199600, 93], [1748199600, 1748242800, 94], [1748242800, 1748286000, 98], [1748286000, 1748329200, 96], [1748329200, 1748372400, 95], [1748372400, 1748415600, 97], [1748415600, 1748458800, 96], [1748458800, 1748502000, 91], [1748502000, 1748545200, 89], [1748545200, 1748588400, 87], [1748588400, 1748631600, 98], [1748631600, 1748674800, 93], [1748674800, 1748718000, 95], [1748718000, 1748761200, 88]];
+          </script>
+
+          <!--prettier-ignore-->
+          <div
+            class="diagram"
+            data-labels="['Outside Humidity']"
+            data-color="['#0099CC']"
+            data-value="outHumiditySeries5"
+            data-unit="['%']"
+            data-observations="['outHumidity']"
+            data-combinedkeys="['outHumidity']"
+            data-diagram="['line']"
+            data-context="month"
+            data-aggregate-type="['avg']"
+            data-nivo-props="{'lineWidth': '2', 'pointSize': '2', 'isInteractive': 'True', 'enablePoints': 'True', 'enableCrosshair': 'True', 'yScaleOffset': '3', 'enableArea': 'True', 'areaOpacity': '0.07', 'curve': 'catmullRom', 'legendPosition': 'top left', 'yScaleMin': '0', 'yScaleMax': '103', 'type': 'line', 'color': '#0099CC', 'aggregate_interval': '43200', 'bottom_date_time_format': '%m/%d', 'tooltip_date_time_format': '%x %X'}"
+          ></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!--prettier-ignore-->
+
+
+<div class="bx--col-sm-4 bx--col-md-8 bx--col-lg-12 bx--col-xlg-6 bx--col-max-6">
+  <div class="bx--tile diagram-tile" data-test="barometer">
+    <div class="bx--row">
+      <div class="bx--col">
+        <!--prettier-ignore-->
+        <p class="label">
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="32"
+  height="32"
+  viewBox="0 0 32 32"
+>
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <title>Barometer</title>
+  <path
+    d="M17.5053,16l8.1591-7.2529A1,1,0,0,0,25,7H22V2H20V9h2.37L16,14.6621,9.63,9H12V2H10V7H7a1,1,0,0,0-.6646,1.7471L14.4945,16,6.3353,23.2529A1,1,0,0,0,7,25h3v5h2V23H9.63L16,17.3379,22.37,23H20v7h2V25h3a1,1,0,0,0,.6645-1.7471Z"
+  />
+  <rect
+    id="_Transparent_Rectangle_"
+    data-name="&lt;Transparent Rectangle&gt;"
+    class="cls-1"
+    width="32"
+    height="32"
+  />
+</svg>
+          Barometer
+        </p>
+        <div class="value">
+          <!--prettier-ignore-->
+
+          <!--TODO: Implement custom context logic from combined-diagram-tile template-->
+          <!--prettier-ignore-->
+
+          <script>
+            /* prettier-ignore */
+            var barometerSeries6 = [[1746082800, 1746126000, 1012.7], [1746126000, 1746169200, 1012.9], [1746169200, 1746212400, 1014.0], [1746212400, 1746255600, 1013.5], [1746255600, 1746298800, 1013.0], [1746298800, 1746342000, 1011.4], [1746342000, 1746385200, 1009.6], [1746385200, 1746428400, 1007.5], [1746428400, 1746471600, 1008.3], [1746471600, 1746514800, 1007.2], [1746514800, 1746558000, 1009.4], [1746558000, 1746601200, 1011.4], [1746601200, 1746644400, 1014.4], [1746644400, 1746687600, 1016.2], [1746687600, 1746730800, 1017.5], [1746730800, 1746774000, 1016.8], [1746774000, 1746817200, 1016.9], [1746817200, 1746860400, 1014.5], [1746860400, 1746903600, 1013.7], [1746903600, 1746946800, 1012.1], [1746946800, 1746990000, 1013.4], [1746990000, 1747033200, 1013.4], [1747033200, 1747076400, 1011.7], [1747076400, 1747119600, 1012.2], [1747119600, 1747162800, 1014.9], [1747162800, 1747206000, 1016.1], [1747206000, 1747249200, 1016.7], [1747249200, 1747292400, 1015.8], [1747292400, 1747335600, 1014.8], [1747335600, 1747378800, 1013.6], [1747378800, 1747422000, 1012.2], [1747422000, 1747465200, 1011.1], [1747465200, 1747508400, 1011.4], [1747508400, 1747551600, 1012.7], [1747551600, 1747594800, 1015.3], [1747594800, 1747638000, 1015.5], [1747638000, 1747681200, 1017.6], [1747681200, 1747724400, 1016.5], [1747724400, 1747767600, 1016.8], [1747767600, 1747810800, 1014.7], [1747810800, 1747854000, 1014.1], [1747854000, 1747897200, 1012.9], [1747897200, 1747940400, 1015.5], [1747940400, 1747983600, 1015.0], [1747983600, 1748026800, 1014.4], [1748026800, 1748070000, 1014.0], [1748070000, 1748113200, 1013.7], [1748113200, 1748156400, 1014.7], [1748156400, 1748199600, 1015.7], [1748199600, 1748242800, 1015.7], [1748242800, 1748286000, 1016.6], [1748286000, 1748329200, 1015.8], [1748329200, 1748372400, 1013.3], [1748372400, 1748415600, 1013.4], [1748415600, 1748458800, 1013.6], [1748458800, 1748502000, 1014.3], [1748502000, 1748545200, 1014.5], [1748545200, 1748588400, 1014.3], [1748588400, 1748631600, 1013.8], [1748631600, 1748674800, 1012.2], [1748674800, 1748718000, 1011.8], [1748718000, 1748761200, 1010.1]];
+          </script>
+
+          <!--prettier-ignore-->
+          <div
+            class="diagram"
+            data-labels="['Barometer']"
+            data-color="['#666666']"
+            data-value="barometerSeries6"
+            data-unit="[' mbar']"
+            data-observations="['barometer']"
+            data-combinedkeys="['barometer']"
+            data-diagram="['line']"
+            data-context="month"
+            data-aggregate-type="['avg']"
+            data-nivo-props="{'lineWidth': '2', 'pointSize': '2', 'isInteractive': 'True', 'enablePoints': 'True', 'enableCrosshair': 'True', 'yScaleOffset': '0.5', 'enableArea': 'True', 'areaOpacity': '0.07', 'curve': 'catmullRom', 'legendPosition': 'top left', 'type': 'line', 'color': '#666666', 'aggregate_interval': '43200', 'bottom_date_time_format': '%m/%d', 'tooltip_date_time_format': '%x %X'}"
+          ></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!--prettier-ignore-->
+
+
+<div class="bx--col-sm-4 bx--col-md-8 bx--col-lg-12 bx--col-xlg-6 bx--col-max-6">
+  <div class="bx--tile diagram-tile" data-test="rain">
+    <div class="bx--row">
+      <div class="bx--col">
+        <!--prettier-ignore-->
+        <p class="label">
+<svg
+  data-name="Layer 1"
+  xmlns="http://www.w3.org/2000/svg"
+  width="32"
+  height="32"
+  viewBox="0 0 32 32"
+>
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <path
+    d="M28,4a2.0023,2.0023,0,0,0-2,2V8H24a3.4376,3.4376,0,0,1-3.0513-2.3164A1.007,1.007,0,0,0,20,5a.9894.9894,0,0,0-.9468.6787A3.44,3.44,0,0,1,16,8a3.4376,3.4376,0,0,1-3.0513-2.3164A1.007,1.007,0,0,0,12,5a.971.971,0,0,0-.9468.6787A3.44,3.44,0,0,1,8,8H6V6A2.0023,2.0023,0,0,0,4,4H2V6H4V26a2.0023,2.0023,0,0,0,2,2H26a2.0023,2.0023,0,0,0,2-2V6h2V4ZM6,26V22h4V20H6V16h4V14H6V10H8a4.9316,4.9316,0,0,0,4-1.9873,5.0192,5.0192,0,0,0,8,0A4.9316,4.9316,0,0,0,24,10h2V26Z"
+    transform="translate(0 0)"
+  />
+  <rect
+    data-name="&lt;Transparent Rectangle&gt;"
+    class="cls-1"
+    width="32"
+    height="32"
+  />
+</svg>
+          Rain
+        </p>
+        <div class="value">
+          <!--prettier-ignore-->
+
+          <!--TODO: Implement custom context logic from combined-diagram-tile template-->
+          <!--prettier-ignore-->
+
+          <script>
+            /* prettier-ignore */
+            var rainSeries7 = [[1746082800, 1746169200, 0.0], [1746169200, 1746255600, 0.026], [1746255600, 1746342000, 0.12], [1746342000, 1746428400, 0.0], [1746428400, 1746514800, 0.0], [1746514800, 1746601200, 0.0], [1746601200, 1746687600, 0.0], [1746687600, 1746774000, 0.0], [1746774000, 1746860400, 0.0], [1746860400, 1746946800, 0.0], [1746946800, 1747033200, 0.0], [1747033200, 1747119600, 0.242], [1747119600, 1747206000, 0.298], [1747206000, 1747292400, 0.0], [1747292400, 1747378800, 0.0], [1747378800, 1747465200, 0.0], [1747465200, 1747551600, 0.363], [1747551600, 1747638000, 0.0], [1747638000, 1747724400, 0.0], [1747724400, 1747810800, 0.0], [1747810800, 1747897200, 0.0], [1747897200, 1747983600, 0.046], [1747983600, 1748070000, 0.0], [1748070000, 1748156400, 0.23], [1748156400, 1748242800, 0.144], [1748242800, 1748329200, 0.0], [1748329200, 1748415600, 0.0], [1748415600, 1748502000, 0.0], [1748502000, 1748588400, 0.0], [1748588400, 1748674800, 0.0], [1748674800, 1748761200, 0.0]];
+          </script>
+
+          <!--prettier-ignore-->
+          <div
+            class="diagram"
+            data-labels="['Rain']"
+            data-color="['#0198E1']"
+            data-value="rainSeries7"
+            data-unit="[' in']"
+            data-observations="['rain']"
+            data-combinedkeys="['rain']"
+            data-diagram="['bar']"
+            data-context="month"
+            data-aggregate-type="['sum']"
+            data-nivo-props="{'enableLabel': 'False', 'isInteractive': 'True', 'enableCrosshair': 'True', 'yScaleOffset': '0.05', 'aggregate_type': 'sum', 'yScaleMin': '0', 'rounding': '3', 'type': 'bar', 'color': '#0198E1', 'aggregate_interval': '86400', 'bottom_date_time_format': '%m/%d', 'tooltip_date_time_format': '%X'}"
+          ></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!--prettier-ignore-->
+
+
+<div class="bx--col-sm-4 bx--col-md-8 bx--col-lg-12 bx--col-xlg-6 bx--col-max-6">
+  <div class="bx--tile diagram-tile" data-test="UV">
+    <div class="bx--row">
+      <div class="bx--col">
+        <!--prettier-ignore-->
+        <p class="label">
+<svg
+  data-name="Layer 1"
+  xmlns="http://www.w3.org/2000/svg"
+  width="32"
+  height="32"
+  viewBox="0 0 32 32"
+>
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <path
+    d="M13,30H9a2.0027,2.0027,0,0,1-2-2V20H9v8h4V20h2v8A2.0027,2.0027,0,0,1,13,30Z"
+    transform="translate(0 0)"
+  />
+  <polygon
+    points="25 20 23.25 20 21 29.031 18.792 20 17 20 19.5 30 22.5 30 25 20"
+  />
+  <rect x="15" y="2" width="2" height="5" />
+  <rect
+    x="21.6675"
+    y="6.8536"
+    width="4.958"
+    height="1.9998"
+    transform="translate(1.5191 19.3744) rotate(-45)"
+  />
+  <rect x="25" y="15" width="5" height="2" />
+  <rect x="2" y="15" width="5" height="2" />
+  <rect
+    x="6.8536"
+    y="5.3745"
+    width="1.9998"
+    height="4.958"
+    transform="translate(-3.253 7.8535) rotate(-45)"
+  />
+  <path
+    d="M22,17H20V16a4,4,0,0,0-8,0v1H10V16a6,6,0,0,1,12,0Z"
+    transform="translate(0 0)"
+  />
+  <rect
+    data-name="&lt;Transparent Rectangle&gt;"
+    class="cls-1"
+    width="32"
+    height="32"
+  />
+</svg>
+          UV Index
+        </p>
+        <div class="value">
+          <!--prettier-ignore-->
+
+          <!--TODO: Implement custom context logic from combined-diagram-tile template-->
+          <!--prettier-ignore-->
+
+          <script>
+            /* prettier-ignore */
+            var UVSeries8 = [[1746082800, 1746126000, 7.074], [1746126000, 1746169200, 7.18], [1746169200, 1746212400, 4.24], [1746212400, 1746255600, 7.35], [1746255600, 1746298800, 5.204], [1746298800, 1746342000, 7.723], [1746342000, 1746385200, 7.01], [1746385200, 1746428400, 7.31], [1746428400, 1746471600, 7.14], [1746471600, 1746514800, 7.546], [1746514800, 1746558000, 7.012], [1746558000, 1746601200, 7.312], [1746601200, 1746644400, 6.196], [1746644400, 1746687600, 7.522], [1746687600, 1746730800, 7.238], [1746730800, 1746774000, 7.512], [1746774000, 1746817200, 7.346], [1746817200, 1746860400, 7.643], [1746860400, 1746903600, 7.466], [1746903600, 1746946800, 7.76], [1746946800, 1746990000, 7.742], [1746990000, 1747033200, 8.048], [1747033200, 1747076400, 7.855], [1747076400, 1747119600, 7.645], [1747119600, 1747162800, 6.157], [1747162800, 1747206000, 8.26], [1747206000, 1747249200, 7.94], [1747249200, 1747292400, 8.417], [1747292400, 1747335600, 5.698], [1747335600, 1747378800, 8.01], [1747378800, 1747422000, 7.645], [1747422000, 1747465200, 8.37], [1747465200, 1747508400, 7.992], [1747508400, 1747551600, 8.39], [1747551600, 1747594800, 8.078], [1747594800, 1747638000, 8.12], [1747638000, 1747681200, 5.59], [1747681200, 1747724400, 4.13], [1747724400, 1747767600, 6.575], [1747767600, 1747810800, 8.08], [1747810800, 1747854000, 6.41], [1747854000, 1747897200, 6.31], [1747897200, 1747940400, 7.99], [1747940400, 1747983600, 8.37], [1747983600, 1748026800, 8.082], [1748026800, 1748070000, 8.352], [1748070000, 1748113200, 8.186], [1748113200, 1748156400, 8.443], [1748156400, 1748199600, 8.15], [1748199600, 1748242800, 8.482], [1748242800, 1748286000, 8.224], [1748286000, 1748329200, 8.55], [1748329200, 1748372400, 8.208], [1748372400, 1748415600, 8.548], [1748415600, 1748458800, 8.125], [1748458800, 1748502000, 8.495], [1748502000, 1748545200, 8.16], [1748545200, 1748588400, 8.468], [1748588400, 1748631600, 8.16], [1748631600, 1748674800, 8.468], [1748674800, 1748718000, 8.264], [1748718000, 1748761200, 8.6]];
+          </script>
+
+          <!--prettier-ignore-->
+          <div
+            class="diagram"
+            data-labels="['UV Index']"
+            data-color="['#e61919']"
+            data-value="UVSeries8"
+            data-unit="['']"
+            data-observations="['UV']"
+            data-combinedkeys="['UV']"
+            data-diagram="['line']"
+            data-context="month"
+            data-aggregate-type="['max']"
+            data-nivo-props="{'lineWidth': '2', 'pointSize': '2', 'isInteractive': 'True', 'enablePoints': 'True', 'enableCrosshair': 'True', 'yScaleOffset': '1', 'enableArea': 'True', 'areaOpacity': '0.07', 'curve': 'step', 'legendPosition': 'top left', 'aggregate_type': 'max', 'rounding': '3', 'yScaleMin': '0', 'type': 'line', 'color': '#e61919', 'aggregate_interval': '43200', 'bottom_date_time_format': '%m/%d', 'tooltip_date_time_format': '%x %X'}"
+          ></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!--prettier-ignore-->
+
+
+<div class="bx--col-sm-4 bx--col-md-8 bx--col-lg-12 bx--col-xlg-6 bx--col-max-6">
+  <div class="bx--tile diagram-tile" data-test="cloudbase">
+    <div class="bx--row">
+      <div class="bx--col">
+        <!--prettier-ignore-->
+        <p class="label">
+<svg
+  data-name="Layer 1"
+  xmlns="http://www.w3.org/2000/svg"
+  width="32"
+  height="32"
+  viewBox="0 0 32 32"
+>
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <rect x="2" y="28" width="9" height="2" />
+  <rect x="21" y="28" width="9" height="2" />
+  <polygon
+    points="17 26.167 17 17.832 19.586 20.414 21 19 16 14 11 19 12.413 20.415 15 17.832 15 26.167 12.413 23.584 11 25 16 30 21 25 19.586 23.586 17 26.167"
+  />
+  <path
+    d="M23,16H21V14h2a3,3,0,0,0,0-6c-.0938.0144-.1538.0219-.2153.0263l-.8037.0572L21.7544,7.31a5.9927,5.9927,0,0,0-11.1758-.8655l-.2832.5994-.8423-.0455A3.5008,3.5008,0,0,0,9.5,14H11v2H9.5A5.5,5.5,0,0,1,9.07,5.0166,7.9909,7.9909,0,0,1,23.42,6.0175,5,5,0,0,1,23,16Z"
+    transform="translate(0 0)"
+  />
+  <rect class="cls-1" width="32" height="32" />
+</svg>
+          Cloud Base
+        </p>
+        <div class="value">
+          <!--prettier-ignore-->
+
+          <!--TODO: Implement custom context logic from combined-diagram-tile template-->
+          <!--prettier-ignore-->
+
+          <script>
+            /* prettier-ignore */
+            var cloudbaseSeries9 = [[1746082800, 1746126000, 466], [1746126000, 1746169200, 372], [1746169200, 1746212400, 371], [1746212400, 1746255600, 485], [1746255600, 1746298800, 671], [1746298800, 1746342000, 2070], [1746342000, 1746385200, 1527], [1746385200, 1746428400, 2030], [1746428400, 1746471600, 13047], [1746471600, 1746514800, 10401], [1746514800, 1746558000, 781], [1746558000, 1746601200, 636], [1746601200, 1746644400, 896], [1746644400, 1746687600, 762], [1746687600, 1746730800, 447], [1746730800, 1746774000, 690], [1746774000, 1746817200, 677], [1746817200, 1746860400, 807], [1746860400, 1746903600, 720], [1746903600, 1746946800, 1514], [1746946800, 1746990000, 1165], [1746990000, 1747033200, 1065], [1747033200, 1747076400, 959], [1747076400, 1747119600, 1497], [1747119600, 1747162800, 1237], [1747162800, 1747206000, 1285], [1747206000, 1747249200, 896], [1747249200, 1747292400, 961], [1747292400, 1747335600, 804], [1747335600, 1747378800, 1171], [1747378800, 1747422000, 970], [1747422000, 1747465200, 1097], [1747465200, 1747508400, 551], [1747508400, 1747551600, 1141], [1747551600, 1747594800, 885], [1747594800, 1747638000, 1954], [1747638000, 1747681200, 1295], [1747681200, 1747724400, 1301], [1747724400, 1747767600, 809], [1747767600, 1747810800, 1755], [1747810800, 1747854000, 1053], [1747854000, 1747897200, 1332], [1747897200, 1747940400, 1323], [1747940400, 1747983600, 1002], [1747983600, 1748026800, 550], [1748026800, 1748070000, 702], [1748070000, 1748113200, 440], [1748113200, 1748156400, 565], [1748156400, 1748199600, 424], [1748199600, 1748242800, 387], [1748242800, 1748286000, 107], [1748286000, 1748329200, 209], [1748329200, 1748372400, 285], [1748372400, 1748415600, 175], [1748415600, 1748458800, 237], [1748458800, 1748502000, 553], [1748502000, 1748545200, 690], [1748545200, 1748588400, 862], [1748588400, 1748631600, 85], [1748631600, 1748674800, 415], [1748674800, 1748718000, 318], [1748718000, 1748761200, 796]];
+          </script>
+
+          <!--prettier-ignore-->
+          <div
+            class="diagram"
+            data-labels="['Cloud Base']"
+            data-color="['#92b6f0']"
+            data-value="cloudbaseSeries9"
+            data-unit="[' feet']"
+            data-observations="['cloudbase']"
+            data-combinedkeys="['cloudbase']"
+            data-diagram="['line']"
+            data-context="month"
+            data-aggregate-type="['avg']"
+            data-nivo-props="{'lineWidth': '2', 'pointSize': '2', 'isInteractive': 'True', 'enablePoints': 'True', 'enableCrosshair': 'True', 'yScaleOffset': '300', 'enableArea': 'True', 'areaOpacity': '0.07', 'curve': 'catmullRom', 'legendPosition': 'top left', 'yScaleMin': '0', 'type': 'line', 'color': '#92b6f0', 'aggregate_interval': '43200', 'bottom_date_time_format': '%m/%d', 'tooltip_date_time_format': '%x %X'}"
+          ></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!--prettier-ignore-->
+
+<br/><br/>
+
+<div class="bx--row">
+  <!-- prettier-ignore -->
+<!--prettier-ignore-->
+
+<div class="bx--col">
+  <div class="bx--tile data-table-tile">
+    <div class="bx--row">
+      <div class="bx--col">
+        <script>
+          /*prettier-ignore*/
+          var tableRows = [{'time': '2025-05-02T12:00:00', 'windSpeed': 13, 'id': 1746169200, 'windGust': 23, 'windDir': 231, 'outTemp': 50, 'outHumidity': 94, 'dewpoint': 48, 'barometer': 1014.0, 'rain': 0.0, 'rainRate': 0.0, 'UV': 4.2, 'cloudbase': 371}, {'time': '2025-05-03T00:00:00', 'windSpeed': 15, 'id': 1746212400, 'windGust': 33, 'windDir': 242, 'outTemp': 54, 'outHumidity': 92, 'dewpoint': 52, 'barometer': 1013.5, 'rain': 0.03, 'rainRate': 0.43, 'UV': 7.3, 'cloudbase': 485}, {'time': '2025-05-03T12:00:00', 'windSpeed': 8, 'id': 1746255600, 'windGust': 22, 'windDir': 233, 'outTemp': 53, 'outHumidity': 90, 'dewpoint': 50, 'barometer': 1013.0, 'rain': 0.12, 'rainRate': 0.16, 'UV': 5.2, 'cloudbase': 671}, {'time': '2025-05-04T00:00:00', 'windSpeed': 7, 'id': 1746298800, 'windGust': 17, 'windDir': 256, 'outTemp': 56, 'outHumidity': 71, 'dewpoint': 47, 'barometer': 1011.4, 'rain': 0.0, 'rainRate': 0.0, 'UV': 7.7, 'cloudbase': 2070}, {'time': '2025-05-04T12:00:00', 'windSpeed': 3, 'id': 1746342000, 'windGust': 9, 'windDir': 134, 'outTemp': 52, 'outHumidity': 78, 'dewpoint': 46, 'barometer': 1009.6, 'rain': 0.0, 'rainRate': 0.0, 'UV': 7.0, 'cloudbase': 1527}, {'time': '2025-05-05T00:00:00', 'windSpeed': 7, 'id': 1746385200, 'windGust': 16, 'windDir': 251, 'outTemp': 57, 'outHumidity': 72, 'dewpoint': 48, 'barometer': 1007.5, 'rain': 0.0, 'rainRate': 0.0, 'UV': 7.3, 'cloudbase': 2030}, {'time': '2025-05-05T12:00:00', 'windSpeed': 5, 'id': 1746428400, 'windGust': 20, 'windDir': 340, 'outTemp': 65, 'outHumidity': 27, 'dewpoint': 8, 'barometer': 1008.3, 'rain': 0.0, 'rainRate': 0.0, 'UV': 7.1, 'cloudbase': 13047}, {'time': '2025-05-06T00:00:00', 'windSpeed': 9, 'id': 1746471600, 'windGust': 20, 'windDir': 282, 'outTemp': 66, 'outHumidity': 41, 'dewpoint': 20, 'barometer': 1007.2, 'rain': 0.0, 'rainRate': 0.0, 'UV': 7.5, 'cloudbase': 10401}, {'time': '2025-05-06T12:00:00', 'windSpeed': 15, 'id': 1746514800, 'windGust': 27, 'windDir': 252, 'outTemp': 55, 'outHumidity': 88, 'dewpoint': 51, 'barometer': 1009.4, 'rain': 0.0, 'rainRate': 0.0, 'UV': 7.0, 'cloudbase': 781}, {'time': '2025-05-07T00:00:00', 'windSpeed': 19, 'id': 1746558000, 'windGust': 29, 'windDir': 256, 'outTemp': 54, 'outHumidity': 90, 'dewpoint': 52, 'barometer': 1011.4, 'rain': 0.0, 'rainRate': 0.0, 'UV': 7.3, 'cloudbase': 636}, {'time': '2025-05-07T12:00:00', 'windSpeed': 12, 'id': 1746601200, 'windGust': 21, 'windDir': 245, 'outTemp': 54, 'outHumidity': 86, 'dewpoint': 50, 'barometer': 1014.4, 'rain': 0.0, 'rainRate': 0.0, 'UV': 6.2, 'cloudbase': 896}, {'time': '2025-05-08T00:00:00', 'windSpeed': 13, 'id': 1746644400, 'windGust': 20, 'windDir': 252, 'outTemp': 53, 'outHumidity': 88, 'dewpoint': 49, 'barometer': 1016.2, 'rain': 0.0, 'rainRate': 0.0, 'UV': 7.5, 'cloudbase': 762}, {'time': '2025-05-08T12:00:00', 'windSpeed': 6, 'id': 1746687600, 'windGust': 11, 'windDir': 218, 'outTemp': 51, 'outHumidity': 93, 'dewpoint': 49, 'barometer': 1017.5, 'rain': 0.0, 'rainRate': 0.0, 'UV': 7.2, 'cloudbase': 447}, {'time': '2025-05-09T00:00:00', 'windSpeed': 10, 'id': 1746730800, 'windGust': 21, 'windDir': 254, 'outTemp': 55, 'outHumidity': 89, 'dewpoint': 52, 'barometer': 1016.8, 'rain': 0.0, 'rainRate': 0.0, 'UV': 7.5, 'cloudbase': 690}, {'time': '2025-05-09T12:00:00', 'windSpeed': 5, 'id': 1746774000, 'windGust': 10, 'windDir': 253, 'outTemp': 55, 'outHumidity': 89, 'dewpoint': 52, 'barometer': 1016.9, 'rain': 0.0, 'rainRate': 0.0, 'UV': 7.3, 'cloudbase': 677}, {'time': '2025-05-10T00:00:00', 'windSpeed': 10, 'id': 1746817200, 'windGust': 19, 'windDir': 259, 'outTemp': 56, 'outHumidity': 88, 'dewpoint': 53, 'barometer': 1014.5, 'rain': 0.0, 'rainRate': 0.0, 'UV': 7.6, 'cloudbase': 807}, {'time': '2025-05-10T12:00:00', 'windSpeed': 7, 'id': 1746860400, 'windGust': 13, 'windDir': 246, 'outTemp': 54, 'outHumidity': 89, 'dewpoint': 51, 'barometer': 1013.7, 'rain': 0.0, 'rainRate': 0.0, 'UV': 7.5, 'cloudbase': 720}, {'time': '2025-05-11T00:00:00', 'windSpeed': 12, 'id': 1746903600, 'windGust': 23, 'windDir': 242, 'outTemp': 56, 'outHumidity': 78, 'dewpoint': 50, 'barometer': 1012.1, 'rain': 0.0, 'rainRate': 0.0, 'UV': 7.8, 'cloudbase': 1514}, {'time': '2025-05-11T12:00:00', 'windSpeed': 9, 'id': 1746946800, 'windGust': 32, 'windDir': 220, 'outTemp': 54, 'outHumidity': 83, 'dewpoint': 49, 'barometer': 1013.4, 'rain': 0.0, 'rainRate': 0.0, 'UV': 7.7, 'cloudbase': 1165}, {'time': '2025-05-12T00:00:00', 'windSpeed': 16, 'id': 1746990000, 'windGust': 33, 'windDir': 243, 'outTemp': 54, 'outHumidity': 84, 'dewpoint': 50, 'barometer': 1013.4, 'rain': 0.0, 'rainRate': 0.0, 'UV': 8.0, 'cloudbase': 1065}, {'time': '2025-05-12T12:00:00', 'windSpeed': 12, 'id': 1747033200, 'windGust': 21, 'windDir': 221, 'outTemp': 55, 'outHumidity': 85, 'dewpoint': 51, 'barometer': 1011.7, 'rain': 0.12, 'rainRate': 0.14, 'UV': 7.9, 'cloudbase': 959}, {'time': '2025-05-13T00:00:00', 'windSpeed': 13, 'id': 1747076400, 'windGust': 23, 'windDir': 252, 'outTemp': 55, 'outHumidity': 78, 'dewpoint': 48, 'barometer': 1012.2, 'rain': 0.12, 'rainRate': 0.54, 'UV': 7.6, 'cloudbase': 1497}, {'time': '2025-05-13T12:00:00', 'windSpeed': 5, 'id': 1747119600, 'windGust': 11, 'windDir': 257, 'outTemp': 53, 'outHumidity': 81, 'dewpoint': 48, 'barometer': 1014.9, 'rain': 0.0, 'rainRate': 0.0, 'UV': 6.2, 'cloudbase': 1237}, {'time': '2025-05-14T00:00:00', 'windSpeed': 12, 'id': 1747162800, 'windGust': 23, 'windDir': 244, 'outTemp': 56, 'outHumidity': 81, 'dewpoint': 50, 'barometer': 1016.1, 'rain': 0.3, 'rainRate': 0.74, 'UV': 8.3, 'cloudbase': 1285}, {'time': '2025-05-14T12:00:00', 'windSpeed': 7, 'id': 1747206000, 'windGust': 15, 'windDir': 166, 'outTemp': 54, 'outHumidity': 86, 'dewpoint': 50, 'barometer': 1016.7, 'rain': 0.0, 'rainRate': 0.0, 'UV': 7.9, 'cloudbase': 896}, {'time': '2025-05-15T00:00:00', 'windSpeed': 12, 'id': 1747249200, 'windGust': 21, 'windDir': 231, 'outTemp': 55, 'outHumidity': 85, 'dewpoint': 51, 'barometer': 1015.8, 'rain': 0.0, 'rainRate': 0.0, 'UV': 8.4, 'cloudbase': 961}, {'time': '2025-05-15T12:00:00', 'windSpeed': 6, 'id': 1747292400, 'windGust': 13, 'windDir': 204, 'outTemp': 54, 'outHumidity': 88, 'dewpoint': 51, 'barometer': 1014.8, 'rain': 0.0, 'rainRate': 0.0, 'UV': 5.7, 'cloudbase': 804}, {'time': '2025-05-16T00:00:00', 'windSpeed': 11, 'id': 1747335600, 'windGust': 22, 'windDir': 239, 'outTemp': 56, 'outHumidity': 83, 'dewpoint': 51, 'barometer': 1013.6, 'rain': 0.0, 'rainRate': 0.0, 'UV': 8.0, 'cloudbase': 1171}, {'time': '2025-05-16T12:00:00', 'windSpeed': 8, 'id': 1747378800, 'windGust': 17, 'windDir': 151, 'outTemp': 54, 'outHumidity': 85, 'dewpoint': 50, 'barometer': 1012.2, 'rain': 0.0, 'rainRate': 0.0, 'UV': 7.6, 'cloudbase': 970}, {'time': '2025-05-17T00:00:00', 'windSpeed': 11, 'id': 1747422000, 'windGust': 22, 'windDir': 224, 'outTemp': 57, 'outHumidity': 84, 'dewpoint': 52, 'barometer': 1011.1, 'rain': 0.0, 'rainRate': 0.0, 'UV': 8.4, 'cloudbase': 1097}, {'time': '2025-05-17T12:00:00', 'windSpeed': 14, 'id': 1747465200, 'windGust': 32, 'windDir': 228, 'outTemp': 54, 'outHumidity': 91, 'dewpoint': 51, 'barometer': 1011.4, 'rain': 0.36, 'rainRate': 1.45, 'UV': 8.0, 'cloudbase': 551}, {'time': '2025-05-18T00:00:00', 'windSpeed': 13, 'id': 1747508400, 'windGust': 35, 'windDir': 246, 'outTemp': 57, 'outHumidity': 83, 'dewpoint': 52, 'barometer': 1012.7, 'rain': 0.0, 'rainRate': 0.0, 'UV': 8.4, 'cloudbase': 1141}, {'time': '2025-05-18T12:00:00', 'windSpeed': 5, 'id': 1747551600, 'windGust': 15, 'windDir': 143, 'outTemp': 55, 'outHumidity': 86, 'dewpoint': 51, 'barometer': 1015.3, 'rain': 0.0, 'rainRate': 0.0, 'UV': 8.1, 'cloudbase': 885}, {'time': '2025-05-19T00:00:00', 'windSpeed': 8, 'id': 1747594800, 'windGust': 21, 'windDir': 249, 'outTemp': 62, 'outHumidity': 73, 'dewpoint': 53, 'barometer': 1015.5, 'rain': 0.0, 'rainRate': 0.0, 'UV': 8.1, 'cloudbase': 1954}, {'time': '2025-05-19T12:00:00', 'windSpeed': 4, 'id': 1747638000, 'windGust': 10, 'windDir': 201, 'outTemp': 58, 'outHumidity': 81, 'dewpoint': 52, 'barometer': 1017.6, 'rain': 0.0, 'rainRate': 0.0, 'UV': 5.6, 'cloudbase': 1295}, {'time': '2025-05-20T00:00:00', 'windSpeed': 8, 'id': 1747681200, 'windGust': 20, 'windDir': 243, 'outTemp': 60, 'outHumidity': 81, 'dewpoint': 54, 'barometer': 1016.5, 'rain': 0.0, 'rainRate': 0.0, 'UV': 4.1, 'cloudbase': 1301}, {'time': '2025-05-20T12:00:00', 'windSpeed': 6, 'id': 1747724400, 'windGust': 12, 'windDir': 159, 'outTemp': 56, 'outHumidity': 88, 'dewpoint': 53, 'barometer': 1016.8, 'rain': 0.0, 'rainRate': 0.0, 'UV': 6.6, 'cloudbase': 809}, {'time': '2025-05-21T00:00:00', 'windSpeed': 9, 'id': 1747767600, 'windGust': 15, 'windDir': 228, 'outTemp': 59, 'outHumidity': 75, 'dewpoint': 52, 'barometer': 1014.7, 'rain': 0.0, 'rainRate': 0.0, 'UV': 8.1, 'cloudbase': 1755}, {'time': '2025-05-21T12:00:00', 'windSpeed': 5, 'id': 1747810800, 'windGust': 11, 'windDir': 192, 'outTemp': 55, 'outHumidity': 84, 'dewpoint': 51, 'barometer': 1014.1, 'rain': 0.0, 'rainRate': 0.0, 'UV': 6.4, 'cloudbase': 1053}, {'time': '2025-05-22T00:00:00', 'windSpeed': 11, 'id': 1747854000, 'windGust': 25, 'windDir': 241, 'outTemp': 57, 'outHumidity': 80, 'dewpoint': 51, 'barometer': 1012.9, 'rain': 0.0, 'rainRate': 0.0, 'UV': 6.3, 'cloudbase': 1332}, {'time': '2025-05-22T12:00:00', 'windSpeed': 8, 'id': 1747897200, 'windGust': 15, 'windDir': 144, 'outTemp': 56, 'outHumidity': 81, 'dewpoint': 50, 'barometer': 1015.5, 'rain': 0.0, 'rainRate': 0.0, 'UV': 8.0, 'cloudbase': 1323}, {'time': '2025-05-23T00:00:00', 'windSpeed': 13, 'id': 1747940400, 'windGust': 28, 'windDir': 238, 'outTemp': 55, 'outHumidity': 85, 'dewpoint': 51, 'barometer': 1015.0, 'rain': 0.05, 'rainRate': 0.51, 'UV': 8.4, 'cloudbase': 1002}, {'time': '2025-05-23T12:00:00', 'windSpeed': 11, 'id': 1747983600, 'windGust': 20, 'windDir': 225, 'outTemp': 52, 'outHumidity': 91, 'dewpoint': 50, 'barometer': 1014.4, 'rain': 0.0, 'rainRate': 0.0, 'UV': 8.1, 'cloudbase': 550}, {'time': '2025-05-24T00:00:00', 'windSpeed': 12, 'id': 1748026800, 'windGust': 23, 'windDir': 220, 'outTemp': 54, 'outHumidity': 89, 'dewpoint': 51, 'barometer': 1014.0, 'rain': 0.0, 'rainRate': 0.0, 'UV': 8.4, 'cloudbase': 702}, {'time': '2025-05-24T12:00:00', 'windSpeed': 11, 'id': 1748070000, 'windGust': 20, 'windDir': 165, 'outTemp': 52, 'outHumidity': 93, 'dewpoint': 50, 'barometer': 1013.7, 'rain': 0.0, 'rainRate': 0.0, 'UV': 8.2, 'cloudbase': 440}, {'time': '2025-05-25T00:00:00', 'windSpeed': 13, 'id': 1748113200, 'windGust': 34, 'windDir': 216, 'outTemp': 53, 'outHumidity': 91, 'dewpoint': 51, 'barometer': 1014.7, 'rain': 0.23, 'rainRate': 0.92, 'UV': 8.4, 'cloudbase': 565}, {'time': '2025-05-25T12:00:00', 'windSpeed': 12, 'id': 1748156400, 'windGust': 22, 'windDir': 236, 'outTemp': 53, 'outHumidity': 93, 'dewpoint': 51, 'barometer': 1015.7, 'rain': 0.0, 'rainRate': 0.0, 'UV': 8.2, 'cloudbase': 424}, {'time': '2025-05-26T00:00:00', 'windSpeed': 17, 'id': 1748199600, 'windGust': 27, 'windDir': 299, 'outTemp': 54, 'outHumidity': 94, 'dewpoint': 52, 'barometer': 1015.7, 'rain': 0.14, 'rainRate': 0.49, 'UV': 8.5, 'cloudbase': 387}, {'time': '2025-05-26T12:00:00', 'windSpeed': 11, 'id': 1748242800, 'windGust': 19, 'windDir': 248, 'outTemp': 54, 'outHumidity': 98, 'dewpoint': 54, 'barometer': 1016.6, 'rain': 0.0, 'rainRate': 0.0, 'UV': 8.2, 'cloudbase': 107}, {'time': '2025-05-27T00:00:00', 'windSpeed': 15, 'id': 1748286000, 'windGust': 27, 'windDir': 235, 'outTemp': 55, 'outHumidity': 96, 'dewpoint': 54, 'barometer': 1015.8, 'rain': 0.0, 'rainRate': 0.0, 'UV': 8.6, 'cloudbase': 209}, {'time': '2025-05-27T12:00:00', 'windSpeed': 8, 'id': 1748329200, 'windGust': 19, 'windDir': 204, 'outTemp': 53, 'outHumidity': 95, 'dewpoint': 52, 'barometer': 1013.3, 'rain': 0.0, 'rainRate': 0.0, 'UV': 8.2, 'cloudbase': 285}, {'time': '2025-05-28T00:00:00', 'windSpeed': 16, 'id': 1748372400, 'windGust': 22, 'windDir': 239, 'outTemp': 53, 'outHumidity': 97, 'dewpoint': 52, 'barometer': 1013.4, 'rain': 0.0, 'rainRate': 0.0, 'UV': 8.5, 'cloudbase': 175}, {'time': '2025-05-28T12:00:00', 'windSpeed': 11, 'id': 1748415600, 'windGust': 23, 'windDir': 220, 'outTemp': 53, 'outHumidity': 96, 'dewpoint': 52, 'barometer': 1013.6, 'rain': 0.0, 'rainRate': 0.0, 'UV': 8.1, 'cloudbase': 237}, {'time': '2025-05-29T00:00:00', 'windSpeed': 16, 'id': 1748458800, 'windGust': 28, 'windDir': 247, 'outTemp': 55, 'outHumidity': 91, 'dewpoint': 53, 'barometer': 1014.3, 'rain': 0.0, 'rainRate': 0.0, 'UV': 8.5, 'cloudbase': 553}, {'time': '2025-05-29T12:00:00', 'windSpeed': 7, 'id': 1748502000, 'windGust': 16, 'windDir': 152, 'outTemp': 56, 'outHumidity': 89, 'dewpoint': 53, 'barometer': 1014.5, 'rain': 0.0, 'rainRate': 0.0, 'UV': 8.2, 'cloudbase': 690}, {'time': '2025-05-30T00:00:00', 'windSpeed': 9, 'id': 1748545200, 'windGust': 17, 'windDir': 234, 'outTemp': 60, 'outHumidity': 87, 'dewpoint': 57, 'barometer': 1014.3, 'rain': 0.0, 'rainRate': 0.0, 'UV': 8.5, 'cloudbase': 862}, {'time': '2025-05-30T12:00:00', 'windSpeed': 5, 'id': 1748588400, 'windGust': 13, 'windDir': 226, 'outTemp': 55, 'outHumidity': 98, 'dewpoint': 54, 'barometer': 1013.8, 'rain': 0.0, 'rainRate': 0.0, 'UV': 8.2, 'cloudbase': 85}, {'time': '2025-05-31T00:00:00', 'windSpeed': 12, 'id': 1748631600, 'windGust': 23, 'windDir': 250, 'outTemp': 57, 'outHumidity': 93, 'dewpoint': 55, 'barometer': 1012.2, 'rain': 0.0, 'rainRate': 0.0, 'UV': 8.5, 'cloudbase': 415}, {'time': '2025-05-31T12:00:00', 'windSpeed': 8, 'id': 1748674800, 'windGust': 17, 'windDir': 253, 'outTemp': 56, 'outHumidity': 95, 'dewpoint': 55, 'barometer': 1011.8, 'rain': 0.0, 'rainRate': 0.0, 'UV': 8.3, 'cloudbase': 318}, {'time': '2025-06-01T00:00:00', 'windSpeed': 13, 'id': 1748718000, 'windGust': 21, 'windDir': 250, 'outTemp': 58, 'outHumidity': 88, 'dewpoint': 54, 'barometer': 1010.1, 'rain': 0.0, 'rainRate': 0.0, 'UV': 8.6, 'cloudbase': 796}];
+          var tableHeaders = [{"title": "Time", "id": "time", "sortCycle": "tri-states-from-ascending"}, {"title": "Wind Speed", "small": "in  knots", "id": "windSpeed", "sortCycle": "tri-states-from-ascending"}, {"title": "Gust Speed", "small": "in  knots", "id": "windGust", "sortCycle": "tri-states-from-ascending"}, {"title": "Wind Direction", "small": "in \u00b0", "id": "windDir", "sortCycle": "tri-states-from-ascending"}, {"title": "Outside Temperature", "small": "in \u00b0F", "id": "outTemp", "sortCycle": "tri-states-from-ascending"}, {"title": "Outside Humidity", "small": "in %", "id": "outHumidity", "sortCycle": "tri-states-from-ascending"}, {"title": "Dew Point", "small": "in \u00b0F", "id": "dewpoint", "sortCycle": "tri-states-from-ascending"}, {"title": "Barometer", "small": "in  mbar", "id": "barometer", "sortCycle": "tri-states-from-ascending"}, {"title": "Rain", "small": "in  in", "id": "rain", "sortCycle": "tri-states-from-ascending"}, {"title": "Rain Rate", "small": "in  in/h", "id": "rainRate", "sortCycle": "tri-states-from-ascending"}, {"title": "UV Index", "small": "in ", "id": "UV", "sortCycle": "tri-states-from-ascending"}, {"title": "Cloud Base", "small": "in  feet", "id": "cloudbase", "sortCycle": "tri-states-from-ascending"}];
+
+          var tableTitle = 'All data';
+          var context = "month";
+        </script>
+        <div class="table"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+        </div>
+      </section>
+    </main>
+
+    <!--Stat tile Modals-->
+
+
+<!--prettier-ignore-->
+
+<div id="footer">
+  <div class="bx--grid bx--grid--full-width">
+    <div class="bx--row">
+      <div class="bx--col-sm-12 bx--col-lg-6">
+        <p>
+          WeeWX uptime: 8 days, 13 hours, 29 minutes<br />
+          Server uptime: 9 days, 19 hours, 24 minutes<br />
+          WeeWX version: 5.1.0 with
+          Weatherflow Tempest Websocket<br />
+          Skin: Weather Data Center 3.5.0
+        </p>
+      </div>
+      <div class="bx--col-sm-12 bx--col-lg-6">
+        <p>
+          Altitude: 13 feet<br />
+          Latitude: 37&deg; 51.54'
+          N<br />
+          Longitude: 122&deg;
+          18.96' W
+        </p>
+      </div>
+    </div>
+    <!--prettier-ignore-->
+    <div class="bx--row">
+      <div class="bx--col">
+        <!--prettier-ignore-->
+        <p class="footnote">
+          This station is controlled by <a target='_blank' href='https://weewx.com'>WeeWX</a>, an experimental weather software system written in Python.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <script src="/dist/main.js" defer></script>
+  </body>
+</html>

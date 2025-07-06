@@ -1,0 +1,956 @@
+<!--prettier-ignore-->
+
+
+
+
+<!--prettier-ignore-->
+
+<!--prettier-ignore-->
+
+<!--prettier-ignore-->
+
+<!--prettier-ignore-->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+<!--prettier-ignore-->
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<style>
+.gauge-label
+{font-family:"IBM Plex Sans"!important;
+}
+.gauge-text text{font-family:"IBM Plex Sans"!important;}
+
+@media only screen and (min-device-width : 320px) and (max-device-width : 480px)  { 
+g.infolayer{
+zoom:75%;
+}
+}
+header.section-header{
+margin-top: var(--cds-spacing-07, 0.5rem)!important;
+}
+
+.gauge{
+padding: 0.1rem!important;
+padding-bottom: 0.3rem!important;
+    zoom: 120%!important;
+}
+.tick-label{
+font-size:0.8em!important;
+}
+.tick-current path{
+stroke:#ad0c00;
+}
+.needle-triangle path{
+fill:#ad0c00;
+}
+.gauge-label{
+font-size:1.2em!important;
+}
+</style>
+
+<link
+  href="/dist/main.css"
+  rel="preload"
+  as="style"
+  onload="this.onload=null;this.rel='stylesheet'"
+/>
+<noscript
+  ><link rel="stylesheet" href="/dist/main.css"
+/></noscript>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/webcomponentsjs/2.6.0/webcomponents-loader.min.js"></script>
+<!-- <script>
+  window.WebComponents = window.WebComponents || {};
+  window.WebComponents.root = "node_modules/@webcomponents/webcomponentsjs/";
+</script> -->
+<script src="/plotly-custom-build.min.js" defer></script>
+
+<link
+  rel="icon"
+  type="image/x-icon"
+  href="https://www.cal-sailing.org/templates/ja_edenite_ii/images/csc/favicon.ico?v=2113102023"
+/>
+<meta
+  name="description"
+  content='Cal Sailing Club - Current Conditions'
+/>
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#161616" />
+<link rel="apple-touch-icon" href="https://status.cal-sailing.org/apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-title" content="CSC Conditions">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+<script>
+  // Check that service workers are supported
+  if ("serviceWorker" in navigator) {
+    // Use the window load event to keep the page load performant
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register(
+        "/service-worker.js"
+      );
+    });
+  }
+</script>
+<!--prettier-ignore-->
+<script>
+  /*prettier-ignore*/
+  window.weewxWdcConfig = {
+    diagramWindDirOrdinals: 1,
+    ordinalCompass: ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'],
+    windRoseColors: ["#f3cec9", "#e7a4b6", "#cd7eaf", "#a262a9", "#6f4d96", "#3d3b72"],
+    units: {'group_altitude': 'foot', 'group_amp': 'amp', 'group_concentration': 'microgram_per_meter_cubed', 'group_data': 'byte', 'group_db': 'dB', 'group_degree_day': 'degree_F_day', 'group_deltatime': 'second', 'group_direction': 'degree_compass', 'group_distance': 'mile', 'group_energy': 'watt_hour', 'group_energy2': 'watt_second', 'group_fraction': 'ppm', 'group_frequency': 'hertz', 'group_illuminance': 'lux', 'group_length': 'inch', 'group_moisture': 'centibar', 'group_percent': 'percent', 'group_power': 'watt', 'group_pressure': 'mbar', 'group_pressure_rate': 'inHq_per_hour', 'group_radiation': 'watt_per_meter_squared', 'group_rain': 'inch', 'group_rainrate': 'inch_per_hour', 'group_speed': 'knot', 'group_speed2': 'knot', 'group_temperature': 'degree_F', 'group_uv': 'uv_index', 'group_volt': 'volt', 'group_volume': 'gallon', 'group_boolean': 'boolean', 'group_count': 'count', 'group_elapsed': 'second', 'group_interval': 'minute', 'group_time': 'unix_epoch', 'group_angle': 'degree_angle', 'group_pressurerate': 'inHg_per_hour'},
+    dwdForecastTable: {},
+    basePath: "/",
+    translations: {
+      "Daily": "Daily",
+      "Hourly": "Hourly",
+      "Forecast_for": "Forecast for",
+      "Forecast_from": "Forecast from",
+      "Issued_on": "Issued on",
+      "Station_name": "Station name",
+      "POP": "Probability of precipitation",
+      "obs_cloud_cover": "Cloud cover",
+      "obs_sunshine_dur": "Rel. Sunshine duration",
+      "obs_dew_point": "Dew Point",
+      "obs_barometer": "Barometer",
+      "obs_wind_speed": "Wind Speed",
+      "obs_precipitation": "Precipitation",
+      "no_warnings": "no warnings at this time",
+      "Verhaltenshinweise": "Behavioral Advice",
+      "source": "Source",
+      "Select_a_day": "Select a day",
+      "Archive_day": "Archive day",
+      "stats_helper_text": "Choose a day to view a statistics page. You can also filter/search for a date by start typing, eg:",
+      "Format_is": "Format is",
+    },
+    locale: "en-US",
+    time: 1751793928.527922
+  };
+</script>
+
+<!--prettier-ignore-->
+<style>
+  *:not(:defined) {
+    display: none;
+  }
+
+      .diagram {
+        height: 220px;
+      }
+      @media screen and (min-width: 672px) {
+        .diagram {
+          height: 325px;
+        }
+      }
+      @media screen and (min-width: 1056px) {
+        .diagram {
+          height: 325px;
+        }
+      }
+      @media screen and (min-width: 1312px) {
+        .diagram {
+          height: 250px;
+        }
+      }
+      @media screen and (min-width: 1920px) {
+        .diagram {
+          height: 250px;
+        }
+      }
+
+      body.theme-classic .diagram {
+        height: 220px;
+      }
+      @media screen and (min-width: 672px) {
+        body.theme-classic .diagram {
+          height: 300px;
+        }
+      }
+      @media screen and (min-width: 1056px) {
+        body.theme-classic .diagram {
+          height: 250px;
+        }
+      }
+      @media screen and (min-width: 1312px) {
+        body.theme-classic .diagram {
+          height: 225px;
+        }
+      }
+      @media screen and (min-width: 1920px) {
+        body.theme-classic .diagram {
+          height: 225px;
+        }
+      }
+</style>
+
+<!-- You can add Google Analytics here or use T3 Injection feature -->
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-79920224-2"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-79920224-2');
+  gtag('config', 'AW-659342775');
+</script>
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-HFZMBJTKP9"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-HFZMBJTKP9');
+</script>
+    <title>Cal Sailing Club - Sensor Status</title>
+  </head>
+
+  <body class="theme-alternative">
+<!--prettier-ignore-->
+
+<script
+  type="module"
+  src="https://1.www.s81c.com/common/carbon/web-components/version/v1.27.0/ui-shell.min.js"
+></script>
+<script
+  type="module"
+  src="https://1.www.s81c.com/common/carbon/web-components/version/v1.21.0/button.min.js"
+></script>
+
+<bx-header aria-label="Cal Sailing Club - 06-Jul-2025 02:25">
+  <bx-header-menu-button
+    button-label-active="Close menu"
+    button-label-inactive="Open menu"
+  ></bx-header-menu-button>
+  <bx-header-name href="http://www.cal-sailing.org" prefix="">
+    <!--prettier-ignore-->
+    <img class="logo" src="https://status.cal-sailing.org/CSC-Logo.png" alt="Logo" />
+    <!--prettier-ignore-->
+
+    <span part="prefix" class="bx--header__name--prefix"></span>
+    Cal Sailing Club
+  </bx-header-name>
+  <bx-header-nav menu-bar-label="Cal Sailing Club Status - 06-Jul-2025 02:25">
+    <bx-header-nav-item href="/index.html"
+      >Today</bx-header-nav-item
+    >
+    <bx-header-nav-item href="/yesterday.html"
+      >Yesterday</bx-header-nav-item
+    >
+    <bx-header-nav-item href="/week.html"
+      >Week</bx-header-nav-item
+    >
+    <bx-header-nav-item href="/month.html"
+      >Month</bx-header-nav-item
+    >
+    <bx-header-nav-item href="/year.html"
+      >Year</bx-header-nav-item
+    >
+  </bx-header-nav>
+  <div id="header-global">
+    <bx-btn kind="ghost" data-id="theme-toggle"
+      ><svg
+        class="hidden"
+        data-id="theme-toggle-light-icon"
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 32 32"
+      >
+        <defs>
+          <style>
+            .cls-1 {
+              fill: none;
+            }
+          </style>
+        </defs>
+        <rect x="15" y="2" width="2" height="5" />
+        <rect
+          x="21.6675"
+          y="6.8536"
+          width="4.958"
+          height="1.9998"
+          transform="translate(1.5191 19.3744) rotate(-45)"
+        />
+        <rect x="25" y="15" width="5" height="2" />
+        <rect
+          x="23.1466"
+          y="21.6675"
+          width="1.9998"
+          height="4.958"
+          transform="translate(-10.0018 24.1465) rotate(-45)"
+        />
+        <rect x="15" y="25" width="2" height="5" />
+        <rect
+          x="5.3745"
+          y="23.1466"
+          width="4.958"
+          height="1.9998"
+          transform="translate(-14.7739 12.6256) rotate(-45)"
+        />
+        <rect x="2" y="15" width="5" height="2" />
+        <rect
+          x="6.8536"
+          y="5.3745"
+          width="1.9998"
+          height="4.958"
+          transform="translate(-3.253 7.8535) rotate(-45)"
+        />
+        <path
+          d="M16,12a4,4,0,1,1-4,4,4.0045,4.0045,0,0,1,4-4m0-2a6,6,0,1,0,6,6,6,6,0,0,0-6-6Z"
+        />
+        <rect
+          data-name="&lt;Transparent Rectangle&gt;"
+          class="cls-1"
+          width="32"
+          height="32"
+        />
+      </svg>
+
+      <svg
+        class="hidden"
+        data-id="theme-toggle-dark-icon"
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 32 32"
+      >
+        <defs>
+          <style>
+            .cls-1 {
+              fill: none;
+            }
+          </style>
+        </defs>
+        <title>asleep</title>
+        <path
+          d="M13.5025,5.4136A15.0755,15.0755,0,0,0,25.096,23.6082a11.1134,11.1134,0,0,1-7.9749,3.3893c-.1385,0-.2782.0051-.4178,0A11.0944,11.0944,0,0,1,13.5025,5.4136M14.98,3a1.0024,1.0024,0,0,0-.1746.0156A13.0959,13.0959,0,0,0,16.63,28.9973c.1641.006.3282,0,.4909,0a13.0724,13.0724,0,0,0,10.702-5.5556,1.0094,1.0094,0,0,0-.7833-1.5644A13.08,13.08,0,0,1,15.8892,4.38,1.0149,1.0149,0,0,0,14.98,3Z"
+        />
+        <rect
+          data-name="&lt;Transparent Rectangle&gt;"
+          class="cls-1"
+          width="32"
+          height="32"
+        />
+      </svg>
+    </bx-btn>
+  </div>
+</bx-header>
+<bx-side-nav aria-label="Side navigation" collapse-mode="responsive">
+  <bx-side-nav-items>
+    <bx-side-nav-link
+      class="show-small"
+      href="/index.html"
+      ><span>Today</span></bx-side-nav-link
+    >
+    <bx-side-nav-link
+      class="show-small"
+      href="/yesterday.html"
+      ><span>Yesterday</span></bx-side-nav-link
+    >
+    <bx-side-nav-link class="show-small" href="/week.html"
+      ><span>Week</span></bx-side-nav-link
+    >
+    <bx-side-nav-link
+      class="show-small"
+      href="/month.html"
+      ><span>Month</span></bx-side-nav-link
+    >
+    <bx-side-nav-link class="show-small" href="/year.html"
+      ><span>Year</span></bx-side-nav-link
+    >
+    <bx-side-nav-divider class="show-small"></bx-side-nav-divider>
+    <bx-side-nav-link href="/celestial.html">
+      <svg
+        slot="title-icon"
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        viewBox="0 0 32 32"
+      >
+        <defs>
+          <style>
+            .cls-1 {
+              fill: none;
+            }
+          </style>
+        </defs>
+        <title>asleep</title>
+        <path
+          d="M13.5025,5.4136A15.0755,15.0755,0,0,0,25.096,23.6082a11.1134,11.1134,0,0,1-7.9749,3.3893c-.1385,0-.2782.0051-.4178,0A11.0944,11.0944,0,0,1,13.5025,5.4136M14.98,3a1.0024,1.0024,0,0,0-.1746.0156A13.0959,13.0959,0,0,0,16.63,28.9973c.1641.006.3282,0,.4909,0a13.0724,13.0724,0,0,0,10.702-5.5556,1.0094,1.0094,0,0,0-.7833-1.5644A13.08,13.08,0,0,1,15.8892,4.38,1.0149,1.0149,0,0,0,14.98,3Z"
+        />
+        <rect
+          id="_Transparent_Rectangle_"
+          data-name="&lt;Transparent Rectangle&gt;"
+          class="cls-1"
+          width="32"
+          height="32"
+        />
+      </svg>
+      <span>Celestial</span>
+    </bx-side-nav-link>
+    <bx-side-nav-link href="/statistics.html">
+      <svg
+        slot="title-icon"
+        width="16"
+        height="16"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 32 32"
+      >
+        <defs>
+          <style>
+            .cls-1 {
+              fill: none;
+            }
+          </style>
+        </defs>
+        <title>analytics</title>
+        <path d="M4,2H2V28a2,2,0,0,0,2,2H30V28H4Z" />
+        <path
+          d="M30,9H23v2h3.59L19,18.59l-4.29-4.3a1,1,0,0,0-1.42,0L6,21.59,7.41,23,14,16.41l4.29,4.3a1,1,0,0,0,1.42,0L28,12.41V16h2Z"
+        />
+        <rect
+          id="_Transparent_Rectangle_"
+          data-name="&lt;Transparent Rectangle&gt;"
+          class="cls-1"
+          width="32"
+          height="32"
+        />
+      </svg>
+      <span>Statistics</span>
+    </bx-side-nav-link>
+
+    <!--prettier-ignore-->
+    <bx-side-nav-link href="/sensor-status.html">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 32 32"
+        slot="title-icon"
+        width="16"
+        height="16"
+      >
+        <defs>
+          <style>
+            .cls-1 {
+              fill: none;
+            }
+          </style>
+        </defs>
+        <title>Sensor Status</title>
+        <rect x="15" y="12" width="2" height="18" />
+        <path d="M11.33,18.22a7,7,0,0,1,0-10.44l1.34,1.49a5,5,0,0,0,0,7.46Z" />
+        <path
+          d="M20.67,18.22l-1.34-1.49a5,5,0,0,0,0-7.46l1.34-1.49a7,7,0,0,1,0,10.44Z"
+        />
+        <path d="M8.4,21.8a11,11,0,0,1,0-17.6L9.6,5.8a9,9,0,0,0,0,14.4Z" />
+        <path
+          d="M23.6,21.8l-1.2-1.6a9,9,0,0,0,0-14.4l1.2-1.6a11,11,0,0,1,0,17.6Z"
+        />
+        <rect
+          data-name="&lt;Transparent Rectangle&gt;"
+          class="cls-1"
+          width="32"
+          height="32"
+        />
+      </svg>
+      <span>Sensor Status</span>
+    </bx-side-nav-link>
+
+    <!--prettier-ignore-->
+
+    <!--prettier-ignore-->
+    <bx-side-nav-link href="/externals.html">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        slot="title-icon"
+        width="16"
+        height="16"
+        viewBox="0 0 32 32"
+      >
+        <defs>
+          <style>
+            .cls-1 {
+              fill: none;
+            }
+          </style>
+        </defs>
+        <polygon
+          points="17 22 17 14 13 14 13 16 15 16 15 22 12 22 12 24 20 24 20 22 17 22"
+        />
+        <path d="M16,8a1.5,1.5,0,1,0,1.5,1.5A1.5,1.5,0,0,0,16,8Z" />
+        <path
+          d="M16,30A14,14,0,1,1,30,16,14,14,0,0,1,16,30ZM16,4A12,12,0,1,0,28,16,12,12,0,0,0,16,4Z"
+        />
+        <rect class="cls-1" width="32" height="32" />
+      </svg>
+      <span>Webcams & Radar</span>
+    </bx-side-nav-link>
+
+    <bx-side-nav-divider></bx-side-nav-divider>
+    <bx-side-nav-link class="sidebar-heading"
+      ><span>Archive & NOAA Reports</span></bx-side-nav-link
+    >
+    <!--prettier-ignore-->
+    <bx-side-nav-menu title="Years">
+      <bx-side-nav-menu-item
+        href="/year-2024.html"
+      >
+        <b>2024</b>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item
+        href="/year-2025.html"
+      >
+        <b>2025</b>
+      </bx-side-nav-menu-item>
+    </bx-side-nav-menu>
+    <!--prettier-ignore-->
+    <!--prettier-ignore-->
+    <bx-side-nav-menu title="2024">
+      <!--prettier-ignore-->
+      <bx-side-nav-menu-item href="/month-2024-01.html">
+        <span>January</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2024-02.html">
+        <span>February</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2024-03.html">
+        <span>March</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2024-04.html">
+        <span>April</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2024-05.html">
+        <span>May</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2024-06.html">
+        <span>June</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2024-07.html">
+        <span>July</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2024-08.html">
+        <span>August</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2024-09.html">
+        <span>September</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2024-10.html">
+        <span>October</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2024-11.html">
+        <span>November</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2024-12.html">
+        <span>December</span>
+      </bx-side-nav-menu-item>
+    </bx-side-nav-menu>
+    <!--prettier-ignore-->
+    <!--prettier-ignore-->
+    <bx-side-nav-menu title="2025">
+      <!--prettier-ignore-->
+      <bx-side-nav-menu-item href="/month-2025-01.html">
+        <span>January</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2025-02.html">
+        <span>February</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2025-03.html">
+        <span>March</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2025-04.html">
+        <span>April</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2025-05.html">
+        <span>May</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2025-06.html">
+        <span>June</span>
+      </bx-side-nav-menu-item>
+      <bx-side-nav-menu-item href="/month-2025-07.html">
+        <span>July</span>
+      </bx-side-nav-menu-item>
+    </bx-side-nav-menu>
+    <!--prettier-ignore-->
+  </bx-side-nav-items>
+</bx-side-nav>
+
+<script>
+  // Add 'active' class to nav-items.
+  const bxSideNavLinks = document.querySelectorAll(
+    "bx-side-nav-link, bx-side-nav-menu-item"
+  );
+
+  bxSideNavLinks.forEach((element) => {
+    if (
+      element.getAttribute("href") &&
+      window.location.pathname.includes(
+        // Remove leading slash.
+        element.getAttribute("href").replace(/^\/+/, "")
+      )
+    ) {
+      element.setAttribute("active", true);
+    }
+  });
+</script>
+
+<script>
+  var themeToggleDarkIcon = document.querySelectorAll(
+    '[data-id="theme-toggle-dark-icon"]'
+  );
+  var themeToggleLightIcon = document.querySelectorAll(
+    '[data-id="theme-toggle-light-icon"]'
+  );
+
+  // Change the icons inside the button based on previous settings
+  if (
+    localStorage.getItem("weewx.weewx_wdc.color-theme") === "dark" ||
+    (!("weewx.weewx_wdc.color-theme" in localStorage) &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches)
+  ) {
+    document.documentElement.classList.add("dark");
+    themeToggleLightIcon.forEach(function (element) {
+      element.classList.remove("hidden");
+    });
+  } else {
+    themeToggleDarkIcon.forEach(function (element) {
+      element.classList.remove("hidden");
+    });
+  }
+
+  var themeToggleBtn = document.querySelectorAll('[data-id="theme-toggle"]');
+
+  themeToggleBtn.forEach(function (element) {
+    element.addEventListener("click", function () {
+      // toggle icons inside button
+      themeToggleDarkIcon.forEach(function (element) {
+        element.classList.toggle("hidden");
+      });
+      themeToggleLightIcon.forEach(function (element) {
+        element.classList.toggle("hidden");
+      });
+
+      // if set via local storage previously
+      if (localStorage.getItem("weewx.weewx_wdc.color-theme")) {
+        if (localStorage.getItem("weewx.weewx_wdc.color-theme") === "light") {
+          document.documentElement.classList.add("dark");
+          localStorage.setItem("weewx.weewx_wdc.color-theme", "dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+          localStorage.setItem("weewx.weewx_wdc.color-theme", "light");
+        }
+
+        // if NOT set via local storage previously
+      } else {
+        if (document.documentElement.classList.contains("dark")) {
+          document.documentElement.classList.remove("dark");
+          localStorage.setItem("weewx.weewx_wdc.color-theme", "light");
+        } else {
+          document.documentElement.classList.add("dark");
+          localStorage.setItem("weewx.weewx_wdc.color-theme", "dark");
+        }
+      }
+    });
+  });
+</script>
+
+<!--prettier-ignore-->
+
+    <main class="main bx--content">
+      <section>
+        <div class="bx--grid bx--grid--full-width">
+          <div class="bx--row">
+            <header class="bx--col page-header">
+              <h1>Sensor Status</h1>
+              <h2>07/06/25 02:25:28</h2>
+            </header>
+          </div>
+
+          <!--prettier-ignore-->
+          <!--prettier-ignore-->
+
+          <div class="bx--row" style="margin-bottom: 1.5rem">
+            <!--prettier-ignore-->
+<script type="module" src="https://1.www.s81c.com/common/carbon/web-components/version/v1.21.0/notification.min.js"></script>
+<!--prettier-ignore-->
+
+          </div>
+
+          <div class="bx--row">
+            <!--prettier-ignore-->
+
+
+
+
+
+
+
+
+
+
+
+
+<!--prettier-ignore-->
+
+
+
+<script
+  type="module"
+  src="https://1.www.s81c.com/common/carbon/web-components/version/v1.27.0/tooltip.min.js"
+></script>
+
+
+<div class="bx--col-sm-4 bx--col-md-4 bx--col-lg-6 bx--col-xlg-3 bx--col-max-2 stat-tile-wrap-supplyVoltage">
+  <!--prettier-ignore-->
+  <div
+  class="bx--tile stat-tile"
+  data-test="supplyVoltage"
+  data-observation="supplyVoltage"
+  data-unit=" V"
+  data-rounding="2"
+  >
+    <!-- Main row -->
+    <div class="bx--row">
+
+
+      <div class="bx--col">
+        <p class="label">Supply Voltage</p>
+        <!--prettier-ignore-->
+        <p class="value">
+<svg
+  width="32"
+  height="32"
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 32 32"
+>
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <title>battery--charging</title>
+  <path
+    d="M27,11H26V10a2,2,0,0,0-2-2H20v2h4v3h3v6H24v3H19v2h5a2,2,0,0,0,2-2V21h1a2,2,0,0,0,2-2V13A2,2,0,0,0,27,11Z"
+  />
+  <path d="M11,22H6V10h6V8H6a2,2,0,0,0-2,2V22a2,2,0,0,0,2,2h5Z" />
+  <polygon
+    points="14.81 23.58 13.19 22.42 17.06 17 9.37 17 16.22 8.38 17.78 9.62 13.51 15 20.94 15 14.81 23.58"
+  />
+  <rect
+    data-name="&lt;Transparent Rectangle&gt;"
+    class="cls-1"
+    width="32"
+    height="32"
+  />
+</svg>
+
+          <!--prettier-ignore-->
+          <span class="stat-title-obs-value">
+
+              <span class="raw">
+                  2.62 V
+              </span>
+
+
+            <!--prettier-ignore-->
+            <!--prettier-ignore-->
+            <!--prettier-ignore-->
+          </span>
+        </p>
+      </div>
+    </div>
+    <!-- /Main row -->
+
+    <!--prettier-ignore-->
+        <div class="bx--row">
+            <div class="bx--col value-max" data-test="max">
+              <p class="stat-label">
+                <!--prettier-ignore-->
+                <bx-tooltip-definition
+                  alignment="center"
+                  body-text="00:06"
+                  direction="top"
+                >
+                  Today's Max
+                </bx-tooltip-definition>
+                <!--prettier-ignore-->
+              </p>
+              <!--prettier-ignore-->
+              <p class="stat-value">
+                <span class="value" style="display: inline;">2.65 V</span>
+
+
+              </p>
+            </div>
+        </div>
+  </div>
+</div>
+
+
+          </div>
+
+          <!--prettier-ignore-->
+
+          <!--prettier-ignore-->
+          <div class="bx--row">
+<!--prettier-ignore-->
+
+<!--prettier-ignore-->
+<header class="bx--col section-header">
+    <h2>Last 7 days</h2>
+    <h3>
+      <!--prettier-ignore-->
+      02:25 on Sunday - 02:25 on Sunday
+    </h3>
+</header>
+          </div>
+
+          <!-- prettier-ignore -->
+          <div class="bx--row">
+            
+<!--prettier-ignore-->
+
+
+<div class="bx--col-sm-4 bx--col-md-8 bx--col-lg-12 bx--col-xlg-6 bx--col-max-6">
+  <div class="bx--tile diagram-tile" data-test="supplyVoltage">
+    <div class="bx--row">
+      <div class="bx--col">
+        <!--prettier-ignore-->
+        <p class="label">
+<svg
+  width="32"
+  height="32"
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 32 32"
+>
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <title>battery--charging</title>
+  <path
+    d="M27,11H26V10a2,2,0,0,0-2-2H20v2h4v3h3v6H24v3H19v2h5a2,2,0,0,0,2-2V21h1a2,2,0,0,0,2-2V13A2,2,0,0,0,27,11Z"
+  />
+  <path d="M11,22H6V10h6V8H6a2,2,0,0,0-2,2V22a2,2,0,0,0,2,2h5Z" />
+  <polygon
+    points="14.81 23.58 13.19 22.42 17.06 17 9.37 17 16.22 8.38 17.78 9.62 13.51 15 20.94 15 14.81 23.58"
+  />
+  <rect
+    data-name="&lt;Transparent Rectangle&gt;"
+    class="cls-1"
+    width="32"
+    height="32"
+  />
+</svg>
+          Supply Voltage
+        </p>
+        <div class="value">
+          <!--prettier-ignore-->
+
+          <!--TODO: Implement custom context logic from combined-diagram-tile template-->
+          <!--prettier-ignore-->
+
+          <script>
+            /* prettier-ignore */
+            var supplyVoltageSeries0 = [[1751189100, 1751192700, 2.61], [1751192700, 1751196300, 2.61], [1751196300, 1751199900, 2.61], [1751199900, 1751203500, 2.61], [1751203500, 1751207100, 2.6], [1751207100, 1751210700, 2.69], [1751210700, 1751214300, 2.78], [1751214300, 1751217900, 2.78], [1751217900, 1751221500, 2.78], [1751221500, 1751225100, 2.78], [1751225100, 1751228700, 2.77], [1751228700, 1751232300, 2.76], [1751232300, 1751235900, 2.78], [1751235900, 1751239500, 2.78], [1751239500, 1751243100, 2.78], [1751243100, 1751246700, 2.78], [1751246700, 1751250300, 2.76], [1751250300, 1751253900, 2.7], [1751253900, 1751257500, 2.66], [1751257500, 1751261100, 2.65], [1751261100, 1751264700, 2.64], [1751264700, 1751268300, 2.62], [1751268300, 1751271900, 2.62], [1751271900, 1751275500, 2.61], [1751275500, 1751279100, 2.61], [1751279100, 1751282700, 2.61], [1751282700, 1751286300, 2.6], [1751286300, 1751289900, 2.6], [1751289900, 1751293500, 2.6], [1751293500, 1751297100, 2.6], [1751297100, 1751300700, null], [1751300700, 1751304300, 2.78], [1751304300, 1751307900, 2.78], [1751307900, 1751311500, 2.78], [1751311500, 1751315100, 2.78], [1751315100, 1751318700, 2.77], [1751318700, 1751322300, 2.78], [1751322300, 1751325900, 2.78], [1751325900, 1751329500, 2.78], [1751329500, 1751333100, 2.78], [1751333100, 1751336700, 2.74], [1751336700, 1751340300, 2.68], [1751340300, 1751343900, 2.65], [1751343900, 1751347500, 2.65], [1751347500, 1751351100, null], [1751351100, 1751354700, 2.62], [1751354700, 1751358300, 2.62], [1751358300, 1751361900, 2.62], [1751361900, 1751365500, 2.61], [1751365500, 1751369100, 2.61], [1751369100, 1751372700, 2.61], [1751372700, 1751376300, 2.6], [1751376300, 1751379900, 2.6], [1751379900, 1751383500, 2.6], [1751383500, 1751387100, 2.6], [1751387100, 1751390700, null], [1751390700, 1751394300, null], [1751394300, 1751397900, 2.78], [1751397900, 1751401500, 2.77], [1751401500, 1751405100, 2.76], [1751405100, 1751408700, 2.78], [1751408700, 1751412300, 2.78], [1751412300, 1751415900, 2.78], [1751415900, 1751419500, 2.77], [1751419500, 1751423100, 2.78], [1751423100, 1751426700, 2.75], [1751426700, 1751430300, 2.67], [1751430300, 1751433900, 2.66], [1751433900, 1751437500, 2.65], [1751437500, 1751441100, null], [1751441100, 1751444700, null], [1751444700, 1751448300, null], [1751448300, 1751451900, null], [1751451900, 1751455500, 2.6], [1751455500, 1751459100, null], [1751459100, 1751462700, null], [1751462700, 1751466300, null], [1751466300, 1751469900, null], [1751469900, 1751473500, null], [1751473500, 1751477100, null], [1751477100, 1751480700, null], [1751480700, 1751484300, null], [1751484300, 1751487900, null], [1751487900, 1751491500, null], [1751491500, 1751495100, null], [1751495100, 1751498700, 2.78], [1751498700, 1751502300, 2.78], [1751502300, 1751505900, 2.73], [1751505900, 1751509500, 2.68], [1751509500, 1751513100, 2.66], [1751513100, 1751516700, 2.65], [1751516700, 1751520300, 2.64], [1751520300, 1751523900, 2.63], [1751523900, 1751527500, 2.62], [1751527500, 1751531100, 2.62], [1751531100, 1751534700, null], [1751534700, 1751538300, 2.61], [1751538300, 1751541900, 2.6], [1751541900, 1751545500, 2.6], [1751545500, 1751549100, 2.6], [1751549100, 1751552700, 2.6], [1751552700, 1751556300, 2.61], [1751556300, 1751559900, 2.63], [1751559900, 1751563500, 2.64], [1751563500, 1751567100, null], [1751567100, 1751570700, 2.78], [1751570700, 1751574300, 2.78], [1751574300, 1751577900, 2.78], [1751577900, 1751581500, 2.78], [1751581500, 1751585100, 2.78], [1751585100, 1751588700, 2.78], [1751588700, 1751592300, 2.78], [1751592300, 1751595900, 2.78], [1751595900, 1751599500, 2.74], [1751599500, 1751603100, 2.68], [1751603100, 1751606700, 2.66], [1751606700, 1751610300, 2.65], [1751610300, 1751613900, 2.63], [1751613900, 1751617500, null], [1751617500, 1751621100, null], [1751621100, 1751624700, 2.61], [1751624700, 1751628300, 2.61], [1751628300, 1751631900, 2.61], [1751631900, 1751635500, 2.6], [1751635500, 1751639100, 2.62], [1751639100, 1751642700, 2.73], [1751642700, 1751646300, 2.78], [1751646300, 1751649900, 2.78], [1751649900, 1751653500, 2.78], [1751653500, 1751657100, 2.78], [1751657100, 1751660700, 2.77], [1751660700, 1751664300, 2.75], [1751664300, 1751667900, 2.78], [1751667900, 1751671500, 2.78], [1751671500, 1751675100, 2.78], [1751675100, 1751678700, 2.78], [1751678700, 1751682300, 2.78], [1751682300, 1751685900, 2.77], [1751685900, 1751689500, 2.7], [1751689500, 1751693100, 2.67], [1751693100, 1751696700, 2.66], [1751696700, 1751700300, 2.64], [1751700300, 1751703900, 2.64], [1751703900, 1751707500, 2.63], [1751707500, 1751711100, 2.62], [1751711100, 1751714700, 2.62], [1751714700, 1751718300, null], [1751718300, 1751721900, null], [1751721900, 1751725500, 2.6], [1751725500, 1751729100, 2.6], [1751729100, 1751732700, 2.6], [1751732700, 1751736300, 2.63], [1751736300, 1751739900, 2.77], [1751739900, 1751743500, 2.78], [1751743500, 1751747100, 2.78], [1751747100, 1751750700, 2.77], [1751750700, 1751754300, 2.78], [1751754300, 1751757900, 2.78], [1751757900, 1751761500, 2.78], [1751761500, 1751765100, 2.78], [1751765100, 1751768700, 2.78], [1751768700, 1751772300, 2.77], [1751772300, 1751775900, 2.7], [1751775900, 1751779500, 2.67], [1751779500, 1751783100, 2.65], [1751783100, 1751786700, 2.63], [1751786700, 1751790300, 2.64], [1751790300, 1751793900, 2.63]];
+          </script>
+
+          <!--prettier-ignore-->
+          <div
+            class="diagram"
+            data-labels="['Supply Voltage']"
+            data-color="['#161616']"
+            data-value="supplyVoltageSeries0"
+            data-unit="[' V']"
+            data-observations="['supplyVoltage']"
+            data-combinedkeys="['supplyVoltage']"
+            data-diagram="['line']"
+            data-context="week"
+            data-aggregate-type="['avg']"
+            data-nivo-props="{'lineWidth': '2', 'pointSize': '2', 'isInteractive': 'True', 'enablePoints': 'True', 'enableCrosshair': 'True', 'yScaleOffset': '0.25', 'enableArea': 'False', 'areaOpacity': '0.07', 'curve': 'catmullRom', 'legendPosition': 'top left', 'aggregate_interval': '3600', 'bottom_date_time_format': '%m/%d', 'tooltip_date_time_format': '%x %X'}"
+          ></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+          </div>
+
+          <!-- prettier-ignore -->
+          <div class="bx--row">
+            <!-- prettier-ignore -->
+<!--prettier-ignore-->
+
+<div class="bx--col">
+  <div class="bx--tile data-table-tile">
+    <div class="bx--row">
+      <div class="bx--col">
+        <script>
+          /*prettier-ignore*/
+          var tableRows = [{'time': '2025-06-29T08:25:00', 'supplyVoltage': 2.62, 'id': 1751189100}, {'time': '2025-06-29T14:25:00', 'supplyVoltage': 2.78, 'id': 1751210700}, {'time': '2025-06-29T20:25:00', 'supplyVoltage': 2.76, 'id': 1751232300}, {'time': '2025-06-30T02:25:00', 'supplyVoltage': 2.63, 'id': 1751253900}, {'time': '2025-06-30T08:25:00', 'supplyVoltage': 2.6, 'id': 1751275500}, {'time': '2025-06-30T14:25:00', 'supplyVoltage': 2.78, 'id': 1751297100}, {'time': '2025-06-30T20:25:00', 'supplyVoltage': 2.76, 'id': 1751318700}, {'time': '2025-07-01T02:25:00', 'supplyVoltage': 2.63, 'id': 1751340300}, {'time': '2025-07-01T08:25:00', 'supplyVoltage': 2.61, 'id': 1751361900}, {'time': '2025-07-01T14:25:00', 'supplyVoltage': 2.75, 'id': 1751383500}, {'time': '2025-07-01T20:25:00', 'supplyVoltage': 2.77, 'id': 1751405100}, {'time': '2025-07-02T02:25:00', 'supplyVoltage': 2.66, 'id': 1751426700}, {'time': '2025-07-02T08:25:00', 'supplyVoltage': 2.6, 'id': 1751448300}, {'time': '2025-07-02T14:25:00', 'supplyVoltage': '-', 'id': 1751469900}, {'time': '2025-07-02T20:25:00', 'supplyVoltage': 2.7, 'id': 1751491500}, {'time': '2025-07-03T02:25:00', 'supplyVoltage': 2.63, 'id': 1751513100}, {'time': '2025-07-03T08:25:00', 'supplyVoltage': 2.6, 'id': 1751534700}, {'time': '2025-07-03T14:25:00', 'supplyVoltage': 2.72, 'id': 1751556300}, {'time': '2025-07-03T20:25:00', 'supplyVoltage': 2.77, 'id': 1751577900}, {'time': '2025-07-04T02:25:00', 'supplyVoltage': 2.67, 'id': 1751599500}, {'time': '2025-07-04T08:25:00', 'supplyVoltage': 2.65, 'id': 1751621100}, {'time': '2025-07-04T14:25:00', 'supplyVoltage': 2.77, 'id': 1751642700}, {'time': '2025-07-04T20:25:00', 'supplyVoltage': 2.78, 'id': 1751664300}, {'time': '2025-07-05T02:25:00', 'supplyVoltage': 2.66, 'id': 1751685900}, {'time': '2025-07-05T08:25:00', 'supplyVoltage': 2.61, 'id': 1751707500}, {'time': '2025-07-05T14:25:00', 'supplyVoltage': 2.72, 'id': 1751729100}, {'time': '2025-07-05T20:25:00', 'supplyVoltage': 2.78, 'id': 1751750700}, {'time': '2025-07-06T02:25:00', 'supplyVoltage': 2.65, 'id': 1751772300}];
+          var tableHeaders = [{"title": "Time", "id": "time", "sortCycle": "tri-states-from-ascending"}, {"title": "Supply Voltage", "small": "in  V", "id": "supplyVoltage", "sortCycle": "tri-states-from-ascending"}];
+
+          var tableTitle = 'All data';
+          var context = "week";
+        </script>
+        <div class="table"></div>
+      </div>
+    </div>
+  </div>
+</div>
+          </div>
+          <!--prettier-ignore-->
+        </div>
+      </section>
+    </main>
+<!--prettier-ignore-->
+
+<div id="footer">
+  <div class="bx--grid bx--grid--full-width">
+    <div class="bx--row">
+      <div class="bx--col-sm-12 bx--col-lg-6">
+        <p>
+          WeeWX uptime: 43 days, 15 hours, 49 minutes<br />
+          Server uptime: 44 days, 21 hours, 44 minutes<br />
+          WeeWX version: 5.1.0 with
+          Weatherflow Tempest Websocket<br />
+          Skin: Weather Data Center 3.5.0
+        </p>
+      </div>
+      <div class="bx--col-sm-12 bx--col-lg-6">
+        <p>
+          Altitude: 13 feet<br />
+          Latitude: 37&deg; 51.54'
+          N<br />
+          Longitude: 122&deg;
+          18.96' W
+        </p>
+      </div>
+    </div>
+    <!--prettier-ignore-->
+    <div class="bx--row">
+      <div class="bx--col">
+        <!--prettier-ignore-->
+        <p class="footnote">
+          This station is controlled by <a target='_blank' href='https://weewx.com'>WeeWX</a>, an experimental weather software system written in Python.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <script src="/dist/main.js" defer></script>
+  </body>
+</html>

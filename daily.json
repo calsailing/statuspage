@@ -1,0 +1,63 @@
+{
+  "title":"Current Values",
+  "location":"Cal Sailing Club",
+  "time":"06-Jul-2025 02:25",
+  "lat":"37&#176; 51.54' N",
+  "lon":"122&#176; 18.96' W",
+  "alt":"13 feet",
+  "hardware":"Weatherflow Tempest Websocket",
+  "uptime":"3772184 seconds",
+  "serverUptime":"3879879 seconds",
+  "weewxVersion":"5.1.0",
+  "stats": {
+    "current": {
+      "outTemp":"54&#176;F",
+      "windchill":"54&#176;F",
+      "heatIndex":"54&#176;F",
+      "dewpoint":"53&#176;F",
+      "humidity":"97%",
+      "insideHumidity":"   N/A",
+      "barometer":"1015.0 mbar",
+      "barometerTrendDelta":"3 hours",
+      "barometerTrendData":"-1.1 mbar",
+      "windSpeed":"13 knots",
+      "windDir":"183&#176;",
+      "windDirText":"S",
+      "windGust":"15 knots",
+      "windGustDir":"184&#176;",
+      "rainRate":"0.00 in/h",
+      "UV":"0.0",
+      "ET":"0.00 in",
+      "solarRadiation":"0 W/m&#178;",
+      "insideTemp":"   N/A"
+    },
+  },
+  "almanac":{
+    "sun":{
+      "startCivilTwilight":"05:21",
+      "sunrise":"05:53",
+      "transit":"13:14",
+      "sunset":"20:34",
+      "endCivilTwilight":"21:06",
+      "azimuth":"18.4&#176;",
+      "altitude":"-27.2&#176;",
+      "rightAscension":"105.8&#176;",
+      "declination":"22.6&#176;",
+      "equinox":"22-Sep-2025 11:19",
+      "solstice":"21-Dec-2025 07:02"
+    },
+    "moon":{
+      "rise":"17:25",
+      "transit":"22:09",
+      "set":"02:13",
+      "azimuth":"242.0&#176;",
+      "altitude":"-1.7&#176;",
+      "rightAscension":"229.3&#176;",
+      "declination":"-23.6&#176;",
+      "fullMoon":"10-Jul-2025 13:36",
+      "newMoon":"24-Jul-2025 12:11",
+      "phase":"Waxing gibbous",
+      "fullness":"82%"
+    }
+  }
+}

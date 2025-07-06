@@ -1,0 +1,93 @@
+{
+    "station":
+    {
+        "location": "Cal Sailing Club",
+        "latitude": 37.859015,
+        "longitude": -122.315981,
+        "altitude (meters)": 4.0,
+        "link": "https://status.cal-sailing.org"
+    },
+    "generation":
+    {
+        "time": "2025-07-06T02:25:00-0700",
+        "generator": "weewx 5.1.0"
+    },
+    "current":
+    {
+        "temperature": {"value": 54.32, "units": "°F"},
+        "dewpoint": {"value": 53.48614259550633, "units": "°F"},
+        "humidity": {"value": 97.0, "units": "%"},
+        "heat index": {"value": 54.010999999999996, "units": "°F"},
+        "barometer": {"value": 1015.0107644008004, "units": "mbar"},
+        "wind speed": {"value": 12.53320557174169, "units": "knots"},
+        "wind gust": {"value": 15.162024727751751, "units": "knots"},
+        "wind direction": {"value": 182.98876623504395, "units": "°"},
+        "wind chill": {"value": 54.32, "units": "°F"},
+        "rain rate": {"value": 0.0, "units": "in/h"},
+        "void_end": null
+    },
+    "day":
+    {
+        "max temperature": {"value": 55.220000000000006, "units": "°F", "at": "00:15"},
+        "min temperature": {"value": 54.14, "units": "°F", "at": "01:40"},
+        "max dewpoint": {"value": 53.811956912504485, "units": "°F", "at": "00:09"},
+        "min dewpoint": {"value": 53.024044496788136, "units": "°F", "at": "01:51"},
+        "max humidity": {"value": 98.0, "units": "%", "at": "02:17"},
+        "min humidity": {"value": 94.0, "units": "%", "at": "00:04"},
+        "max barometer": {"value": 1015.8855031010906, "units": "mbar", "at": "00:00"},
+        "min barometer": {"value": 1014.8857045495891, "units": "mbar", "at": "02:15"},
+        "max wind speed": {"value": 12.594729911379059, "units": "knots", "at": "02:00"},
+        "max wind gust": {"value": 17.10587405182249, "units": "knots", "at": "01:59"},
+        "max rain rate": {"value": 0.0, "units": "in/h", "at": "00:00"},
+        "rain total": {"value": 0.0, "units": "in"},
+        "void_end": null
+    },
+    "week":
+    {
+        "max temperature": {"value": 55.220000000000006, "units": "°F", "at": "00:15 on Sunday"},
+        "min temperature": {"value": 54.14, "units": "°F", "at": "01:40 on Sunday"},
+        "max dewpoint": {"value": 53.811956912504485, "units": "°F", "at": "00:09 on Sunday"},
+        "min dewpoint": {"value": 53.024044496788136, "units": "°F", "at": "01:51 on Sunday"},
+        "max humidity": {"value": 98.0, "units": "%", "at": "02:17 on Sunday"},
+        "min humidity": {"value": 94.0, "units": "%", "at": "00:04 on Sunday"},
+        "max barometer": {"value": 1015.8855031010906, "units": "mbar", "at": "00:00 on Sunday"},
+        "min barometer": {"value": 1014.8857045495891, "units": "mbar", "at": "02:15 on Sunday"},
+        "max wind speed": {"value": 12.594729911379059, "units": "knots", "at": "02:00 on Sunday"},
+        "max wind gust": {"value": 17.10587405182249, "units": "knots", "at": "01:59 on Sunday"},
+        "max rain rate": {"value": 0.0, "units": "in/h", "at": "00:00 on Sunday"},
+        "rain total": {"value": 0.0, "units": "in"},
+        "void_end": null
+    },
+    "month":
+    {
+        "max temperature": {"value": 59.36, "units": "°F", "at": "04-Jul-2025 12:56"},
+        "min temperature": {"value": 52.879999999999995, "units": "°F", "at": "01-Jul-2025 20:55"},
+        "max dewpoint": {"value": 56.620235446005424, "units": "°F", "at": "01-Jul-2025 19:39"},
+        "min dewpoint": {"value": 52.450665675993896, "units": "°F", "at": "05-Jul-2025 10:35"},
+        "max humidity": {"value": 100.0, "units": "%", "at": "01-Jul-2025 08:58"},
+        "min humidity": {"value": 83.0, "units": "%", "at": "04-Jul-2025 12:46"},
+        "max barometer": {"value": 1018.1866028225134, "units": "mbar", "at": "05-Jul-2025 11:11"},
+        "min barometer": {"value": 1005.9814431433479, "units": "mbar", "at": "01-Jul-2025 07:04"},
+        "max wind speed": {"value": 23.407286852837416, "units": "knots", "at": "01-Jul-2025 17:00"},
+        "max wind gust": {"value": 31.101589185131793, "units": "knots", "at": "03-Jul-2025 13:55"},
+        "max rain rate": {"value": 0.0, "units": "in/h", "at": "01-Jul-2025 00:00"},
+        "rain total": {"value": 0.0, "units": "in"},
+        "void_end": null
+    },
+    "year":
+    {
+        "max temperature": {"value": 81.32, "units": "°F", "at": "24-Mar-2025 17:41"},
+        "min temperature": {"value": 39.92, "units": "°F", "at": "10-Feb-2025 04:59"},
+        "max dewpoint": {"value": 60.97257841816745, "units": "°F", "at": "25-Mar-2025 13:55"},
+        "min dewpoint": {"value": -37.10992278637549, "units": "°F", "at": "05-May-2025 06:30"},
+        "max humidity": {"value": 100.0, "units": "%", "at": "06-Jan-2025 00:35"},
+        "min humidity": {"value": 0.0, "units": "%", "at": "05-May-2025 05:19"},
+        "max barometer": {"value": 1032.4003938187852, "units": "mbar", "at": "21-Jan-2025 10:38"},
+        "min barometer": {"value": 857.9128933963033, "units": "mbar", "at": "25-Jan-2025 18:53"},
+        "max wind speed": {"value": 49.20281707627316, "units": "knots", "at": "04-Feb-2025 13:00"},
+        "max wind gust": {"value": 35.961212495308644, "units": "knots", "at": "13-Feb-2025 00:30"},
+        "max rain rate": {"value": 7.233348713910762, "units": "in/h", "at": "13-Feb-2025 12:27"},
+        "rain total": {"value": 139.8587649081366, "units": "in"},
+        "void_end": null
+    }
+}

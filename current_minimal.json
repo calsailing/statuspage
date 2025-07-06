@@ -1,0 +1,26 @@
+{
+    "station":
+    {
+        "location": "Cal Sailing Club",
+        "latitude": 37.859015,
+        "longitude": -122.315981,
+        "altitude (meters)": 4.0,
+        "link": "https://status.cal-sailing.org"
+    },
+    "generation":
+    {
+        "time": "2025-07-06T02:25:00-0700",
+        "generator": "weewx 5.1.0"
+    },
+    "current":
+    {
+        "temperature": {"value": 54.32, "units": "°F"},
+        "humidity": {"value": 97.0, "units": "%"},
+        "barometer": {"value": 1015.0107644008004, "units": "mbar"},
+        "wind speed": {"value": 12.53320557174169, "units": "knots"},
+        "wind gust": {"value": 15.162024727751751, "units": "knots"},
+        "wind direction": {"value": 182.98876623504395, "units": "°"},
+        "rain rate": {"value": 0.0, "units": "in/h"},
+        "void_end": null
+    }
+}
