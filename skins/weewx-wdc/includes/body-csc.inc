@@ -332,7 +332,7 @@ $render_gauges($DisplayOptions['Gauges'][$context])
 	<div class="bx--tile tile-radar-forecast">
 <h5><strong><a href="https://tidesandcurrents.noaa.gov/noaatidepredictions.html?id=9414816">Today's Tides</a></strong></h5>
                  
-		<img id="cscimage1" src="https://www.cal-sailing.org/components/com_cscupload/assets/uploads/wind_0.svg" />
+		<img id="cscimage1" src="https://www.cal-sailing.org/images/uploads/wind_0.svg" />
  		<script>document.getElementById("cscimage1").src=document.getElementById("cscimage1").src + "?" + Math.random()* 100000000000000000000;</script>
 
 <style>

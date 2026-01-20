@@ -125,7 +125,7 @@
 
 	<h3>Tides</h3>
                  
-		<img id="cscimage1" src="https://www.cal-sailing.org/components/com_cscupload/assets/uploads/wind_0.svg" />
+		<img id="cscimage1" src="https://www.cal-sailing.org/images/uploads/wind_0.svg" />
  		<script>document.getElementById("cscimage1").src=document.getElementById("cscimage1").src + "?" + Math.random()* 100000000000000000000;</script>
                   <p class="bx--type-caption-01" style="margin-top: 0.25rem;">Tides in the South Sailing Basin</p>
 
