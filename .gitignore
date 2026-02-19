@@ -1,0 +1,5 @@
+# weewx main config and upgrade backups - contain credentials, never commit
+/weewx.conf
+/weewx.conf-*
+/weewx.conf.*
+!/weewx.conf.example
