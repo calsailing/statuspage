@@ -341,7 +341,7 @@ font-size:1.75rem!important;
         
        <style>
         
-          .tide-widget-wrapper {
+        .tide-widget-wrapper {
             margin: 0 auto;
             padding: 20px 0;
             min-height: 100vh;
@@ -551,13 +551,17 @@ font-size:1.75rem!important;
 
         #tide-chart-widget-container .aspect-wrapper { padding-top: 60%; position: relative; width: 100%; }
         @media (min-width: 640px) { #tide-chart-widget-container .aspect-wrapper { padding-top: 50%; } }
+        
         #tide-chart-widget-container #chart-container { 
             position: absolute; 
             top: 0; 
             left: 0; 
             width: 100%; 
             height: 100%; 
-            touch-action: none; /* Fallback to prevent iOS Safari scrolling over the SVG */
+            touch-action: none; /* Prevents iOS Safari scrolling over the SVG */
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
         }
 
         #tide-chart-widget-container #legend {
@@ -609,7 +613,7 @@ font-size:1.75rem!important;
             position: absolute;
             pointer-events: none;
             opacity: 0;
-            transition: opacity 0.2s, left 0.1s linear, top 0.1s linear;
+            transition: opacity 0.1s linear; /* Quick snap transition */
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             font-family: 'Inter', sans-serif;
@@ -710,7 +714,7 @@ font-size:1.75rem!important;
 
     <script>
         /* #raw */
-          document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', () => {
         // --- CONSTANTS & STATE ---
         const DANGEROUS_LOW_TIDE = 1.5;
         const NOAA_STATION_ID = "9414816";
@@ -1192,21 +1196,12 @@ font-size:1.75rem!important;
             
             function handleInteractionMove(event, force = false) {
                 if (interactionState.locked && !force) return;
-                
-                // 1. Extract proper coordinates for mobile vs desktop natively
-                const isTouch = event.type && event.type.startsWith('touch');
-                let pointerObj = event;
-                if (isTouch && event.touches && event.touches.length > 0) {
-                    pointerObj = event.touches[0];
-                } else if (isTouch && event.changedTouches && event.changedTouches.length > 0) {
-                    pointerObj = event.changedTouches[0];
-                }
 
                 hoverGroup.style("display", null);
                 tooltip.style("opacity", 1);
                 
-                // 2. Use isolated pointerObject for bulletproof D3 positioning
-                const [mx] = d3.pointer(pointerObj, this); 
+                // Natively handle D3 pointer which correctly extracts touch coordinates relative to the rect
+                const [mx] = d3.pointer(event, this); 
                 const time = xScale.invert(mx);
                 
                 const d = getNearestDataPoint(chartData, time);
@@ -1215,40 +1210,52 @@ font-size:1.75rem!important;
                 hoverGroup.attr("transform", `translate(${xScale(d.time)}, 0)`);
                 hoverCircle.attr("cy", yScale(d.height));
                 
+                // Extract exact screen coordinates of the touch or mouse
+                let pageX = 0;
+                let pageY = 0;
+                if (event.type.includes('touch')) {
+                    const touch = event.touches[0] || event.changedTouches[0];
+                    if (touch) {
+                        pageX = touch.pageX;
+                        pageY = touch.pageY;
+                    }
+                } else {
+                    pageX = event.pageX;
+                    pageY = event.pageY;
+                }
+
                 const tooltipRect = tooltip.node().getBoundingClientRect();
                 
-                // 3. Determine if this is a touch-capable device to ensure tap-to-lock events 
-                // still receive the mobile finger offset.
-                const isTouchDevice = isTouch || ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
-                
-                let leftPos = pointerObj.pageX + 15;
-                let topPos = pointerObj.pageY - 15;
-                
-                if (isTouchDevice) {
-                    // Mobile Touch Positioning: center horizontally, substantially higher vertically
-                    leftPos = pointerObj.pageX - (tooltipRect.width / 2);
-                    topPos = pointerObj.pageY - tooltipRect.height - 50; 
-                }
+                // Position tooltip AT the location of the finger/cursor (slightly above to remain visible)
+                let leftPos = pageX - (tooltipRect.width / 2);
+                let topPos = pageY - tooltipRect.height - 15;
                 
                 // Prevent horizontal spill offscreen
                 if (leftPos < 10) leftPos = 10;
-                if (leftPos + tooltipRect.width > window.innerWidth - 10) leftPos = window.innerWidth - tooltipRect.width - 10;
+                if (leftPos + tooltipRect.width > window.innerWidth - 10) {
+                    leftPos = window.innerWidth - tooltipRect.width - 10;
+                }
                 
-                // Prevent vertical spill offscreen (top & bottom)
-                if (topPos < 10) topPos = 10; 
-                if (topPos + tooltipRect.height > window.innerHeight - 10) topPos = window.innerHeight - tooltipRect.height - 10;
+                // Prevent vertical spill offscreen (if it goes too high, flip it below the finger)
+                if (topPos < window.scrollY + 10) {
+                    topPos = pageY + 25; 
+                }
                 
                 tooltip.style("left", `${leftPos}px`).style("top", `${topPos}px`);
                 tooltip.select("#tooltip-time").text(`Time: ${formatTime(d.time)}`);
                 tooltip.select("#tooltip-height").text(`${d.height.toFixed(2)} ft`);
             }
             
-            svg.append("rect")
+            // Draw the invisible overlay for interaction
+            const overlayRect = svg.append("rect")
                 .attr("width", width)
                 .attr("height", height)
                 .attr("fill", "none")
                 .attr("pointer-events", "all")
-                // Desktop Mouse events
+                .style("cursor", "crosshair");
+
+            // Desktop Mouse events via D3
+            overlayRect
                 .on("mouseover", function(e) { 
                     if (interactionState.locked) return;
                     hoverGroup.style("display", null); 
@@ -1261,7 +1268,6 @@ font-size:1.75rem!important;
                     tooltip.style("opacity", 0); 
                 })
                 .on("click", function(e) {
-                    // Desktop tap-to-lock
                     e.preventDefault();
                     interactionState.locked = !interactionState.locked;
                     if (interactionState.locked) {
@@ -1270,44 +1276,54 @@ font-size:1.75rem!important;
                         hoverGroup.style("display", "none");
                         tooltip.style("opacity", 0);
                     }
-                })
-                // Bulletproof Mobile Touch Events
-                .on("touchstart", function(e) { 
-                    e.preventDefault(); // Prevents iOS Safari from emulating clicks/scrolls
-                    interactionState.moved = false;
-                    if (interactionState.locked) return;
-                    handleInteractionMove.call(this, e); 
-                }) 
-                .on("touchmove", function(e) { 
-                    e.preventDefault(); // Prevents iOS Safari from capturing scroll gestures
-                    interactionState.moved = true;
-                    if (interactionState.locked) return;
-                    handleInteractionMove.call(this, e); 
-                }) 
-                .on("touchend", function(e) { 
-                    e.preventDefault();
-                    if (!interactionState.moved) {
-                        // This was a tap. Manually toggle lock state instead of relying on broken 'click'
-                        interactionState.locked = !interactionState.locked;
-                        if (interactionState.locked) {
-                            handleInteractionMove.call(this, e, true);
-                        } else {
-                            hoverGroup.style("display", "none");
-                            tooltip.style("opacity", 0);
-                        }
-                    } else {
-                        // This was a drag. Hide normally.
-                        if (!interactionState.locked) {
-                            hoverGroup.style("display", "none"); 
-                            tooltip.style("opacity", 0);
-                        }
-                    }
-                })
-                .on("touchcancel", function(e) { 
-                    if (interactionState.locked) return;
-                    hoverGroup.style("display", "none"); 
-                    tooltip.style("opacity", 0);
                 });
+
+            // Bulletproof Mobile Touch Events mapped natively 
+            // Using native addEventListener guarantees { passive: false } works on all iOS/Android browsers
+            const rectNode = overlayRect.node();
+
+            rectNode.addEventListener("touchstart", function(e) { 
+                e.preventDefault(); // Stop iOS Safari native gestures
+                interactionState.moved = false;
+                if (interactionState.locked) return;
+                
+                hoverGroup.style("display", null);
+                tooltip.style("opacity", 1);
+                handleInteractionMove.call(this, e); 
+            }, { passive: false });
+
+            rectNode.addEventListener("touchmove", function(e) { 
+                e.preventDefault(); // Stop iOS scroll
+                interactionState.moved = true;
+                if (interactionState.locked) return;
+                handleInteractionMove.call(this, e); 
+            }, { passive: false });
+
+            rectNode.addEventListener("touchend", function(e) { 
+                e.preventDefault();
+                if (!interactionState.moved) {
+                    // Tap logic
+                    interactionState.locked = !interactionState.locked;
+                    if (interactionState.locked) {
+                        handleInteractionMove.call(this, e, true);
+                    } else {
+                        hoverGroup.style("display", "none");
+                        tooltip.style("opacity", 0);
+                    }
+                } else {
+                    // Drag ended
+                    if (!interactionState.locked) {
+                        hoverGroup.style("display", "none"); 
+                        tooltip.style("opacity", 0);
+                    }
+                }
+            }, { passive: false });
+
+            rectNode.addEventListener("touchcancel", function(e) { 
+                if (interactionState.locked) return;
+                hoverGroup.style("display", "none"); 
+                tooltip.style("opacity", 0);
+            }, { passive: false });
             
             // Build events table
             tideEvents.forEach(event => {
