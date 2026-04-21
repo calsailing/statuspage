@@ -341,8 +341,8 @@ font-size:1.75rem!important;
        <style>
         
         .tide-widget-wrapper {
-            margin: 0;
-            padding: 0;
+            margin: 0!important;
+            padding: 0!important;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
