@@ -702,7 +702,7 @@ font-size:1.75rem!important;
 
     <script>
         /* #raw */
-     document.addEventListener('DOMContentLoaded', () => {
+       document.addEventListener('DOMContentLoaded', () => {
         // --- CONSTANTS & STATE ---
         const DANGEROUS_LOW_TIDE = 1.5;
         const NOAA_STATION_ID = "9414816";
@@ -960,7 +960,7 @@ font-size:1.75rem!important;
             const chartData = currentTides;
             chartDataForUpdate = chartData;
             
-            // QA Fix: Native Date boundary definitions prevent timezone/DST rounding glitches in d3.timeDay
+            // Native Date boundary definitions prevent timezone/DST rounding glitches in d3.timeDay
             const startOfDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 0, 0, 0);
             const endOfDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1, 0, 0, 0);
             
@@ -1209,10 +1209,14 @@ font-size:1.75rem!important;
                     pointerObj = event.changedTouches[0];
                 }
                 
+                // Determine if this is a touch-capable device to ensure tap-to-lock events 
+                // still receive the mobile finger offset, even though they fire as 'click' events.
+                const isTouchDevice = isTouch || ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+                
                 let leftPos = pointerObj.pageX + 15;
                 let topPos = pointerObj.pageY - 15;
                 
-                if (isTouch) {
+                if (isTouchDevice) {
                     // Mobile Touch Positioning: center horizontally, substantially higher vertically
                     leftPos = pointerObj.pageX - (tooltipRect.width / 2);
                     topPos = pointerObj.pageY - tooltipRect.height - 50; 
@@ -1236,7 +1240,6 @@ font-size:1.75rem!important;
                 .attr("height", height)
                 .attr("fill", "none")
                 .attr("pointer-events", "all")
-                .style("touch-action", "none") // Prevents native page scrolling when scrubbing the chart on mobile
                 // Desktop Mouse events
                 .on("mouseover", (e) => { 
                     if (interactionState.locked) return;
@@ -1265,12 +1268,13 @@ font-size:1.75rem!important;
                     interactionState.moved = false;
                     if (interactionState.locked) return;
                     handleInteractionMove.call(this, e); 
-                }, { passive: true })
+                }) // Removed { passive: true } to allow manual prevention if needed
                 .on("touchmove", function(e) { 
+                    e.preventDefault(); // Explicitly intercept scroll behavior if CSS fails
                     interactionState.moved = true;
                     if (interactionState.locked) return;
                     handleInteractionMove.call(this, e); 
-                }, { passive: true })
+                }) 
                 .on("touchend", function(e) { 
                     if (!interactionState.moved) {
                         // This was a tap. It will trigger "click" sequentially to handle locking.
@@ -1281,12 +1285,12 @@ font-size:1.75rem!important;
                             tooltip.style("opacity", 0);
                         }
                     }
-                }, { passive: true })
+                })
                 .on("touchcancel", () => { 
                     if (interactionState.locked) return;
                     hoverGroup.style("display", "none"); 
                     tooltip.style("opacity", 0);
-                }, { passive: true });
+                });
             
             // Build events table
             tideEvents.forEach(event => {
