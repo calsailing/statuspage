@@ -341,9 +341,9 @@ font-size:1.75rem!important;
         
        <style>
         
-        .tide-widget-wrapper {
-            margin: 0!important;
-            padding: 0!important;
+          .tide-widget-wrapper {
+            margin: 0 auto;
+            padding: 20px 0;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -551,7 +551,14 @@ font-size:1.75rem!important;
 
         #tide-chart-widget-container .aspect-wrapper { padding-top: 60%; position: relative; width: 100%; }
         @media (min-width: 640px) { #tide-chart-widget-container .aspect-wrapper { padding-top: 50%; } }
-        #tide-chart-widget-container #chart-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        #tide-chart-widget-container #chart-container { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            touch-action: none; /* Fallback to prevent iOS Safari scrolling over the SVG */
+        }
 
         #tide-chart-widget-container #legend {
             display: flex;
