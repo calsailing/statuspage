@@ -1470,7 +1470,7 @@ font-size:1.75rem!important;
     });
         /* #end raw */
     </script>
-                  </div>  </div><br/><br/>
+                  <br/><br/>
 
 
 
