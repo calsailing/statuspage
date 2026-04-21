@@ -658,6 +658,7 @@ font-size:1.75rem!important;
         }
     </style>
 
+<div class="tide-widget-wrapper">
 <div id="tide-chart-widget-container">
         <div class="widget-header">
             <button id="prev-day" class="nav-button" aria-label="Previous Day">
@@ -1470,7 +1471,7 @@ font-size:1.75rem!important;
     });
         /* #end raw */
     </script>
-                  <br/><br/>
+                </div>  <br/><br/>
 
 
 
