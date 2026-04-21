@@ -702,7 +702,7 @@ font-size:1.75rem!important;
 
     <script>
         /* #raw */
-       document.addEventListener('DOMContentLoaded', () => {
+          document.addEventListener('DOMContentLoaded', () => {
         // --- CONSTANTS & STATE ---
         const DANGEROUS_LOW_TIDE = 1.5;
         const NOAA_STATION_ID = "9414816";
@@ -1185,11 +1185,20 @@ font-size:1.75rem!important;
             function handleInteractionMove(event, force = false) {
                 if (interactionState.locked && !force) return;
                 
+                // 1. Extract proper coordinates for mobile vs desktop natively
+                const isTouch = event.type && event.type.startsWith('touch');
+                let pointerObj = event;
+                if (isTouch && event.touches && event.touches.length > 0) {
+                    pointerObj = event.touches[0];
+                } else if (isTouch && event.changedTouches && event.changedTouches.length > 0) {
+                    pointerObj = event.changedTouches[0];
+                }
+
                 hoverGroup.style("display", null);
                 tooltip.style("opacity", 1);
                 
-                // D3 pointer natively handles Touch Events
-                const [mx] = d3.pointer(event, this); 
+                // 2. Use isolated pointerObject for bulletproof D3 positioning
+                const [mx] = d3.pointer(pointerObj, this); 
                 const time = xScale.invert(mx);
                 
                 const d = getNearestDataPoint(chartData, time);
@@ -1200,17 +1209,8 @@ font-size:1.75rem!important;
                 
                 const tooltipRect = tooltip.node().getBoundingClientRect();
                 
-                // Extract proper coordinates for mobile vs desktop
-                const isTouch = event.type && event.type.startsWith('touch');
-                let pointerObj = event;
-                if (isTouch && event.touches && event.touches.length > 0) {
-                    pointerObj = event.touches[0];
-                } else if (isTouch && event.changedTouches && event.changedTouches.length > 0) {
-                    pointerObj = event.changedTouches[0];
-                }
-                
-                // Determine if this is a touch-capable device to ensure tap-to-lock events 
-                // still receive the mobile finger offset, even though they fire as 'click' events.
+                // 3. Determine if this is a touch-capable device to ensure tap-to-lock events 
+                // still receive the mobile finger offset.
                 const isTouchDevice = isTouch || ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
                 
                 let leftPos = pointerObj.pageX + 15;
@@ -1241,19 +1241,19 @@ font-size:1.75rem!important;
                 .attr("fill", "none")
                 .attr("pointer-events", "all")
                 // Desktop Mouse events
-                .on("mouseover", (e) => { 
+                .on("mouseover", function(e) { 
                     if (interactionState.locked) return;
                     hoverGroup.style("display", null); 
                     tooltip.style("opacity", 1); 
                 })
                 .on("mousemove", function(e) { handleInteractionMove.call(this, e); })
-                .on("mouseout", () => { 
+                .on("mouseout", function(e) { 
                     if (interactionState.locked) return;
                     hoverGroup.style("display", "none"); 
                     tooltip.style("opacity", 0); 
                 })
-                // Click (Tap) allows locking the tooltip in place
                 .on("click", function(e) {
+                    // Desktop tap-to-lock
                     e.preventDefault();
                     interactionState.locked = !interactionState.locked;
                     if (interactionState.locked) {
@@ -1263,21 +1263,30 @@ font-size:1.75rem!important;
                         tooltip.style("opacity", 0);
                     }
                 })
-                // Mobile Touch events
+                // Bulletproof Mobile Touch Events
                 .on("touchstart", function(e) { 
+                    e.preventDefault(); // Prevents iOS Safari from emulating clicks/scrolls
                     interactionState.moved = false;
                     if (interactionState.locked) return;
                     handleInteractionMove.call(this, e); 
-                }) // Removed { passive: true } to allow manual prevention if needed
+                }) 
                 .on("touchmove", function(e) { 
-                    e.preventDefault(); // Explicitly intercept scroll behavior if CSS fails
+                    e.preventDefault(); // Prevents iOS Safari from capturing scroll gestures
                     interactionState.moved = true;
                     if (interactionState.locked) return;
                     handleInteractionMove.call(this, e); 
                 }) 
                 .on("touchend", function(e) { 
+                    e.preventDefault();
                     if (!interactionState.moved) {
-                        // This was a tap. It will trigger "click" sequentially to handle locking.
+                        // This was a tap. Manually toggle lock state instead of relying on broken 'click'
+                        interactionState.locked = !interactionState.locked;
+                        if (interactionState.locked) {
+                            handleInteractionMove.call(this, e, true);
+                        } else {
+                            hoverGroup.style("display", "none");
+                            tooltip.style("opacity", 0);
+                        }
                     } else {
                         // This was a drag. Hide normally.
                         if (!interactionState.locked) {
@@ -1286,7 +1295,7 @@ font-size:1.75rem!important;
                         }
                     }
                 })
-                .on("touchcancel", () => { 
+                .on("touchcancel", function(e) { 
                     if (interactionState.locked) return;
                     hoverGroup.style("display", "none"); 
                     tooltip.style("opacity", 0);
