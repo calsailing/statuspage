@@ -338,7 +338,7 @@ font-size:1.75rem!important;
 
            <script src="https://d3js.org/d3.v7.min.js"></script>
         
-    <style>
+       <style>
         /* --- SCOPED CSS RESET & BASE --- */
         body {
             margin: 0;
@@ -636,7 +636,12 @@ font-size:1.75rem!important;
         #tide-chart-widget-container .axis path,
         #tide-chart-widget-container .axis line { stroke: var(--color-axis-stroke); }
         #tide-chart-widget-container .axis text { fill: var(--color-text-tertiary); font-size: 0.75rem; font-family: 'Inter', sans-serif;}
-        #tide-chart-widget-container .event-label { font-size: 0.7rem; fill: var(--color-text-primary); font-family: 'Inter', sans-serif; }
+        
+        #tide-chart-widget-container .event-label { font-size: 0.65rem; fill: var(--color-text-primary); font-family: 'Inter', sans-serif; }
+        @media (max-width: 639px) {
+            #tide-chart-widget-container .event-label { font-size: 0.55rem; }
+        }
+        
         #tide-chart-widget-container #chart-container svg { display: block; width: 100%; height: 100%; }
         
         /* Loading Animation */
@@ -652,13 +657,8 @@ font-size:1.75rem!important;
             50% { transform: scaleY(2.5); }
         }
     </style>
-</head>
-<body>
 
-<div class="tide-widget-wrapper">
-    <h2 class="widget-title">Club Tides &amp; Hours</h2>
-
-    <div id="tide-chart-widget-container">
+<div id="tide-chart-widget-container">
         <div class="widget-header">
             <button id="prev-day" class="nav-button" aria-label="Previous Day">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -707,7 +707,7 @@ font-size:1.75rem!important;
 
     <script>
         /* #raw */
-   document.addEventListener('DOMContentLoaded', () => {
+     document.addEventListener('DOMContentLoaded', () => {
         // --- CONSTANTS & STATE ---
         const DANGEROUS_LOW_TIDE = 1.5;
         const NOAA_STATION_ID = "9414816";
@@ -1125,45 +1125,26 @@ font-size:1.75rem!important;
             const eventsGroup = svg.selectAll(".event").data(tideEvents).enter().append("g").attr("class", "event").attr("transform", d => `translate(${xScale(d.time)},${yScale(d.height)})`);
             eventsGroup.append("circle").attr("r", 5).attr("fill", colors.eventFill).attr("stroke", colors.eventStroke).attr("stroke-width", 1.5);
             
-            // Render Mini Tooltips for extremes
+            // Render labels for extremes (removed background styling)
             eventsGroup.each(function(d) {
                 const g = d3.select(this);
                 const timeStr = formatTime(d.time);
                 const heightStr = `${d.height.toFixed(2)} ft`;
 
-                // QA Fix: Prevent mini-tooltips from bleeding off the edges of the SVG
+                // QA Fix: Prevent labels from bleeding off the edges of the SVG
                 const xPos = xScale(d.time);
                 let xOffset = 0;
                 if (xPos < 35) xOffset = 35 - xPos;
                 if (xPos > width - 35) xOffset = (width - 35) - xPos;
 
-                // Add Text Nodes
+                // Add Text Nodes only
                 const text = g.append("text")
                     .attr("class", "event-label")
                     .attr("text-anchor", "middle")
-                    .attr("fill", colors.textPrimary)
-                    .style("font-size", "0.65rem")
                     .style("pointer-events", "none");
 
                 text.append("tspan").attr("x", xOffset).attr("dy", "-24px").text(timeStr).style("font-weight", "600");
                 text.append("tspan").attr("x", xOffset).attr("dy", "12px").text(heightStr).style("fill", colors.textSecondary).style("font-weight", "500");
-
-                const bbox = text.node().getBBox();
-                const padX = 6;
-                const padY = 4;
-
-                // Insert Background Rect behind text, ensuring pointer-events are disabled so we don't block the invisible overlay
-                g.insert("rect", "text")
-                    .attr("class", "mini-tooltip-bg")
-                    .attr("rx", 4)
-                    .attr("fill", colors.pageBg)
-                    .attr("stroke", colors.tableBorder)
-                    .attr("stroke-width", 1)
-                    .attr("x", bbox.x - padX)
-                    .attr("y", bbox.y - padY)
-                    .attr("width", bbox.width + padX * 2)
-                    .attr("height", bbox.height + padY * 2)
-                    .style("pointer-events", "none");
             });
             
             // Add Club Open / Dock Icons to the tide line
@@ -1212,8 +1193,8 @@ font-size:1.75rem!important;
                 hoverGroup.style("display", null);
                 tooltip.style("opacity", 1);
                 
-                const pointer = event.touches ? event.touches[0] : event;
-                const [mx] = d3.pointer(pointer, this); 
+                // D3 pointer natively handles Touch Events
+                const [mx] = d3.pointer(event, this); 
                 const time = xScale.invert(mx);
                 
                 const d = getNearestDataPoint(chartData, time);
@@ -1223,13 +1204,23 @@ font-size:1.75rem!important;
                 hoverCircle.attr("cy", yScale(d.height));
                 
                 const tooltipRect = tooltip.node().getBoundingClientRect();
-                let leftPos = pointer.pageX + 15;
-                let topPos = pointer.pageY - 15;
                 
-                if (event.touches) {
+                // Extract proper coordinates for mobile vs desktop
+                const isTouch = event.type && event.type.startsWith('touch');
+                let pointerObj = event;
+                if (isTouch && event.touches && event.touches.length > 0) {
+                    pointerObj = event.touches[0];
+                } else if (isTouch && event.changedTouches && event.changedTouches.length > 0) {
+                    pointerObj = event.changedTouches[0];
+                }
+                
+                let leftPos = pointerObj.pageX + 15;
+                let topPos = pointerObj.pageY - 15;
+                
+                if (isTouch) {
                     // Mobile Touch Positioning: center horizontally, substantially higher vertically
-                    leftPos = pointer.pageX - (tooltipRect.width / 2);
-                    topPos = pointer.pageY - tooltipRect.height - 50; 
+                    leftPos = pointerObj.pageX - (tooltipRect.width / 2);
+                    topPos = pointerObj.pageY - tooltipRect.height - 50; 
                 }
                 
                 // Prevent horizontal spill offscreen
@@ -1250,6 +1241,7 @@ font-size:1.75rem!important;
                 .attr("height", height)
                 .attr("fill", "none")
                 .attr("pointer-events", "all")
+                .style("touch-action", "none") // Prevents native page scrolling when scrubbing the chart on mobile
                 // Desktop Mouse events
                 .on("mouseover", (e) => { 
                     if (interactionState.locked) return;
@@ -1345,18 +1337,6 @@ font-size:1.75rem!important;
                      const widgetContainer = document.querySelector('#tide-chart-widget-container');
                      if (!widgetContainer) return;
                      const nowIndicatorColor = getComputedStyle(widgetContainer).getPropertyValue('--color-now-indicator').trim();
-                     const chartHeight = yScale.range()[0];
-                     
-                     // Vertical line for "now"
-                     svg.append("line")
-                         .attr("class", "now-indicator")
-                         .attr("x1", xScale(now))
-                         .attr("x2", xScale(now))
-                         .attr("y1", 0)
-                         .attr("y2", chartHeight)
-                         .attr("stroke", nowIndicatorColor)
-                         .attr("stroke-width", 1)
-                         .style("pointer-events", "none");
 
                      // Dot on the tide line
                      svg.append("circle")
