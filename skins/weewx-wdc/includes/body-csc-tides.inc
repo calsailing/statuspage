@@ -339,16 +339,10 @@ font-size:1.75rem!important;
            <script src="https://d3js.org/d3.v7.min.js"></script>
         
        <style>
-        /* --- SCOPED CSS RESET & BASE --- */
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #f9fafb; /* Light page background for demo */
-        }
         
         .tide-widget-wrapper {
-            margin: 0 auto;
-            padding: 20px 0;
+            margin: 0;
+            padding: 0;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
