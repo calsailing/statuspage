@@ -44,6 +44,7 @@
             --color-text-secondary: #6b7280;
             --color-text-tertiary: #6b7280;
             --color-text-danger: #ef4444;
+            --color-event-text: #000000;
             --color-button-hover-bg: #f3f4f6;
             --color-axis-stroke: #d1d5db;
             --color-chart-day: #FFFFFF;
@@ -86,6 +87,7 @@
             --color-text-secondary: #9ca3af;
             --color-text-tertiary: #9ca3af;
             --color-text-danger: #f87171;
+            --color-event-text: #ffffff;
             --color-button-hover-bg: #374151;
             --color-axis-stroke: #4b5563;
             --color-chart-day: #1f2937;
@@ -242,10 +244,16 @@
 
         #tide-chart-widget-container .axis path,
         #tide-chart-widget-container .axis line { stroke: var(--color-axis-stroke); }
-        #tide-chart-widget-container .axis text { fill: var(--color-text-tertiary); font-size: 0.75rem; }
+        
+        /* Font size reduced for mobile, restored for larger screens */
+        #tide-chart-widget-container .axis text { fill: var(--color-text-tertiary); font-size: 0.6rem; }
+        @media (min-width: 640px) {
+            #tide-chart-widget-container .axis text { font-size: 0.75rem; }
+        }
+        
         #tide-chart-widget-container .event-label { 
             font-size: 0.7rem; 
-            fill: var(--color-text-primary); 
+            fill: var(--color-event-text); 
             font-weight: 600; 
         }
         #tide-chart-widget-container #chart-container svg { display: block; width: 100%; height: 100%; }
@@ -662,7 +670,10 @@
 
                 const containerRect = chartContainer.node().getBoundingClientRect();
                 const isMobile = window.innerWidth < 640;
-                const margin = { top: isMobile ? 40 : 20, right: 20, bottom: 40, left: 45 };
+                
+                // PERFORMANCE/UI FIX: Significantly reduced margins on mobile to maximize graph space
+                const margin = { top: isMobile ? 25 : 20, right: isMobile ? 0 : 20, bottom: isMobile ? 16 : 40, left: isMobile ? 22 : 45 };
+                
                 const width = containerRect.width - margin.left - margin.right;
                 const height = containerRect.height - margin.top - margin.bottom;
                 svg = chartContainer.append("svg").attr("width", containerRect.width).attr("height", containerRect.height)
@@ -758,7 +769,13 @@
                 }
 
                 redSegments.forEach(segment => svg.append("path").datum(segment).attr("fill", redAreaColor).attr("d", redAreaGenerator));
-                svg.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(xScale).ticks(d3.timeHour.every(6)).tickFormat(d3.timeFormat("%H:%M"))).attr("class", "axis x-axis");
+                
+                // Hide the midnight labels (00:00) so the graph text doesn't clip on the zero-margin edges
+                svg.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(xScale).ticks(d3.timeHour.every(6)).tickFormat(d => {
+                    const timeStr = d3.timeFormat("%H:%M")(d);
+                    return timeStr === "00:00" ? "" : timeStr;
+                })).attr("class", "axis x-axis");
+                
                 const yAxis = d3.axisLeft(yScale), ticks = yScale.ticks(), uniqueRoundedTicks = [...new Set(ticks.map(t => Math.round(t)))];
                 yAxis.tickValues(uniqueRoundedTicks).tickFormat(d => `${d} ft`);
                 svg.append("g").call(yAxis).attr("class", "axis y-axis");
@@ -770,20 +787,38 @@
                     const tStr = d3.timeFormat("%H:%M")(d.time);
                     const hStr = `${d.height.toFixed(1)}ft`;
 
-                    // Added semi-transparent background rect behind text
-                    d3.select(this).append("rect")
-                        .attr("x", -22)
-                        .attr("y", -32)
-                        .attr("width", 44)
-                        .attr("height", 26)
-                        .attr("rx", 4)
-                        .attr("fill", "var(--color-icon-bg)")
-                        .style("opacity", 0.5);
+                    // Smart positioning: Prefer above for all tides when possible
+                    let placeAbove = true;
+                    
+                    // Prevent clipping at the top bounds of the chart
+                    if (placeAbove && yScale(d.height) - 34 < 0) {
+                        placeAbove = false;
+                    }
+                    // Prevent clipping at the bottom bounds of the chart
+                    if (!placeAbove && yScale(d.height) + 38 > height) {
+                        placeAbove = true;
+                    }
 
+                    const textY1 = placeAbove ? -21 : 18;
+                    const textY2 = placeAbove ? -10 : 29;
+
+                    // Draw text first to measure its exact dimensions
                     const textGroup = d3.select(this).append("text").attr("class", "event-label").attr("text-anchor", "middle");
-                    // Added time line above height
-                    textGroup.append("tspan").attr("x", 0).attr("y", -22).style("font-weight", "normal").style("font-size", "0.6rem").text(tStr);
-                    textGroup.append("tspan").attr("x", 0).attr("y", -10).style("font-weight", "normal").style("font-size", "0.6rem").text(hStr);
+                    textGroup.append("tspan").attr("x", 0).attr("y", textY1).style("font-weight", "normal").style("font-size", "0.6rem").text(tStr);
+                    textGroup.append("tspan").attr("x", 0).attr("y", textY2).style("font-weight", "normal").style("font-size", "0.6rem").text(hStr);
+
+                    // Get exact bounding box
+                    const bbox = textGroup.node().getBBox();
+
+                    // Insert semi-transparent background rect behind text (0.85 opacity, exactly 1px padding on all sides)
+                    d3.select(this).insert("rect", "text")
+                        .attr("x", bbox.x - 1)
+                        .attr("y", bbox.y - 1)
+                        .attr("width", bbox.width + 2)
+                        .attr("height", bbox.height + 2)
+                        .attr("rx", 3)
+                        .attr("fill", "var(--color-icon-bg)")
+                        .style("opacity", 0.85);
                 });
 
                 // --- Open and Dock Icons on Tideline ---
