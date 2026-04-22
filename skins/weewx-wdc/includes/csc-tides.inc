@@ -155,9 +155,11 @@
         }
 
         #tide-chart-widget-container #current-tide-status { font-size: 1.125rem; font-weight: 600; min-height: 1.75rem; color: var(--color-text-primary); }
+        #tide-chart-widget-container #observed-tide-status { font-size: 0.875rem; min-height: 1.25rem; color: var(--color-text-secondary); font-weight: 500; }
         #tide-chart-widget-container #next-tide-event { font-size: 0.875rem; min-height: 1.25rem; color: var(--color-text-secondary); }
         #tide-chart-widget-container #club-status-alert { font-size: 0.875rem; min-height: 1.25rem; color: var(--color-text-danger); }
         #tide-chart-widget-container #current-tide-status:empty,
+        #tide-chart-widget-container #observed-tide-status:empty,
         #tide-chart-widget-container #next-tide-event:empty,
         #tide-chart-widget-container #club-status-alert:empty {
             min-height: 0;
@@ -272,6 +274,7 @@
                      <input type="date" id="date-picker" title="Select Date" aria-label="Select Date">
                  </div>
                  <p id="current-tide-status"></p>
+                 <p id="observed-tide-status"></p>
                  <p id="next-tide-event"></p>
                  <p id="club-status-alert"></p>
             </div>
@@ -322,7 +325,9 @@
             let currentDate = new Date(initialDate);
             let countdownInterval = null;
             const tideDataCache = {};
+            const observedDataCache = {};
             const NOAA_STATION_ID = "9414816";
+            const RICHMOND_STATION_ID = "9414863";
             const LOCATION_LAT = 37.8716;
             const LOCATION_LNG = -122.2727;
             let isHoveringOnEvent = false;
@@ -534,12 +539,69 @@
                 return { isClosed: true, alertMessage: 'Could not load club status', sunsetTime: null };
             }
 
+            async function fetchObservedTideData(date) {
+                const dateString = date.toISOString().split('T')[0];
+                if (observedDataCache[dateString]) return observedDataCache[dateString];
+
+                const yyyymmdd = date.getFullYear() + ('0' + (date.getMonth() + 1)).slice(-2) + ('0' + date.getDate()).slice(-2);
+                const predUrl = `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&application=NOS.CO-OPS.CAT&begin_date=${yyyymmdd}&end_date=${yyyymmdd}&datum=MLLW&station=${RICHMOND_STATION_ID}&time_zone=lst_ldt&units=english&format=json`;
+                const obsUrl = `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=water_level&application=NOS.CO-OPS.CAT&begin_date=${yyyymmdd}&end_date=${yyyymmdd}&datum=MLLW&station=${RICHMOND_STATION_ID}&time_zone=lst_ldt&units=english&format=json`;
+
+                const maxRetries = 10;
+                const retryDelay = 1000;
+
+                for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                    try {
+                        const [predRes, obsRes] = await Promise.all([fetch(predUrl), fetch(obsUrl)]);
+                        if (!predRes.ok) throw new Error(`NOAA Richmond Pred API failed`);
+                        if (!obsRes.ok) throw new Error(`NOAA Richmond Obs API failed`);
+                        
+                        const predData = await predRes.json();
+                        const obsData = await obsRes.json();
+
+                        // No observed data for this date (e.g. it's in the future)
+                        if (obsData.error || !obsData.data) {
+                            observedDataCache[dateString] = [];
+                            return [];
+                        }
+
+                        const richmondPreds = new Map((predData.predictions || []).map(p => [p.t, parseFloat(p.v)]));
+                        const observedPoints = [];
+
+                        (obsData.data || []).forEach(o => {
+                            if (o.v) {
+                                const obsVal = parseFloat(o.v);
+                                const predVal = richmondPreds.get(o.t);
+                                if (predVal !== undefined) {
+                                    observedPoints.push({
+                                        time: parseNOAADate(o.t),
+                                        anomaly: obsVal - predVal
+                                    });
+                                }
+                            }
+                        });
+
+                        observedDataCache[dateString] = observedPoints;
+                        return observedPoints;
+                    } catch (error) {
+                        console.error(`Failed to fetch observed data on attempt ${attempt}:`, error);
+                        if (attempt < maxRetries) {
+                            await new Promise(resolve => setTimeout(resolve, retryDelay));
+                        } else {
+                            return [];
+                        }
+                    }
+                }
+                return [];
+            }
+
             async function drawChart() {
                 const loadingHTML = `<div class='wave-container'><div style='color: var(--color-text-secondary)'>Loading tide data...</div><div class='wave'><div class='bar'></div><div class='bar'></div><div class='bar'></div><div class='bar'></div></div></div>`;
                 chartContainer.html(loadingHTML);
                 clubStatusAlert.textContent = '';
+                document.getElementById('observed-tide-status').textContent = '';
                 eventsList.innerHTML = '';
-                const [currentTides, clubStatus] = await Promise.all([fetchTideData(currentDate), fetchClubStatus(currentDate)]);
+                const [currentTides, clubStatus, observedAnomalies] = await Promise.all([fetchTideData(currentDate), fetchClubStatus(currentDate), fetchObservedTideData(currentDate)]);
                 chartContainer.html("");
                 if (!currentTides || currentTides.length === 0) {
                     const message = !currentTides ? "Could not load tide data." : "No tide data available for this date.";
@@ -557,6 +619,24 @@
                 const allExtremes = findTideExtremes(allTidesData);
                 const tideEvents = allExtremes.filter(event => event.time >= startOfDay && event.time < endOfDay);
                 
+                const berkeleyObserved = [];
+                const berkeleyPredsMap = new Map(chartData.map(p => [p.time.getTime(), p.height]));
+                observedAnomalies.forEach(obs => {
+                    const predHeight = berkeleyPredsMap.get(obs.time.getTime());
+                    if (predHeight !== undefined) {
+                        berkeleyObserved.push({ time: obs.time, height: predHeight + obs.anomaly, anomaly: obs.anomaly });
+                    }
+                });
+
+                const observedStatusEl = document.getElementById('observed-tide-status');
+                if (berkeleyObserved.length > 0) {
+                    const latestObs = berkeleyObserved[berkeleyObserved.length - 1];
+                    const sign = latestObs.anomaly >= 0 ? '+' : '';
+                    observedStatusEl.textContent = `Observed tide: ${latestObs.height.toFixed(1)} ft (${sign}${latestObs.anomaly.toFixed(1)} ft)`;
+                } else {
+                    observedStatusEl.textContent = '';
+                }
+
                 const widgetContainer = document.querySelector('#tide-chart-widget-container');
                 if (!widgetContainer) return;
                 const computedStyles = getComputedStyle(widgetContainer);
@@ -664,6 +744,12 @@
                 }
                 segments.forEach(seg => svg.append("path").datum(seg.data).attr("fill", seg.rising ? risingColor : fallingColor).attr("d", areaGenerator(height)));
                 svg.append("path").datum(chartData).attr("fill", "none").attr("stroke", tideLineColor).attr("stroke-width", 2).attr("d", lineGenerator);
+                
+                if (berkeleyObserved.length > 0) {
+                    const observedLineGenerator = d3.line().x(d => xScale(d.time)).y(d => yScale(d.height)).curve(curve);
+                    svg.append("path").datum(berkeleyObserved).attr("fill", "none").attr("stroke", "var(--color-text-danger)").attr("stroke-width", 2).attr("d", observedLineGenerator);
+                }
+
                 redSegments.forEach(segment => svg.append("path").datum(segment).attr("fill", redAreaColor).attr("d", redAreaGenerator));
                 svg.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(xScale).ticks(d3.timeHour.every(6)).tickFormat(d3.timeFormat("%H:%M"))).attr("class", "axis x-axis");
                 const yAxis = d3.axisLeft(yScale), ticks = yScale.ticks(), uniqueRoundedTicks = [...new Set(ticks.map(t => Math.round(t)))];
@@ -859,6 +945,7 @@
                 // Reflected the updated Circular Icons logic in the Legend UI
                 document.getElementById('legend').innerHTML = `
                     <div><div style="width: 0.75rem; height: 0.75rem; border-radius: 0.125rem; background-color: var(--color-chart-open-overlay);"></div><span>Club Open</span></div>
+                    <div><div style="width: 1rem; height: 2px; background-color: var(--color-text-danger);"></div><span>Observed tide</span></div>
                     <div>
                         <svg style="width:0.875rem;height:0.875rem;color:var(--icon-color-open);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="9" fill="var(--color-page-bg)" stroke="none"></circle>
@@ -935,6 +1022,7 @@
             function clearHeaderInfo() {
                 dateDisplay.textContent = '';
                 currentTideStatus.innerHTML = '';
+                document.getElementById('observed-tide-status').textContent = '';
                 nextTideDisplay.innerHTML = '';
                 clubStatusAlert.textContent = '';
             }
