@@ -854,21 +854,25 @@
                 eventsGroup.on("mouseover", (event, d) => { 
                     isHoveringOnEvent = true; 
                     
+                    // 1. Update text FIRST so the tooltip resizes to the correct width
+                    tooltip.select("#tooltip-time").text(`Event: ${d3.timeFormat("%H:%M")(d.time)}`); 
+                    tooltip.select("#tooltip-height").text(`${d.height.toFixed(1)} ft`); 
+
+                    // 2. Measure dimensions
                     const tooltipNode = tooltip.node();
                     const tooltipRect = tooltipNode.getBoundingClientRect();
                     const containerBox = chartContainer.node().getBoundingClientRect();
                     
-                    // Show Tooltip at top of the graph, horizontally tracked
-                    let leftPos = event.pageX - (tooltipRect.width / 2);
+                    // 3. Align perfectly with the marker's X position
+                    const snappedX = margin.left + xScale(d.time);
+                    let leftPos = containerBox.left + window.scrollX + snappedX - (tooltipRect.width / 2);
+                    
                     leftPos = Math.max(containerBox.left + window.scrollX, Math.min(leftPos, containerBox.right + window.scrollX - tooltipRect.width));
                     let topPos = containerBox.top + window.scrollY + 10;
                     
                     tooltip.style("opacity", 1)
                            .style("left", `${leftPos}px`)
                            .style("top", `${topPos}px`); 
-                           
-                    tooltip.select("#tooltip-time").text(`Event: ${d3.timeFormat("%H:%M")(d.time)}`); 
-                    tooltip.select("#tooltip-height").text(`${d.height.toFixed(1)} ft`); 
                 }).on("mouseout", () => { 
                     isHoveringOnEvent = false; 
                     tooltip.style("opacity", 0); 
@@ -886,7 +890,9 @@
                     if (!pointer) return; // Prevent errors on fast touch actions
                     
                     const [mx] = d3.pointer(pointer, chartContainer.node());
-                    const time = xScale.invert(mx);
+                    const innerX = mx - margin.left; // Fix: Adjust for the left margin offset
+                    const time = xScale.invert(innerX);
+                    
                     const bisect = d3.bisector(d => d.time).left;
                     const index = bisect(chartData, time, 1);
                     const a = chartData[index - 1], b = chartData[index];
@@ -895,20 +901,24 @@
                     hoverGroup.attr("transform", `translate(${xScale(d.time)}, 0)`);
                     hoverCircle.attr("cy", yScale(d.height));
                     
+                    // 1. Update text FIRST so the tooltip resizes to the correct width
+                    tooltip.select("#tooltip-time").text(d3.timeFormat("%H:%M")(d.time));
+                    tooltip.select("#tooltip-height").text(`${d.height.toFixed(1)} ft`);
+
+                    // 2. Measure dimensions
                     const tooltipNode = tooltip.node();
                     const tooltipRect = tooltipNode.getBoundingClientRect();
                     const containerBox = chartContainer.node().getBoundingClientRect();
                     
-                    // Show Tooltip at top of the graph, horizontally tracked
-                    let leftPos = pointer.pageX - (tooltipRect.width / 2);
+                    // 3. Align perfectly with the vertical hover line's X position
+                    const snappedX = margin.left + xScale(d.time);
+                    let leftPos = containerBox.left + window.scrollX + snappedX - (tooltipRect.width / 2);
+                    
                     leftPos = Math.max(containerBox.left + window.scrollX, Math.min(leftPos, containerBox.right + window.scrollX - tooltipRect.width));
                     let topPos = containerBox.top + window.scrollY + 10;
                     
                     tooltip.style("left", `${leftPos}px`)
                            .style("top", `${topPos}px`);
-                           
-                    tooltip.select("#tooltip-time").text(d3.timeFormat("%H:%M")(d.time));
-                    tooltip.select("#tooltip-height").text(`${d.height.toFixed(1)} ft`);
                 }
                 
                 svg.append("rect").attr("width", width).attr("height", height).attr("fill", "none").attr("pointer-events", "all")
