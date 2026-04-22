@@ -247,11 +247,6 @@
             font-size: 0.7rem; 
             fill: var(--color-text-primary); 
             font-weight: 600; 
-            paint-order: stroke fill;
-            stroke: var(--color-icon-bg);
-            stroke-width: 4px;
-            stroke-linecap: round;
-            stroke-linejoin: round;
         }
         #tide-chart-widget-container #chart-container svg { display: block; width: 100%; height: 100%; }
         #tide-chart-widget-container .aspect-wrapper { padding-top: 66.67%; position: relative; width: 100%; }
@@ -774,6 +769,17 @@
                 eventsGroup.each(function(d) {
                     const tStr = d3.timeFormat("%H:%M")(d.time);
                     const hStr = `${d.height.toFixed(1)}ft`;
+
+                    // Added semi-transparent background rect behind text
+                    d3.select(this).append("rect")
+                        .attr("x", -22)
+                        .attr("y", -32)
+                        .attr("width", 44)
+                        .attr("height", 26)
+                        .attr("rx", 4)
+                        .attr("fill", "var(--color-icon-bg)")
+                        .style("opacity", 0.5);
+
                     const textGroup = d3.select(this).append("text").attr("class", "event-label").attr("text-anchor", "middle");
                     // Added time line above height
                     textGroup.append("tspan").attr("x", 0).attr("y", -22).style("font-weight", "normal").style("font-size", "0.6rem").text(tStr);
