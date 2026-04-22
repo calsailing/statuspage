@@ -970,6 +970,6 @@
 
             drawChart();
         });
-/* #end raw */
+        /* #end raw */
     </script>
 </div>
