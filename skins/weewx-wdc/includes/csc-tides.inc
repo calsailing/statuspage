@@ -679,7 +679,7 @@
                     const textGroup = d3.select(this).append("text").attr("class", "event-label").attr("text-anchor", "middle");
                     // Added time line above height
                     textGroup.append("tspan").attr("x", 0).attr("y", -22).style("font-weight", "normal").style("font-size", "0.6rem").text(tStr);
-                    textGroup.append("tspan").attr("x", 0).attr("y", -10).text(hStr);
+                    textGroup.append("tspan").attr("x", 0).attr("y", -10).style("font-weight", "normal").style("font-size", "0.6rem").text(hStr);
                 });
 
                 // --- Open and Dock Icons on Tideline ---
@@ -970,7 +970,6 @@
 
             drawChart();
         });
-        /* #end raw */
+/* #end raw */
     </script>
-    
 </div>
