@@ -299,7 +299,7 @@
     </div>
 
     <script>
-/* */
+/* #raw */
         document.addEventListener('DOMContentLoaded', () => {
             const initialDate = new Date();
             const DANGEROUS_LOW_TIDE = 1.5;
@@ -970,7 +970,7 @@
 
             drawChart();
         });
-        /* */
+        /* #end raw */
     </script>
     
 </div>
