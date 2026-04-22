@@ -675,7 +675,7 @@
                 eventsGroup.append("circle").attr("r", 5).attr("fill", eventCircleFill).attr("stroke", eventCircleStroke).attr("stroke-width", 1.5);
                 eventsGroup.each(function(d) {
                     const tStr = d3.timeFormat("%H:%M")(d.time);
-                    const hStr = `${d.height.toFixed(2)}ft`;
+                    const hStr = `${d.height.toFixed(1)}ft`;
                     const textGroup = d3.select(this).append("text").attr("class", "event-label").attr("text-anchor", "middle");
                     // Added time line above height
                     textGroup.append("tspan").attr("x", 0).attr("y", -22).style("font-weight", "normal").style("font-size", "0.6rem").text(tStr);
@@ -739,7 +739,7 @@
                            .style("top", `${topPos}px`); 
                            
                     tooltip.select("#tooltip-time").text(`Event: ${d3.timeFormat("%H:%M")(d.time)}`); 
-                    tooltip.select("#tooltip-height").text(`${d.height.toFixed(2)} ft`); 
+                    tooltip.select("#tooltip-height").text(`${d.height.toFixed(1)} ft`); 
                 }).on("mouseout", () => { 
                     isHoveringOnEvent = false; 
                     tooltip.style("opacity", 0); 
@@ -779,7 +779,7 @@
                            .style("top", `${topPos}px`);
                            
                     tooltip.select("#tooltip-time").text(d3.timeFormat("%H:%M")(d.time));
-                    tooltip.select("#tooltip-height").text(`${d.height.toFixed(2)} ft`);
+                    tooltip.select("#tooltip-height").text(`${d.height.toFixed(1)} ft`);
                 }
                 
                 svg.append("rect").attr("width", width).attr("height", height).attr("fill", "none").attr("pointer-events", "all")
@@ -793,7 +793,7 @@
                 
                 tideEvents.forEach(event => {
                     if (event.time >= sunriseTime && event.time <= sunsetTime) {
-                        dayEvents.push({ time: event.time, text: `${event.type} Tide: ${event.height.toFixed(2)} ft`, type: event.type.toLowerCase() });
+                        dayEvents.push({ time: event.time, text: `${event.type} Tide: ${event.height.toFixed(1)} ft`, type: event.type.toLowerCase() });
                     }
                 });
                 dayEvents.push({ time: sunsetTime, text: "Sunset", type: 'sunset' });
@@ -911,7 +911,7 @@
                             if (futureHeight > currentHeight) directionArrow = `<svg class="icon-sm" style="display: inline-block; vertical-align: middle; color: var(--icon-color-high);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>`;
                             else if (futureHeight < currentHeight) directionArrow = `<svg class="icon-sm" style="display: inline-block; vertical-align: middle; color: var(--icon-color-low);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>`;
                         }
-                        currentTideStatus.innerHTML = `<span style="display: inline-flex; align-items: center;">${directionArrow}<span style="margin-left: 0.25rem;">${currentHeight.toFixed(2)} ft</span></span>`;
+                        currentTideStatus.innerHTML = `<span style="display: inline-flex; align-items: center;">${directionArrow}<span style="margin-left: 0.25rem;">${currentHeight.toFixed(1)} ft</span></span>`;
                     } else {
                         currentTideStatus.innerHTML = "";
                     }
@@ -920,7 +920,7 @@
                     const nextEvent = allTideExtremes.find(event => event.time > now);
                     if (nextEvent) {
                         const diff = nextEvent.time - now, hours = Math.floor(diff / 3600000), minutes = Math.floor((diff % 3600000) / 60000);
-                        nextTideDisplay.innerHTML = `<span>${nextEvent.type} tide in ${hours}h ${minutes}m at ${nextEvent.height.toFixed(2)} ft</span>`;
+                        nextTideDisplay.innerHTML = `<span>${nextEvent.type} tide in ${hours}h ${minutes}m at ${nextEvent.height.toFixed(1)} ft</span>`;
                     } else {
                         nextTideDisplay.innerHTML = "";
                     }
