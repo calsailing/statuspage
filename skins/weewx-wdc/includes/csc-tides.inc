@@ -553,9 +553,9 @@
                 return { isClosed: true, alertMessage: 'Could not load club status', sunsetTime: null };
             }
 
-            async function fetchObservedTideData(date) {
+            async function fetchObservedTideData(date, forceRefresh = false) {
                 const dateString = date.toISOString().split('T')[0];
-                if (observedDataCache[dateString]) return observedDataCache[dateString];
+                if (!forceRefresh && observedDataCache[dateString]) return observedDataCache[dateString];
 
                 const yyyymmdd = date.getFullYear() + ('0' + (date.getMonth() + 1)).slice(-2) + ('0' + date.getDate()).slice(-2);
                 const predUrl = `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&application=NOS.CO-OPS.CAT&begin_date=${yyyymmdd}&end_date=${yyyymmdd}&datum=MLLW&station=${RICHMOND_STATION_ID}&time_zone=lst_ldt&units=english&format=json`;
@@ -642,16 +642,6 @@
                     }
                 });
 
-                const isCurrentDayExact = currentDate.toDateString() === new Date().toDateString();
-                const observedStatusEl = document.getElementById('observed-tide-status');
-                if (isCurrentDayExact && berkeleyObserved.length > 0) {
-                    const latestObs = berkeleyObserved[berkeleyObserved.length - 1];
-                    const sign = latestObs.anomaly >= 0 ? '+' : '';
-                    observedStatusEl.textContent = `Observed tide: ${latestObs.height.toFixed(1)} ft (${sign}${latestObs.anomaly.toFixed(1)} ft)`;
-                } else {
-                    observedStatusEl.textContent = '';
-                }
-
                 const widgetContainer = document.querySelector('#tide-chart-widget-container');
                 if (!widgetContainer) return;
                 const computedStyles = getComputedStyle(widgetContainer);
@@ -671,8 +661,8 @@
                 const containerRect = chartContainer.node().getBoundingClientRect();
                 const isMobile = window.innerWidth < 640;
                 
-                // PERFORMANCE/UI FIX: Significantly reduced margins on mobile to maximize graph space
-                const margin = { top: isMobile ? 25 : 20, right: isMobile ? 0 : 20, bottom: isMobile ? 16 : 40, left: isMobile ? 22 : 45 };
+                // PERFORMANCE/UI FIX: Margins properly adjusted to prevent axis text clipping on mobile
+                const margin = { top: isMobile ? 25 : 20, right: isMobile ? 0 : 20, bottom: isMobile ? 24 : 40, left: isMobile ? 32 : 45 };
                 
                 const width = containerRect.width - margin.left - margin.right;
                 const height = containerRect.height - margin.top - margin.bottom;
@@ -1030,31 +1020,38 @@
                     if (!prevTides || !currentTides || !nextTides || !nextNextTides) { 
                         nextTideDisplay.innerHTML = ""; 
                         currentTideStatus.innerHTML = "";
+                        document.getElementById('observed-tide-status').textContent = '';
                         return; 
                     }
-                    const combinedTideDataForLookup = [...prevTides, ...currentTides, ...nextTides];
-                    const bisect = d3.bisector(d => d.time).left;
-                    const index = bisect(combinedTideDataForLookup, now, 1);
-                    const a = combinedTideDataForLookup[index - 1];
-                    const b = combinedTideDataForLookup[index];
-                    const currentTidePoint = !a ? b : !b ? a : (now - a.time > b.time - now) ? b : a;
-                    if (currentTidePoint) {
-                        const currentHeight = currentTidePoint.height;
-                        const timeIn5Mins = new Date(now.getTime() + 5 * 60000);
-                        const indexIn5Mins = bisect(combinedTideDataForLookup, timeIn5Mins, 1);
-                        const a5 = combinedTideDataForLookup[indexIn5Mins - 1];
-                        const b5 = combinedTideDataForLookup[indexIn5Mins];
-                        const futureTidePoint = !a5 ? b5 : !b5 ? a5 : (timeIn5Mins - a5.time > b.time - timeIn5Mins) ? b5 : a5;
-                        let directionArrow = '';
-                        if (futureTidePoint) {
-                            const futureHeight = futureTidePoint.height;
-                            if (futureHeight > currentHeight) directionArrow = `<svg class="icon-sm" style="display: inline-block; vertical-align: middle; color: var(--icon-color-high);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>`;
-                            else if (futureHeight < currentHeight) directionArrow = `<svg class="icon-sm" style="display: inline-block; vertical-align: middle; color: var(--icon-color-low);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>`;
+                    const combinedTideDataForLookup = [...prevTides, ...currentTides, ...nextTides, ...nextNextTides];
+                    
+                    // Exact real-time interpolation
+                    const currentHeight = getTideHeightAtTime(combinedTideDataForLookup, now);
+                    const timeIn5Mins = new Date(now.getTime() + 5 * 60000);
+                    const futureHeight = getTideHeightAtTime(combinedTideDataForLookup, timeIn5Mins);
+                    
+                    let directionArrow = '';
+                    if (futureHeight > currentHeight) directionArrow = `<svg class="icon-sm" style="display: inline-block; vertical-align: middle; color: var(--icon-color-high);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>`;
+                    else if (futureHeight < currentHeight) directionArrow = `<svg class="icon-sm" style="display: inline-block; vertical-align: middle; color: var(--icon-color-low);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>`;
+                    
+                    currentTideStatus.innerHTML = `<span style="display: inline-flex; align-items: center;">${directionArrow}<span style="margin-left: 0.25rem;">${currentHeight.toFixed(1)} ft</span></span>`;
+                    
+                    // Handle accurate real-time observed status mapping anomaly to current interpolation
+                    const observedStatusEl = document.getElementById('observed-tide-status');
+                    if (currentDate.toDateString() === now.toDateString()) {
+                        const obsAnomalies = await fetchObservedTideData(now, true);
+                        if (obsAnomalies && obsAnomalies.length > 0) {
+                            const latestAnomaly = obsAnomalies[obsAnomalies.length - 1].anomaly;
+                            const exactObservedHeight = currentHeight + latestAnomaly;
+                            const sign = latestAnomaly >= 0 ? '+' : '';
+                            observedStatusEl.textContent = `Observed tide: ${exactObservedHeight.toFixed(1)} ft (${sign}${latestAnomaly.toFixed(1)} ft)`;
+                        } else {
+                            observedStatusEl.textContent = '';
                         }
-                        currentTideStatus.innerHTML = `<span style="display: inline-flex; align-items: center;">${directionArrow}<span style="margin-left: 0.25rem;">${currentHeight.toFixed(1)} ft</span></span>`;
                     } else {
-                        currentTideStatus.innerHTML = "";
+                        observedStatusEl.textContent = '';
                     }
+
                     const allRawTides = [...prevTides, ...currentTides, ...nextTides, ...nextNextTides];
                     const allTideExtremes = findTideExtremes(allRawTides);
                     const nextEvent = allTideExtremes.find(event => event.time > now);
