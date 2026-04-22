@@ -694,8 +694,8 @@
                     const g = d3.select(this);
                         
                     const svgIcon = g.append("svg")
-                        .attr("x", -10).attr("y", -10)
-                        .attr("width", 20).attr("height", 20)
+                        .attr("x", -7).attr("y", -7)
+                        .attr("width", 14).attr("height", 14)
                         .attr("viewBox", "0 0 24 24")
                         .attr("fill", "none")
                         .attr("stroke", d.type === 'open' ? "var(--icon-color-open)" : "var(--icon-color-dock)")
@@ -703,7 +703,7 @@
                         .attr("stroke-linecap", "round")
                         .attr("stroke-linejoin", "round");
                         
-                    // Background exactly matching the 9-unit radius of the icon's outer circle
+                    // Background covering the icon area
                     svgIcon.append("circle")
                         .attr("cx", 12)
                         .attr("cy", 12)
@@ -860,7 +860,7 @@
                 document.getElementById('legend').innerHTML = `
                     <div><div style="width: 0.75rem; height: 0.75rem; border-radius: 0.125rem; background-color: var(--color-chart-open-overlay);"></div><span>Club Open</span></div>
                     <div>
-                        <svg style="width:1rem;height:1rem;color:var(--icon-color-open);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <svg style="width:0.875rem;height:0.875rem;color:var(--icon-color-open);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="9" fill="var(--color-page-bg)" stroke="none"></circle>
                             <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -868,7 +868,7 @@
                         <span>Open Time</span>
                     </div>
                     <div>
-                        <svg style="width:1rem;height:1rem;color:var(--icon-color-dock);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <svg style="width:0.875rem;height:0.875rem;color:var(--icon-color-dock);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="9" fill="var(--color-page-bg)" stroke="none"></circle>
                             <path stroke-linecap="round" stroke-linejoin="round" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
