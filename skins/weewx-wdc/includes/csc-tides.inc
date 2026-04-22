@@ -39,6 +39,7 @@
         #tide-chart-widget-container {
             /* Light theme variables */
             --color-page-bg: #ffffff;
+            --color-icon-bg: #ffffff;
             --color-text-primary: #374151;
             --color-text-secondary: #6b7280;
             --color-text-tertiary: #6b7280;
@@ -80,6 +81,7 @@
         /* Dark theme variables */
         .dark #tide-chart-widget-container {
             --color-page-bg: transparent;
+            --color-icon-bg: #1f2937;
             --color-text-primary: #d1d5db;
             --color-text-secondary: #9ca3af;
             --color-text-tertiary: #9ca3af;
@@ -241,7 +243,16 @@
         #tide-chart-widget-container .axis path,
         #tide-chart-widget-container .axis line { stroke: var(--color-axis-stroke); }
         #tide-chart-widget-container .axis text { fill: var(--color-text-tertiary); font-size: 0.75rem; }
-        #tide-chart-widget-container .event-label { font-size: 0.7rem; fill: var(--color-text-primary); font-weight: 600; }
+        #tide-chart-widget-container .event-label { 
+            font-size: 0.7rem; 
+            fill: var(--color-text-primary); 
+            font-weight: 600; 
+            paint-order: stroke fill;
+            stroke: var(--color-icon-bg);
+            stroke-width: 4px;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
         #tide-chart-widget-container #chart-container svg { display: block; width: 100%; height: 100%; }
         #tide-chart-widget-container .aspect-wrapper { padding-top: 66.67%; position: relative; width: 100%; }
         @media (min-width: 640px) { #tide-chart-widget-container .aspect-wrapper { padding-top: 50%; } }
@@ -628,8 +639,9 @@
                     }
                 });
 
+                const isCurrentDayExact = currentDate.toDateString() === new Date().toDateString();
                 const observedStatusEl = document.getElementById('observed-tide-status');
-                if (berkeleyObserved.length > 0) {
+                if (isCurrentDayExact && berkeleyObserved.length > 0) {
                     const latestObs = berkeleyObserved[berkeleyObserved.length - 1];
                     const sign = latestObs.anomaly >= 0 ? '+' : '';
                     observedStatusEl.textContent = `Observed tide: ${latestObs.height.toFixed(1)} ft (${sign}${latestObs.anomaly.toFixed(1)} ft)`;
@@ -794,7 +806,7 @@
                         .attr("cx", 12)
                         .attr("cy", 12)
                         .attr("r", 9)
-                        .attr("fill", "var(--color-page-bg)")
+                        .attr("fill", "var(--color-icon-bg)")
                         .attr("stroke", "none");
                         
                     if (d.type === 'open') {
@@ -948,7 +960,7 @@
                     <div><div style="width: 1rem; height: 2px; background-color: var(--color-text-danger);"></div><span>Observed tide</span></div>
                     <div>
                         <svg style="width:0.875rem;height:0.875rem;color:var(--icon-color-open);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="9" fill="var(--color-page-bg)" stroke="none"></circle>
+                            <circle cx="12" cy="12" r="9" fill="var(--color-icon-bg)" stroke="none"></circle>
                             <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
@@ -956,7 +968,7 @@
                     </div>
                     <div>
                         <svg style="width:0.875rem;height:0.875rem;color:var(--icon-color-dock);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="9" fill="var(--color-page-bg)" stroke="none"></circle>
+                            <circle cx="12" cy="12" r="9" fill="var(--color-icon-bg)" stroke="none"></circle>
                             <path stroke-linecap="round" stroke-linejoin="round" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                         <span>Dock Time</span>
