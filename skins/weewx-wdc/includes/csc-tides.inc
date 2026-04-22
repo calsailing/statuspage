@@ -159,7 +159,7 @@
         }
 
         #tide-chart-widget-container #current-tide-status { font-size: 1.125rem; font-weight: 600; min-height: 1.75rem; color: var(--color-text-primary); }
-        #tide-chart-widget-container #observed-tide-status { font-size: 0.875rem; min-height: 1.25rem; color: var(--color-text-secondary); font-weight: 500; }
+        #tide-chart-widget-container #observed-tide-status { font-size: 0.75rem; min-height: 1rem; color: var(--color-text-secondary); font-weight: normal; font-style: italic; }
         #tide-chart-widget-container #next-tide-event { font-size: 0.875rem; min-height: 1.25rem; color: var(--color-text-secondary); }
         #tide-chart-widget-container #club-status-alert { font-size: 0.875rem; min-height: 1.25rem; color: var(--color-text-danger); }
         #tide-chart-widget-container #current-tide-status:empty,
@@ -288,9 +288,9 @@
                      <input type="date" id="date-picker" title="Select Date" aria-label="Select Date">
                  </div>
                  <p id="current-tide-status"></p>
-                 <p id="observed-tide-status"></p>
                  <p id="next-tide-event"></p>
                  <p id="club-status-alert"></p>
+                 <p id="observed-tide-status"></p>
             </div>
             <button id="next-day" class="nav-button" aria-label="Next Day">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
