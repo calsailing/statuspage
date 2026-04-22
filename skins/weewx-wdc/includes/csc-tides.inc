@@ -299,7 +299,7 @@
     </div>
 
     <script>
-/* #raw */
+        /* #raw */
         document.addEventListener('DOMContentLoaded', () => {
             const initialDate = new Date();
             const DANGEROUS_LOW_TIDE = 1.5;
