@@ -261,7 +261,7 @@
         #tide-chart-widget-container .event-label { 
             font-size: 0.7rem; 
             fill: var(--color-event-text); 
-            font-weight: 500; 
+            font-weight: bold; 
         }
         #tide-chart-widget-container #chart-container svg { display: block; width: 100%; height: 100%; }
         #tide-chart-widget-container .aspect-wrapper { padding-top: 66.67%; position: relative; width: 100%; }
