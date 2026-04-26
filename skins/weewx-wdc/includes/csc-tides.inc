@@ -44,14 +44,14 @@
             --color-text-secondary: #6b7280;
             --color-text-tertiary: #6b7280;
             --color-text-danger: #ef4444;
-            --color-event-text: #000000;
+            --color-event-text: #ffffff;
             --color-button-hover-bg: #f3f4f6;
             --color-axis-stroke: #d1d5db;
             --color-chart-day: #FFFFFF;
             --color-chart-night: #f3f4f6;
             --color-chart-open-overlay: rgba(34, 197, 94, 0.15);
             --color-chart-danger-area: rgba(239, 68, 68, 0.7);
-            --color-chart-rising: #5da7d1;
+            --color-chart-rising: #0284c7;
             --color-chart-falling: #0369a1;
             --color-chart-tide-line: #0ea5e9;
             --color-open-line: #22c55e;
@@ -95,8 +95,8 @@
             --color-chart-night: #111827;
             --color-chart-open-overlay: rgba(22, 163, 74, 0.25);
             --color-chart-danger-area: rgba(220, 38, 38, 0.6);
-            --color-chart-rising: #2563eb;
-            --color-chart-falling: #3b82f6;
+            --color-chart-rising: #1d4ed8;
+            --color-chart-falling: #2563eb;
             --color-chart-tide-line: #60a5fa;
             --color-open-line: #4ade80;
             --color-dock-line: #fb923c;
@@ -259,7 +259,7 @@
         }
         
         #tide-chart-widget-container .event-label { 
-            font-size: 0.7rem; 
+            font-size: 0.8rem; 
             fill: var(--color-event-text); 
             font-weight: 600; 
         }
@@ -761,6 +761,7 @@
                     const lastSegment = segments[segments.length - 1], lastDataPoint = chartData[chartData.length - 1];
                     if (lastDataPoint.time < endOfDay) lastSegment.data.push({ time: endOfDay, height: lastDataPoint.height });
                 }
+                
                 segments.forEach(seg => svg.append("path").datum(seg.data).attr("fill", seg.rising ? risingColor : fallingColor).attr("d", areaGenerator(height)));
                 svg.append("path").datum(chartData).attr("fill", "none").attr("stroke", tideLineColor).attr("stroke-width", 2).attr("d", lineGenerator);
                 
@@ -789,26 +790,13 @@
                     const hStr = `${d.height.toFixed(1)}ft`;
 
                     // Hardcoded to strictly place text below the tide marker
-                    const textY1 = 18;
-                    const textY2 = 29;
+                    const textY1 = 20;
+                    const textY2 = 34;
 
-                    // Draw text first to measure its exact dimensions
+                    // Draw text
                     const textGroup = d3.select(this).append("text").attr("class", "event-label").attr("text-anchor", "middle");
-                    textGroup.append("tspan").attr("x", 0).attr("y", textY1).style("font-weight", "normal").style("font-size", "0.6rem").text(tStr);
-                    textGroup.append("tspan").attr("x", 0).attr("y", textY2).style("font-weight", "normal").style("font-size", "0.6rem").text(hStr);
-
-                    // Get exact bounding box
-                    const bbox = textGroup.node().getBBox();
-
-                    // Insert semi-transparent background rect behind text (0.5 opacity, exactly 1px padding on all sides)
-                    d3.select(this).insert("rect", "text")
-                        .attr("x", bbox.x - 1)
-                        .attr("y", bbox.y - 1)
-                        .attr("width", bbox.width + 2)
-                        .attr("height", bbox.height + 2)
-                        .attr("rx", 3)
-                        .attr("fill", "var(--color-icon-bg)")
-                        .style("opacity", 0.5);
+                    textGroup.append("tspan").attr("x", 0).attr("y", textY1).style("font-weight", "normal").style("font-size", "0.75rem").text(tStr);
+                    textGroup.append("tspan").attr("x", 0).attr("y", textY2).style("font-weight", "normal").style("font-size", "0.75rem").text(hStr);
                 });
 
                 // --- Open and Dock Icons on Tideline ---
