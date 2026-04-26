@@ -259,7 +259,7 @@
         }
         
         #tide-chart-widget-container .event-label { 
-            font-size: 0.75rem; 
+            font-size: 0.7rem; 
             fill: var(--color-event-text); 
             font-weight: 500; 
         }
