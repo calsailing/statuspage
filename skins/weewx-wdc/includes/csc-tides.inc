@@ -44,16 +44,16 @@
             --color-text-secondary: #6b7280;
             --color-text-tertiary: #6b7280;
             --color-text-danger: #ef4444;
-            --color-event-text: #ffffff;
+            --color-event-text: #000000;
             --color-button-hover-bg: #f3f4f6;
             --color-axis-stroke: #d1d5db;
             --color-chart-day: #FFFFFF;
             --color-chart-night: #f3f4f6;
             --color-chart-open-overlay: rgba(34, 197, 94, 0.15);
             --color-chart-danger-area: rgba(239, 68, 68, 0.7);
-            --color-chart-rising: #0284c7;
-            --color-chart-falling: #0369a1;
-            --color-chart-tide-line: #0ea5e9;
+            --color-chart-rising: #38bdf8;
+            --color-chart-falling: #0ea5e9;
+            --color-chart-tide-line: #0284c7;
             --color-open-line: #22c55e;
             --color-dock-line: #f97316;
             --color-event-circle-fill: #f3f4f6;
@@ -88,16 +88,16 @@
             --color-text-secondary: #9ca3af;
             --color-text-tertiary: #9ca3af;
             --color-text-danger: #f87171;
-            --color-event-text: #ffffff;
+            --color-event-text: #000000;
             --color-button-hover-bg: #374151;
             --color-axis-stroke: #4b5563;
             --color-chart-day: #1f2937;
             --color-chart-night: #111827;
             --color-chart-open-overlay: rgba(22, 163, 74, 0.25);
             --color-chart-danger-area: rgba(220, 38, 38, 0.6);
-            --color-chart-rising: #1d4ed8;
-            --color-chart-falling: #2563eb;
-            --color-chart-tide-line: #60a5fa;
+            --color-chart-rising: #0ea5e9;
+            --color-chart-falling: #0284c7;
+            --color-chart-tide-line: #38bdf8;
             --color-open-line: #4ade80;
             --color-dock-line: #fb923c;
             --color-event-circle-fill: #374151;
@@ -261,7 +261,7 @@
         #tide-chart-widget-container .event-label { 
             font-size: 0.7rem; 
             fill: var(--color-event-text); 
-            font-weight: bold; 
+            font-weight: normal; 
         }
         #tide-chart-widget-container #chart-container svg { display: block; width: 100%; height: 100%; }
         #tide-chart-widget-container .aspect-wrapper { padding-top: 66.67%; position: relative; width: 100%; }
