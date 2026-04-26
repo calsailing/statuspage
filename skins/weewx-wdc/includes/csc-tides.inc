@@ -259,9 +259,9 @@
         }
         
         #tide-chart-widget-container .event-label { 
-            font-size: 0.8rem; 
+            font-size: 0.75rem; 
             fill: var(--color-event-text); 
-            font-weight: 600; 
+            font-weight: 500; 
         }
         #tide-chart-widget-container #chart-container svg { display: block; width: 100%; height: 100%; }
         #tide-chart-widget-container .aspect-wrapper { padding-top: 66.67%; position: relative; width: 100%; }
@@ -681,6 +681,8 @@
                 const allHeights = chartData.map(d => d.height).concat(berkeleyObserved.map(d => d.height));
                 const minTide = Math.min(...allHeights);
                 const maxTide = Math.max(...allHeights);
+                
+                // Scale the Y-axis to be exactly 1.5 feet below the lowest tide
                 yScale = d3.scaleLinear().domain([minTide - 1.5, maxTide + 1]).range([height, 0]);
                 
                 // PERFORMANCE FIX: Use curveMonotoneX instead of curveBasis to prevent the plotted
@@ -779,6 +781,7 @@
                 })).attr("class", "axis x-axis");
                 
                 const yAxis = d3.axisLeft(yScale), ticks = yScale.ticks(), uniqueRoundedTicks = [...new Set(ticks.map(t => Math.round(t)))];
+                
                 yAxis.tickValues(uniqueRoundedTicks).tickFormat(d => `${d} ft`);
                 svg.append("g").call(yAxis).attr("class", "axis y-axis");
                 
@@ -793,10 +796,10 @@
                     const textY1 = 20;
                     const textY2 = 34;
 
-                    // Draw text
+                    // Draw text (styling is now handled purely by the .event-label CSS class to prevent conflicts)
                     const textGroup = d3.select(this).append("text").attr("class", "event-label").attr("text-anchor", "middle");
-                    textGroup.append("tspan").attr("x", 0).attr("y", textY1).style("font-weight", "normal").style("font-size", "0.75rem").text(tStr);
-                    textGroup.append("tspan").attr("x", 0).attr("y", textY2).style("font-weight", "normal").style("font-size", "0.75rem").text(hStr);
+                    textGroup.append("tspan").attr("x", 0).attr("y", textY1).text(tStr);
+                    textGroup.append("tspan").attr("x", 0).attr("y", textY2).text(hStr);
                 });
 
                 // --- Open and Dock Icons on Tideline ---
