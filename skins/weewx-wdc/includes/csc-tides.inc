@@ -229,12 +229,17 @@
             font-family: 'Inter', sans-serif;
             font-size: 0.875rem;
             border-radius: 0.5rem;
-            padding: 0.5rem 0.75rem;
+            padding: 2px;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
             background-color: var(--color-tooltip-bg);
             color: var(--color-tooltip-text);
             border: 1px solid var(--color-tooltip-border);
             z-index: 9999;
+        }
+        #tide-chart-tooltip p {
+            margin: 0;
+            padding: 0;
+            line-height: 1.1;
         }
         .dark #tide-chart-tooltip {
             /* Dark Theme Override Variables */
@@ -671,8 +676,12 @@
                 svg = chartContainer.append("svg").attr("width", containerRect.width).attr("height", containerRect.height)
                     .append("g").attr("transform", `translate(${margin.left},${margin.top})`);
                 xScale = d3.scaleTime().domain([startOfDay, endOfDay]).range([0, width]);
-                const [minTide, maxTide] = d3.extent(chartData, d => d.height);
-                yScale = d3.scaleLinear().domain([minTide - 1, maxTide + 2]).range([height, 0]);
+                
+                // Incorporate both predicted and observed heights to ensure the graph scale covers all drawn lines
+                const allHeights = chartData.map(d => d.height).concat(berkeleyObserved.map(d => d.height));
+                const minTide = Math.min(...allHeights);
+                const maxTide = Math.max(...allHeights);
+                yScale = d3.scaleLinear().domain([minTide - 1.5, maxTide + 1]).range([height, 0]);
                 
                 // PERFORMANCE FIX: Use curveMonotoneX instead of curveBasis to prevent the plotted
                 // line from overshooting or missing actual data points (tide chart integrity)
@@ -779,20 +788,9 @@
                     const tStr = d3.timeFormat("%H:%M")(d.time);
                     const hStr = `${d.height.toFixed(1)}ft`;
 
-                    // Smart positioning: Prefer above for all tides when possible
-                    let placeAbove = true;
-                    
-                    // Prevent clipping at the top bounds of the chart
-                    if (placeAbove && yScale(d.height) - 34 < 0) {
-                        placeAbove = false;
-                    }
-                    // Prevent clipping at the bottom bounds of the chart
-                    if (!placeAbove && yScale(d.height) + 38 > height) {
-                        placeAbove = true;
-                    }
-
-                    const textY1 = placeAbove ? -21 : 18;
-                    const textY2 = placeAbove ? -10 : 29;
+                    // Hardcoded to strictly place text below the tide marker
+                    const textY1 = 18;
+                    const textY2 = 29;
 
                     // Draw text first to measure its exact dimensions
                     const textGroup = d3.select(this).append("text").attr("class", "event-label").attr("text-anchor", "middle");
@@ -802,7 +800,7 @@
                     // Get exact bounding box
                     const bbox = textGroup.node().getBBox();
 
-                    // Insert semi-transparent background rect behind text (0.85 opacity, exactly 1px padding on all sides)
+                    // Insert semi-transparent background rect behind text (0.5 opacity, exactly 1px padding on all sides)
                     d3.select(this).insert("rect", "text")
                         .attr("x", bbox.x - 1)
                         .attr("y", bbox.y - 1)
@@ -810,7 +808,7 @@
                         .attr("height", bbox.height + 2)
                         .attr("rx", 3)
                         .attr("fill", "var(--color-icon-bg)")
-                        .style("opacity", 0.85);
+                        .style("opacity", 0.5);
                 });
 
                 // --- Open and Dock Icons on Tideline ---
