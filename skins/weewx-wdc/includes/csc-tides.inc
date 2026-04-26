@@ -682,8 +682,8 @@
                 const minTide = Math.min(...allHeights);
                 const maxTide = Math.max(...allHeights);
                 
-                // Scale the Y-axis to be exactly 1.5 feet below the lowest tide
-                yScale = d3.scaleLinear().domain([minTide - 1.5, maxTide + 1]).range([height, 0]);
+                // Scale the Y-axis to be exactly 2 feet below the lowest tide
+                yScale = d3.scaleLinear().domain([minTide - 2, maxTide + 1]).range([height, 0]);
                 
                 // PERFORMANCE FIX: Use curveMonotoneX instead of curveBasis to prevent the plotted
                 // line from overshooting or missing actual data points (tide chart integrity)
