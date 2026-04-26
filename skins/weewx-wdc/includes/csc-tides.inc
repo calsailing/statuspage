@@ -51,9 +51,9 @@
             --color-chart-night: #f3f4f6;
             --color-chart-open-overlay: rgba(34, 197, 94, 0.15);
             --color-chart-danger-area: rgba(239, 68, 68, 0.7);
-            --color-chart-rising: #38bdf8;
-            --color-chart-falling: #0ea5e9;
-            --color-chart-tide-line: #0284c7;
+            --color-chart-rising: #a0c0e0;
+            --color-chart-falling: #80a8d0;
+            --color-chart-tide-line: #4070a0;
             --color-open-line: #22c55e;
             --color-dock-line: #f97316;
             --color-event-circle-fill: #f3f4f6;
@@ -95,9 +95,9 @@
             --color-chart-night: #111827;
             --color-chart-open-overlay: rgba(22, 163, 74, 0.25);
             --color-chart-danger-area: rgba(220, 38, 38, 0.6);
-            --color-chart-rising: #0ea5e9;
-            --color-chart-falling: #0284c7;
-            --color-chart-tide-line: #38bdf8;
+            --color-chart-rising: #6088b0;
+            --color-chart-falling: #406890;
+            --color-chart-tide-line: #a0c0e0;
             --color-open-line: #4ade80;
             --color-dock-line: #fb923c;
             --color-event-circle-fill: #374151;
@@ -308,18 +308,18 @@
 
         <div class="aspect-wrapper">
             <div id="chart-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></div>
+            
+            <!-- Tooltip (Now securely housed inside the relative wrapper) -->
+            <div id="tide-chart-tooltip" style="display: none;" aria-hidden="true">
+                <p id="tooltip-time"></p>
+                <p id="tooltip-height"></p>
+            </div>
         </div>
         
         <div id="legend"></div>
         
         <div id="events-list"></div>
 
-    </div>
-
-    <!-- Tooltip -->
-    <div id="tide-chart-tooltip" style="display: none;" aria-hidden="true">
-        <p id="tooltip-time"></p>
-        <p id="tooltip-height"></p>
     </div>
 
     <script>
@@ -336,12 +336,8 @@
             const eventsList = document.getElementById('events-list');
             
             // --- Tooltip Handling ---
-            let tooltipNode = document.getElementById('tide-chart-tooltip');
-            if (tooltipNode && tooltipNode.parentElement !== document.body) {
-                document.body.appendChild(tooltipNode);
-            }
-            tooltipNode.style.display = 'block';
             const tooltip = d3.select("#tide-chart-tooltip");
+            tooltip.style("display", "block"); // Reveal to DOM layout so width is calculable, remains invisible via opacity: 0
             
             let currentDate = new Date(initialDate);
             let countdownInterval = null;
@@ -852,18 +848,18 @@
                     // 2. Measure dimensions
                     const tooltipNode = tooltip.node();
                     const tooltipRect = tooltipNode.getBoundingClientRect();
-                    const containerBox = chartContainer.node().getBoundingClientRect();
+                    const containerRect = chartContainer.node().getBoundingClientRect();
                     
-                    // 3. Align perfectly with the marker's X position
+                    // 3. Align perfectly with the marker's X position, relative to wrapper
                     const snappedX = margin.left + xScale(d.time);
-                    let leftPos = containerBox.left + window.scrollX + snappedX - (tooltipRect.width / 2);
+                    let leftPos = snappedX - (tooltipRect.width / 2);
                     
-                    leftPos = Math.max(containerBox.left + window.scrollX, Math.min(leftPos, containerBox.right + window.scrollX - tooltipRect.width));
-                    let topPos = containerBox.top + window.scrollY + 10;
+                    // Prevent tooltip from overflowing the widget edges
+                    leftPos = Math.max(0, Math.min(leftPos, containerRect.width - tooltipRect.width));
                     
                     tooltip.style("opacity", 1)
                            .style("left", `${leftPos}px`)
-                           .style("top", `${topPos}px`); 
+                           .style("top", `10px`); 
                 }).on("mouseout", () => { 
                     isHoveringOnEvent = false; 
                     tooltip.style("opacity", 0); 
@@ -899,17 +895,17 @@
                     // 2. Measure dimensions
                     const tooltipNode = tooltip.node();
                     const tooltipRect = tooltipNode.getBoundingClientRect();
-                    const containerBox = chartContainer.node().getBoundingClientRect();
+                    const containerRect = chartContainer.node().getBoundingClientRect();
                     
-                    // 3. Align perfectly with the vertical hover line's X position
+                    // 3. Align perfectly with the vertical hover line's X position, relative to wrapper
                     const snappedX = margin.left + xScale(d.time);
-                    let leftPos = containerBox.left + window.scrollX + snappedX - (tooltipRect.width / 2);
+                    let leftPos = snappedX - (tooltipRect.width / 2);
                     
-                    leftPos = Math.max(containerBox.left + window.scrollX, Math.min(leftPos, containerBox.right + window.scrollX - tooltipRect.width));
-                    let topPos = containerBox.top + window.scrollY + 10;
+                    // Prevent tooltip from overflowing the widget edges
+                    leftPos = Math.max(0, Math.min(leftPos, containerRect.width - tooltipRect.width));
                     
                     tooltip.style("left", `${leftPos}px`)
-                           .style("top", `${topPos}px`);
+                           .style("top", `10px`);
                 }
                 
                 svg.append("rect").attr("width", width).attr("height", height).attr("fill", "none").attr("pointer-events", "all")
