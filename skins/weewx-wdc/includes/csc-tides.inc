@@ -81,7 +81,6 @@
             background-color: var(--color-page-bg);
             color: var(--color-text-primary);
             touch-action: manipulation;
-            border-radius: 1rem;
             width: 100%;
             max-width: 600px;
             margin-left: auto;
@@ -146,13 +145,13 @@
         #tide-chart-widget-container .date-nav-box {
             display: flex; justify-content: space-between; align-items: center;
             background-color: var(--color-box-bg); border: 1px solid var(--color-box-border);
-            border-radius: 0.5rem; box-shadow: var(--shadow-sm);
+            box-shadow: var(--shadow-sm);
             padding: 0.25rem; width: 100%;
         }
 
         #tide-chart-widget-container .nav-button {
             padding: 0.5rem;
-            border-radius: 9999px;
+            border-radius: 9999px; /* Keeping round buttons */
             transition: background-color 0.2s;
         }
         #tide-chart-widget-container .nav-button:hover {
@@ -200,7 +199,7 @@
 
         #tide-chart-widget-container .status-box {
             background-color: var(--color-box-bg); border: 1px solid var(--color-box-border);
-            border-radius: 0.5rem; box-shadow: var(--shadow-sm); padding: 0.5rem 0.25rem;
+            box-shadow: var(--shadow-sm); padding: 0.5rem 0.25rem;
             text-align: center; display: flex; flex-direction: column; align-items: center; min-height: 4rem;
         }
         #tide-chart-widget-container .box-primary {
@@ -221,7 +220,7 @@
 
         #tide-chart-widget-container .status-banner {
             display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-            padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; text-align: center;
+            padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 500; text-align: center;
         }
         #tide-chart-widget-container .banner-yellow { background-color: #fef08a; color: #854d0e; }
         #tide-chart-widget-container .banner-red { background-color: #fecaca; color: #991b1b; }
@@ -265,8 +264,8 @@
         
         #tide-chart-widget-container .event-row-next { font-weight: 700; background-color: var(--color-button-hover-bg); }
         #tide-chart-widget-container .event-row-next td { color: var(--color-text-primary); }
-        #tide-chart-widget-container .event-row-next td:first-child { padding-left: 0.25rem; border-top-left-radius: 0.25rem; border-bottom-left-radius: 0.25rem; }
-        #tide-chart-widget-container .event-row-next td:last-child { padding-right: 0.25rem; border-top-right-radius: 0.25rem; border-bottom-right-radius: 0.25rem; }
+        #tide-chart-widget-container .event-row-next td:first-child { padding-left: 0.25rem; }
+        #tide-chart-widget-container .event-row-next td:last-child { padding-right: 0.25rem; }
         
         #tide-chart-widget-container .icon-sm { width: 1rem; height: 1rem; }
         #tide-chart-widget-container .icon-open { color: var(--icon-color-open); }
@@ -290,7 +289,6 @@
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             font-family: 'Inter', sans-serif;
-            border-radius: 0.5rem;
             padding: 0.5rem 0.75rem;
             box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
             background-color: var(--color-tooltip-bg);
@@ -1066,7 +1064,6 @@
                     g.append("rect")
                         .attr("x", rectX).attr("y", rectY)
                         .attr("width", boxWidth).attr("height", boxHeight)
-                        .attr("rx", 4)
                         .attr("fill", label.isOpen ? "var(--color-open-line)" : "var(--color-dock-line)")
                         .attr("stroke", "none");
                         
@@ -1270,8 +1267,7 @@
                              .attr("y", flagY)
                              .attr("width", flagWidth)
                              .attr("height", flagHeight)
-                             .attr("fill", nowIndicatorColor)
-                             .attr("rx", 2); // Slightly rounded corners
+                             .attr("fill", nowIndicatorColor); // Removed rounded corners here
                              
                          // Flag text
                          nowGroup.append("text")
@@ -1307,7 +1303,7 @@
                 
                 // Reflected the updated Circular Icons logic in the Legend UI
                 document.getElementById('legend').innerHTML = `
-                    <div><div style="width: 0.75rem; height: 0.75rem; border-radius: 0.125rem; background-color: var(--color-chart-open-overlay);"></div><span>Club Open</span></div>
+                    <div><div style="width: 0.75rem; height: 0.75rem; background-color: var(--color-chart-open-overlay);"></div><span>Club Open</span></div>
                     <div><div style="width: 1rem; height: 1px; background-color: var(--color-observed-line); opacity: 0.85;"></div><span>Observed tide</span></div>
                     <div>
                         <svg style="width:0.875rem;height:0.875rem;color:var(--icon-color-open);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
