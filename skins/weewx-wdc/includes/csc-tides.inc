@@ -227,7 +227,7 @@
             backdrop-filter: blur(4px);
             -webkit-backdrop-filter: blur(4px);
             font-family: 'Inter', sans-serif;
-            font-size: 0.875rem;
+            font-size: 0.7rem;
             border-radius: 0.5rem;
             padding: 2px;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
