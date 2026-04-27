@@ -439,8 +439,12 @@
             
             let currentDate = new Date(initialDate);
             let countdownInterval = null;
+            
+            // --- Caching Stores ---
             const tideDataCache = {};
             const observedDataCache = {};
+            const clubStatusCache = {}; // Added cache to prevent API spam on resize
+            
             const NOAA_STATION_ID = "9414816";
             const RICHMOND_STATION_ID = "9414863";
             const LOCATION_LAT = 37.8716;
@@ -468,6 +472,15 @@
 
             // --- HELPERS ---
             const parseNOAADate = d3.timeParse("%Y-%m-%d %H:%M");
+            
+            // Returns a timezone-safe YYYYMMDD string for caching to prevent UTC roll-over bugs
+            function getLocalCacheKey(date) {
+                const yyyy = date.getFullYear();
+                const mm = ('0' + (date.getMonth() + 1)).slice(-2);
+                const dd = ('0' + date.getDate()).slice(-2);
+                return `${yyyy}${mm}${dd}`;
+            }
+            
             function isPDT(date) {
                 const year = date.getFullYear();
                 const dstStart = new Date(year, 2, 1);
@@ -519,10 +532,10 @@
             }
 
             async function fetchTideData(date) {
-                const dateString = date.toISOString().split('T')[0];
-                if (tideDataCache[dateString]) return tideDataCache[dateString];
-                const yyyymmdd = date.getFullYear() + ('0' + (date.getMonth() + 1)).slice(-2) + ('0' + date.getDate()).slice(-2);
-                const url = `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&application=NOS.CO-OPS.CAT&begin_date=${yyyymmdd}&end_date=${yyyymmdd}&datum=MLLW&station=${NOAA_STATION_ID}&time_zone=lst_ldt&units=english&format=json`;
+                const cacheKey = getLocalCacheKey(date);
+                if (tideDataCache[cacheKey]) return tideDataCache[cacheKey];
+                
+                const url = `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&application=NOS.CO-OPS.CAT&begin_date=${cacheKey}&end_date=${cacheKey}&datum=MLLW&station=${NOAA_STATION_ID}&time_zone=lst_ldt&units=english&format=json`;
                 
                 const maxRetries = 10;
                 const retryDelay = 1000; 
@@ -533,12 +546,12 @@
                         if (!response.ok) throw new Error(`NOAA API request failed: ${response.statusText} (Attempt ${attempt})`);
                         const data = await response.json();
                         if (data.error || !data.predictions) {
-                            console.warn(`NOAA returned no predictions for ${dateString} (Attempt ${attempt})`);
-                            tideDataCache[dateString] = [];
+                            console.warn(`NOAA returned no predictions for ${cacheKey} (Attempt ${attempt})`);
+                            tideDataCache[cacheKey] = [];
                             return [];
                         }
                         const formattedData = data.predictions.map(p => ({ time: parseNOAADate(p.t), height: parseFloat(p.v) })).filter(p => p.time !== null);
-                        tideDataCache[dateString] = formattedData;
+                        tideDataCache[cacheKey] = formattedData;
                         return formattedData;
                     } catch (error) {
                         console.error(`Failed to fetch tide data on attempt ${attempt}:`, error);
@@ -581,6 +594,9 @@
             }
 
             async function fetchClubStatus(date) {
+                const cacheKey = getLocalCacheKey(date);
+                if (clubStatusCache[cacheKey]) return clubStatusCache[cacheKey]; // Resolves network spam issue on resize
+                
                 const yyyymmdd = date.getFullYear() + '-' + ('0' + (date.getMonth() + 1)).slice(-2) + '-' + ('0' + date.getDate()).slice(-2);
                 const url = `https://www.cal-sailing.org/index.php?option=com_csctides&view=gettidedatalist&task=gettidedatalist&tmpl=component&output=json&tidedate=${yyyymmdd}`;
                 const maxRetries = 10;
@@ -618,7 +634,11 @@
                         const isClosed = clubData.clubclosed === true || clubData.clubclosed === 'true';
                         const sunsetTime = parseClubTime(clubData.sunsettime);
 
-                        if (isClosed) return { isClosed: true, alertMessage: 'Club Closed Due To Tide', sunsetTime };
+                        if (isClosed) {
+                            const result = { isClosed: true, alertMessage: 'Club Closed Due To Tide', sunsetTime };
+                            clubStatusCache[cacheKey] = result;
+                            return result;
+                        }
 
                         const openTime = parseClubTime(clubData.opentime);
                         const dockTime = parseClubTime(clubData.docktime);
@@ -640,7 +660,10 @@
                             }
                         }
                         const alertMessage = Array.from(alerts).join(' & ');
-                        return { isClosed: false, openTime, dockTime, midDayDockTime, midDayOpenTime, alertMessage, sunsetTime };
+                        
+                        const result = { isClosed: false, openTime, dockTime, midDayDockTime, midDayOpenTime, alertMessage, sunsetTime };
+                        clubStatusCache[cacheKey] = result;
+                        return result;
 
                     } catch (error) {
                         console.error(`Failed to fetch or parse club status on attempt ${attempt}:`, error);
@@ -656,12 +679,11 @@
             }
 
             async function fetchObservedTideData(date, forceRefresh = false) {
-                const dateString = date.toISOString().split('T')[0];
-                if (!forceRefresh && observedDataCache[dateString]) return observedDataCache[dateString];
+                const cacheKey = getLocalCacheKey(date);
+                if (!forceRefresh && observedDataCache[cacheKey]) return observedDataCache[cacheKey];
 
-                const yyyymmdd = date.getFullYear() + ('0' + (date.getMonth() + 1)).slice(-2) + ('0' + date.getDate()).slice(-2);
-                const predUrl = `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&application=NOS.CO-OPS.CAT&begin_date=${yyyymmdd}&end_date=${yyyymmdd}&datum=MLLW&station=${RICHMOND_STATION_ID}&time_zone=lst_ldt&units=english&format=json`;
-                const obsUrl = `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=water_level&application=NOS.CO-OPS.CAT&begin_date=${yyyymmdd}&end_date=${yyyymmdd}&datum=MLLW&station=${RICHMOND_STATION_ID}&time_zone=lst_ldt&units=english&format=json`;
+                const predUrl = `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&application=NOS.CO-OPS.CAT&begin_date=${cacheKey}&end_date=${cacheKey}&datum=MLLW&station=${RICHMOND_STATION_ID}&time_zone=lst_ldt&units=english&format=json`;
+                const obsUrl = `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=water_level&application=NOS.CO-OPS.CAT&begin_date=${cacheKey}&end_date=${cacheKey}&datum=MLLW&station=${RICHMOND_STATION_ID}&time_zone=lst_ldt&units=english&format=json`;
 
                 const maxRetries = 10;
                 const retryDelay = 1000;
@@ -677,7 +699,7 @@
 
                         // No observed data for this date (e.g. it's in the future)
                         if (obsData.error || !obsData.data) {
-                            observedDataCache[dateString] = [];
+                            observedDataCache[cacheKey] = [];
                             return [];
                         }
 
@@ -697,7 +719,7 @@
                             }
                         });
 
-                        observedDataCache[dateString] = observedPoints;
+                        observedDataCache[cacheKey] = observedPoints;
                         return observedPoints;
                     } catch (error) {
                         console.error(`Failed to fetch observed data on attempt ${attempt}:`, error);
@@ -712,6 +734,8 @@
             }
 
             async function drawChart() {
+                tooltip.style("opacity", 0); // Hide tooltip proactively before re-render
+                
                 const loadingHTML = `<div class='wave-container'><div style='color: var(--color-text-secondary)'>Loading tide data...</div><div class='wave'><div class='bar'></div><div class='bar'></div><div class='bar'></div><div class='bar'></div></div></div>`;
                 chartContainer.html(loadingHTML);
                 clubStatusBanner.style.display = 'none';
