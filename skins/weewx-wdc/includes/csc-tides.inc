@@ -51,9 +51,9 @@
             --color-chart-night: #f3f4f6;
             --color-chart-open-overlay: rgba(34, 197, 94, 0.15);
             --color-chart-danger-area: rgba(239, 68, 68, 0.7);
-            --color-chart-rising: #6da9e9;
-            --color-chart-falling: #558bc7;
-            --color-chart-tide-line: #2b609c;
+            --color-chart-rising: #a0c0e0;
+            --color-chart-falling: #80a8d0;
+            --color-chart-tide-line: #4070a0;
             --color-open-line: #22c55e;
             --color-dock-line: #f97316;
             --color-event-circle-fill: #f3f4f6;
@@ -227,7 +227,7 @@
             backdrop-filter: blur(4px);
             -webkit-backdrop-filter: blur(4px);
             font-family: 'Inter', sans-serif;
-            font-size: 0.7rem;
+            font-size: 0.875rem;
             border-radius: 0.5rem;
             padding: 2px;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
