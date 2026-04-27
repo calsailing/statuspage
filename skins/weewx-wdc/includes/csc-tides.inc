@@ -253,9 +253,9 @@
         #tide-chart-widget-container .axis line { stroke: var(--color-axis-stroke); }
         
         /* Font size reduced for mobile, restored for larger screens */
-        #tide-chart-widget-container .axis text { fill: var(--color-text-tertiary); font-size: 0.6rem; }
+        #tide-chart-widget-container .axis text { fill: var(--color-text-tertiary); font-size: 0.55rem; }
         @media (min-width: 640px) {
-            #tide-chart-widget-container .axis text { font-size: 0.75rem; }
+            #tide-chart-widget-container .axis text { font-size: 0.7rem; }
         }
         
         #tide-chart-widget-container .event-label { 
@@ -778,7 +778,7 @@
                 
                 const yAxis = d3.axisLeft(yScale), ticks = yScale.ticks(), uniqueRoundedTicks = [...new Set(ticks.map(t => Math.round(t)))];
                 
-                yAxis.tickValues(uniqueRoundedTicks).tickFormat(d => `${d} ft`);
+                yAxis.tickValues(uniqueRoundedTicks).tickFormat(d => `${d}`);
                 svg.append("g").call(yAxis).attr("class", "axis y-axis");
                 
                 // --- Tide Event Markers (High / Low) ---
