@@ -779,7 +779,14 @@
                 const yAxis = d3.axisLeft(yScale), ticks = yScale.ticks(), uniqueRoundedTicks = [...new Set(ticks.map(t => Math.round(t)))];
                 
                 yAxis.tickValues(uniqueRoundedTicks).tickFormat(d => `${d}`);
-                svg.append("g").call(yAxis).attr("class", "axis y-axis");
+                const yAxisGroup = svg.append("g").call(yAxis).attr("class", "axis y-axis");
+                
+                // Add "ft" label neatly below the y-axis numbers
+                yAxisGroup.append("text")
+                    .attr("x", -9) // Align with standard d3 left axis tick text
+                    .attr("y", height + 15) // Position level with the x-axis text
+                    .attr("text-anchor", "end")
+                    .text("ft");
                 
                 // --- Tide Event Markers (High / Low) ---
                 const eventsGroup = svg.selectAll(".event").data(tideEvents).enter().append("g").attr("class", "event").attr("transform", d => `translate(${xScale(d.time)},${yScale(d.height)})`);
