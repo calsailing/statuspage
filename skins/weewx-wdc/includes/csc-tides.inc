@@ -64,6 +64,9 @@
             --color-now-indicator: #facc15;
             --color-observed-line: #3b82f6;
             --color-table-border: #e5e7eb;
+            --color-box-bg: #ffffff;
+            --color-box-border: #e5e7eb;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
             --icon-color-open: #22c55e;
             --icon-color-dock: #f97316;
             --icon-color-high: #22d3ee;
@@ -108,6 +111,9 @@
             --color-now-indicator: #fde047;
             --color-observed-line: #60a5fa;
             --color-table-border: #374151;
+            --color-box-bg: #1f2937;
+            --color-box-border: #4b5563;
+            --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.3);
             --icon-color-open: #4ade80;
             --icon-color-dock: #fb923c;
             --icon-color-high: #67e8f9;
@@ -116,14 +122,22 @@
         }
 
         /* --- CUSTOM CSS STYLES --- */
-        #tide-chart-widget-container .widget-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        #tide-chart-widget-container .widget-top-container {
             padding: 0 1rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
         }
         @media (min-width: 640px) {
-            #tide-chart-widget-container .widget-header { padding: 0 1.5rem; }
+            #tide-chart-widget-container .widget-top-container { padding: 0 1.5rem; }
+        }
+
+        #tide-chart-widget-container .date-nav-box {
+            display: flex; justify-content: space-between; align-items: center;
+            background-color: var(--color-box-bg); border: 1px solid var(--color-box-border);
+            border-radius: 0.5rem; box-shadow: var(--shadow-sm);
+            padding: 0.25rem; width: 100%;
         }
 
         #tide-chart-widget-container .nav-button {
@@ -141,7 +155,7 @@
         }
 
         #tide-chart-widget-container .info-center { text-align: center; }
-        #tide-chart-widget-container .date-picker-wrapper { position: relative; }
+        #tide-chart-widget-container .date-picker-wrapper { position: relative; cursor: pointer; }
         #tide-chart-widget-container .date-display {
             display: flex;
             align-items: center;
@@ -158,18 +172,45 @@
             width: 100%; height: 100%;
             opacity: 0;
             cursor: pointer;
+            z-index: 10;
+        }
+        
+        /* This CSS trick stretches the native clickable area to cover the entire wrapper */
+        #tide-chart-widget-container #date-picker::-webkit-calendar-picker-indicator {
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            width: 100%; height: 100%;
+            opacity: 0;
+            cursor: pointer;
         }
 
-        #tide-chart-widget-container #current-tide-status { font-size: 1.125rem; font-weight: 600; min-height: 1.75rem; color: var(--color-text-primary); }
-        #tide-chart-widget-container #observed-tide-status { font-size: 0.75rem; min-height: 1rem; color: var(--color-text-secondary); font-weight: normal; font-style: italic; }
-        #tide-chart-widget-container #next-tide-event { font-size: 0.875rem; min-height: 1.25rem; color: var(--color-text-secondary); }
-        #tide-chart-widget-container #club-status-alert { font-size: 0.875rem; min-height: 1.25rem; color: var(--color-text-danger); }
-        #tide-chart-widget-container #current-tide-status:empty,
-        #tide-chart-widget-container #observed-tide-status:empty,
-        #tide-chart-widget-container #next-tide-event:empty,
-        #tide-chart-widget-container #club-status-alert:empty {
-            min-height: 0;
+        #tide-chart-widget-container .status-boxes-container {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; width: 100%;
         }
+        @media (max-width: 400px) { #tide-chart-widget-container .status-boxes-container { gap: 0.25rem; } }
+
+        #tide-chart-widget-container .status-box {
+            background-color: var(--color-box-bg); border: 1px solid var(--color-box-border);
+            border-radius: 0.5rem; box-shadow: var(--shadow-sm); padding: 0.5rem 0.25rem;
+            text-align: center; display: flex; flex-direction: column; align-items: center; min-height: 4rem;
+        }
+        #tide-chart-widget-container .status-label {
+            font-size: 0.65rem; color: var(--color-text-tertiary); text-transform: uppercase;
+            letter-spacing: 0.05em; margin-bottom: 0.25rem;
+        }
+        #tide-chart-widget-container .status-value {
+            font-size: 0.875rem; color: var(--color-text-primary); line-height: 1.2;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1;
+        }
+
+        #tide-chart-widget-container .status-banner {
+            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+            padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; text-align: center;
+        }
+        #tide-chart-widget-container .banner-yellow { background-color: #fef08a; color: #854d0e; }
+        #tide-chart-widget-container .banner-red { background-color: #fecaca; color: #991b1b; }
+        .dark #tide-chart-widget-container .banner-yellow { background-color: rgba(234, 179, 8, 0.15); color: #fde047; border: 1px solid rgba(234, 179, 8, 0.3); }
+        .dark #tide-chart-widget-container .banner-red { background-color: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
 
         #tide-chart-widget-container .chart-aspect-wrapper { position: relative; width: 100%; }
         #tide-chart-widget-container #chart-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
@@ -278,14 +319,14 @@
     </style>
 
     <div id="tide-chart-widget-container">
-        <div class="widget-header">
-            <button id="prev-day" class="nav-button" aria-label="Previous Day">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                </svg>
-            </button>
-            <div class="info-center">
-                 <div class="date-picker-wrapper">
+        <div class="widget-top-container">
+            <div class="date-nav-box">
+                <button id="prev-day" class="nav-button" aria-label="Previous Day">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
+                <div class="date-picker-wrapper">
                      <div class="date-display">
                          <p id="current-date"></p>
                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -293,17 +334,30 @@
                          </svg>
                      </div>
                      <input type="date" id="date-picker" title="Select Date" aria-label="Select Date">
-                 </div>
-                 <p id="current-tide-status"></p>
-                 <p id="next-tide-event"></p>
-                 <p id="club-status-alert"></p>
-                 <p id="observed-tide-status"></p>
+                </div>
+                <button id="next-day" class="nav-button" aria-label="Next Day">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
             </div>
-            <button id="next-day" class="nav-button" aria-label="Next Day">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-            </button>
+
+            <div id="club-status-banner" style="display: none;"></div>
+            
+            <div id="status-boxes-container" class="status-boxes-container" style="display: none;">
+                <div class="status-box">
+                    <div class="status-label">Current Predicted Tide</div>
+                    <div id="current-tide-status" class="status-value"></div>
+                </div>
+                <div class="status-box">
+                    <div class="status-label">Observed Tide</div>
+                    <div id="observed-tide-status" class="status-value"></div>
+                </div>
+                <div class="status-box">
+                    <div class="status-label">Next Tide</div>
+                    <div id="next-tide-event" class="status-value"></div>
+                </div>
+            </div>
         </div>
 
         <div class="aspect-wrapper">
@@ -331,8 +385,10 @@
             const dateDisplay = document.getElementById('current-date');
             const datePicker = document.getElementById('date-picker');
             const nextTideDisplay = document.getElementById('next-tide-event');
-            const clubStatusAlert = document.getElementById('club-status-alert');
+            const clubStatusBanner = document.getElementById('club-status-banner');
             const currentTideStatus = document.getElementById('current-tide-status');
+            const observedStatusEl = document.getElementById('observed-tide-status');
+            const statusBoxesContainer = document.getElementById('status-boxes-container');
             const eventsList = document.getElementById('events-list');
             
             // --- Tooltip Handling ---
@@ -615,8 +671,8 @@
             async function drawChart() {
                 const loadingHTML = `<div class='wave-container'><div style='color: var(--color-text-secondary)'>Loading tide data...</div><div class='wave'><div class='bar'></div><div class='bar'></div><div class='bar'></div><div class='bar'></div></div></div>`;
                 chartContainer.html(loadingHTML);
-                clubStatusAlert.textContent = '';
-                document.getElementById('observed-tide-status').textContent = '';
+                clubStatusBanner.style.display = 'none';
+                observedStatusEl.innerHTML = '';
                 eventsList.innerHTML = '';
                 const [currentTides, clubStatus, observedAnomalies] = await Promise.all([fetchTideData(currentDate), fetchClubStatus(currentDate), fetchObservedTideData(currentDate)]);
                 chartContainer.html("");
@@ -721,7 +777,20 @@
                 
                 const dayEvents = [];
                 const specialIcons = []; // For storing Open/Dock icons on the tideline
-                clubStatusAlert.textContent = clubStatus.alertMessage || '';
+                const topLabelsData = []; // For the top boxes
+                
+                // Update Warning Banner
+                if (clubStatus.isClosed) {
+                    clubStatusBanner.className = 'status-banner banner-red';
+                    clubStatusBanner.innerHTML = `<svg class="icon-sm" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> <span>${clubStatus.alertMessage}</span>`;
+                    clubStatusBanner.style.display = 'flex';
+                } else if (clubStatus.alertMessage) {
+                    clubStatusBanner.className = 'status-banner banner-yellow';
+                    clubStatusBanner.innerHTML = `<svg class="icon-sm" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> <span>${clubStatus.alertMessage}</span>`;
+                    clubStatusBanner.style.display = 'flex';
+                } else {
+                    clubStatusBanner.style.display = 'none';
+                }
                 
                 if (!clubStatus.isClosed) {
                     const openPeriods = [];
@@ -739,11 +808,13 @@
                             svg.append("line").attr("x1", xScale(start)).attr("x2", xScale(start)).attr("y1", 0).attr("y2", height).attr("stroke", "var(--color-open-line)").attr("stroke-width", 1);
                             dayEvents.push({time: start, text: openText, type: 'open'});
                             specialIcons.push({ time: start, type: 'open', yHeight: getTideHeightAtTime(chartData, start) });
+                            topLabelsData.push({ time: start, text: 'Open', isOpen: true });
                         }
                         if (end > start && end < endOfDay) {
                              svg.append("line").attr("x1", xScale(end)).attr("x2", xScale(end)).attr("y1", 0).attr("y2", height).attr("stroke", "var(--color-dock-line)").attr("stroke-width", 1);
                              dayEvents.push({time: end, text: dockText, type: 'dock'});
                              specialIcons.push({ time: end, type: 'dock', yHeight: getTideHeightAtTime(chartData, end) });
+                             topLabelsData.push({ time: end, text: 'Dock', isOpen: false });
                         }
                     });
                 }
@@ -840,6 +911,55 @@
                     } else if (d.type === 'dock') {
                         svgIcon.append("path").attr("d", "M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z");
                     }
+                });
+
+                // --- Top Labels for Open / Dock Times ---
+                const topBoxes = [];
+                topLabelsData.forEach(label => {
+                    const timeStr = d3.timeFormat("%H:%M")(label.time);
+                    const labelText = `${label.text} ${timeStr}`;
+                    const boxWidth = 66;
+                    const boxHeight = 18;
+                    const xPos = xScale(label.time);
+                    let rectX = xPos - (boxWidth / 2);
+                    
+                    // Prevent overflow off the edges of the chart
+                    if (rectX < 0) rectX = 0;
+                    if (rectX + boxWidth > width) rectX = width - boxWidth;
+                    
+                    let rectY = 4;
+                    let collision = true;
+                    // Collision detection loop to prevent boxes from overlapping horizontally
+                    while(collision) {
+                        collision = false;
+                        for (let b of topBoxes) {
+                            if (rectX < b.x + b.w && rectX + boxWidth > b.x &&
+                                rectY < b.y + b.h && rectY + boxHeight > b.y) {
+                                rectY += boxHeight + 4; // Shift down if overlapped
+                                collision = true;
+                                break;
+                            }
+                        }
+                    }
+                    topBoxes.push({x: rectX, y: rectY, w: boxWidth, h: boxHeight});
+
+                    const g = svg.append("g").attr("class", "top-time-label");
+                    
+                    g.append("rect")
+                        .attr("x", rectX).attr("y", rectY)
+                        .attr("width", boxWidth).attr("height", boxHeight)
+                        .attr("rx", 4)
+                        .attr("fill", "var(--color-box-bg)")
+                        .attr("stroke", label.isOpen ? "var(--color-open-line)" : "var(--color-dock-line)")
+                        .attr("stroke-width", 1);
+                        
+                    g.append("text")
+                        .attr("x", rectX + (boxWidth / 2))
+                        .attr("y", rectY + (boxHeight / 2) + 1)
+                        .attr("text-anchor", "middle").attr("dominant-baseline", "middle")
+                        .attr("font-size", "0.6rem").attr("font-weight", "600")
+                        .attr("fill", label.isOpen ? "var(--color-open-line)" : "var(--color-dock-line)")
+                        .text(labelText);
                 });
 
                 updateNowIndicator();
@@ -951,7 +1071,7 @@
 
             function updateNowIndicator() {
                 if (!svg || !xScale || !yScale || !chartDataForUpdate) return;
-                svg.select(".now-indicator").remove();
+                svg.selectAll(".now-indicator, .now-group").remove();
                 const now = new Date();
                 const startOfDay = d3.timeDay.floor(currentDate);
                 const endOfDay = d3.timeDay.ceil(currentDate);
@@ -965,7 +1085,69 @@
                          if (!widgetContainer) return;
                          const computedStyles = getComputedStyle(widgetContainer);
                          const nowIndicatorColor = computedStyles.getPropertyValue('--color-now-indicator').trim();
-                         svg.append("circle").attr("class", "now-indicator").attr("cx", xScale(now)).attr("cy", yScale(currentDataPoint.height)).attr("r", 5).attr("fill", nowIndicatorColor).style("pointer-events", "none");
+                         
+                         const xPos = xScale(now);
+                         const yPos = yScale(currentDataPoint.height);
+                         const chartWidth = xScale.range()[1];
+                         
+                         // Create a group for the now indicator to keep things organized and prevent hover interference
+                         const nowGroup = svg.append("g").attr("class", "now-group").style("pointer-events", "none");
+                         
+                         // Determine dynamic Y position to avoid overlapping the top labels (Open/Dock boxes)
+                         let maxLabelY = 0;
+                         svg.selectAll(".top-time-label rect").each(function() {
+                             const y = parseFloat(d3.select(this).attr("y"));
+                             const h = parseFloat(d3.select(this).attr("height"));
+                             if (!isNaN(y) && !isNaN(h) && (y + h > maxLabelY)) {
+                                 maxLabelY = y + h;
+                             }
+                         });
+                         const flagY = maxLabelY > 0 ? maxLabelY + 4 : 0;
+                         
+                         // 2px thick vertical line (pole)
+                         nowGroup.append("line")
+                             .attr("x1", xPos)
+                             .attr("x2", xPos)
+                             .attr("y1", flagY)
+                             .attr("y2", yPos)
+                             .attr("stroke", nowIndicatorColor)
+                             .attr("stroke-width", 2);
+
+                         // Original now circle
+                         nowGroup.append("circle")
+                             .attr("cx", xPos)
+                             .attr("cy", yPos)
+                             .attr("r", 5)
+                             .attr("fill", nowIndicatorColor);
+                             
+                         // Flag dimensions
+                         const flagWidth = 28;
+                         const flagHeight = 14;
+                         let flagX = xPos;
+                         
+                         // Flip the flag to the left side of the pole if it's too close to the right edge
+                         if (xPos + flagWidth > chartWidth) {
+                             flagX = xPos - flagWidth;
+                         }
+                         
+                         // Flag background
+                         nowGroup.append("rect")
+                             .attr("x", flagX)
+                             .attr("y", flagY)
+                             .attr("width", flagWidth)
+                             .attr("height", flagHeight)
+                             .attr("fill", nowIndicatorColor)
+                             .attr("rx", 2); // Slightly rounded corners
+                             
+                         // Flag text
+                         nowGroup.append("text")
+                             .attr("x", flagX + (flagWidth / 2))
+                             .attr("y", flagY + 10.5) // Adjust for vertical centering
+                             .attr("fill", "#000000") // Black text for maximum contrast on yellow
+                             .attr("font-size", "0.6rem")
+                             .attr("font-weight", "bold")
+                             .attr("text-anchor", "middle")
+                             .text("Now");
                     }
                 }
             }
@@ -982,8 +1164,7 @@
                     countdownInterval = null;
                 }
                 const isCurrentDay = currentDate.toDateString() === new Date().toDateString();
-                nextTideDisplay.style.display = isCurrentDay ? 'block' : 'none';
-                currentTideStatus.style.display = isCurrentDay ? 'block' : 'none';
+                statusBoxesContainer.style.display = isCurrentDay ? 'grid' : 'none';
                 if (isCurrentDay) {
                     updateNextTideEvent();
                     countdownInterval = setInterval(updateNextTideEvent, 60000); 
@@ -1034,26 +1215,31 @@
                     const timeIn5Mins = new Date(now.getTime() + 5 * 60000);
                     const futureHeight = getTideHeightAtTime(combinedTideDataForLookup, timeIn5Mins);
                     
+                    const currentHeightDisplay = currentHeight.toFixed(1);
                     let directionArrow = '';
                     if (futureHeight > currentHeight) directionArrow = `<svg class="icon-sm" style="display: inline-block; vertical-align: middle; color: var(--icon-color-high);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>`;
                     else if (futureHeight < currentHeight) directionArrow = `<svg class="icon-sm" style="display: inline-block; vertical-align: middle; color: var(--icon-color-low);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>`;
                     
-                    currentTideStatus.innerHTML = `<span style="display: inline-flex; align-items: center;">${directionArrow}<span style="margin-left: 0.25rem;">${currentHeight.toFixed(1)} ft</span></span>`;
+                    currentTideStatus.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1rem;">${directionArrow}<span style="margin-left: 0.25rem;">${currentHeightDisplay} ft</span></div>`;
                     
                     // Handle accurate real-time observed status mapping anomaly to current interpolation
-                    const observedStatusEl = document.getElementById('observed-tide-status');
                     if (currentDate.toDateString() === now.toDateString()) {
                         const obsAnomalies = await fetchObservedTideData(now, true);
                         if (obsAnomalies && obsAnomalies.length > 0) {
                             const latestAnomaly = obsAnomalies[obsAnomalies.length - 1].anomaly;
-                            const exactObservedHeight = currentHeight + latestAnomaly;
-                            const sign = latestAnomaly >= 0 ? '+' : '';
-                            observedStatusEl.textContent = `Observed tide: ${exactObservedHeight.toFixed(1)} ft (${sign}${latestAnomaly.toFixed(1)} ft)`;
+                            
+                            // Recalculate based on displayed numbers to prevent rounding inaccuracies
+                            const roundedPredicted = parseFloat(currentHeight.toFixed(1));
+                            const roundedObserved = parseFloat((currentHeight + latestAnomaly).toFixed(1));
+                            const visualAnomaly = roundedObserved - roundedPredicted;
+                            
+                            const sign = visualAnomaly >= 0 ? '+' : '';
+                            observedStatusEl.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; gap: 0.25rem;"><span style="font-weight: 600; font-size: 1rem;">${roundedObserved.toFixed(1)} ft</span><span style="font-size:0.75rem; color:var(--color-text-secondary);">(${sign}${visualAnomaly.toFixed(1)} ft)</span></div>`;
                         } else {
-                            observedStatusEl.textContent = '';
+                            observedStatusEl.innerHTML = `<div style="color:var(--color-text-tertiary); font-size: 0.75rem;">Waiting for data...</div>`;
                         }
                     } else {
-                        observedStatusEl.textContent = '';
+                        observedStatusEl.innerHTML = '';
                     }
 
                     const allRawTides = [...prevTides, ...currentTides, ...nextTides, ...nextNextTides];
@@ -1061,24 +1247,24 @@
                     const nextEvent = allTideExtremes.find(event => event.time > now);
                     if (nextEvent) {
                         const diff = nextEvent.time - now, hours = Math.floor(diff / 3600000), minutes = Math.floor((diff % 3600000) / 60000);
-                        nextTideDisplay.innerHTML = `<span>${nextEvent.type} tide in ${hours}h ${minutes}m at ${nextEvent.height.toFixed(1)} ft</span>`;
+                        nextTideDisplay.innerHTML = `<div style="font-weight: 600;">${nextEvent.type} Tide ${nextEvent.height.toFixed(1)} ft</div><div style="font-size:0.75rem; color:var(--color-text-secondary); margin-top:2px;">in ${hours}h ${minutes}m</div>`;
                     } else {
-                        nextTideDisplay.innerHTML = "";
+                        nextTideDisplay.innerHTML = "-";
                     }
                     updateNowIndicator();
                 } catch (error) {
                     console.error("Error during periodic tide update:", error);
-                    currentTideStatus.innerHTML = "";
-                    nextTideDisplay.innerHTML = "<span>Could not update status</span>";
+                    currentTideStatus.innerHTML = "-";
+                    nextTideDisplay.innerHTML = "-";
                 }
             }
 
             function clearHeaderInfo() {
                 dateDisplay.textContent = '';
                 currentTideStatus.innerHTML = '';
-                document.getElementById('observed-tide-status').textContent = '';
+                observedStatusEl.innerHTML = '';
                 nextTideDisplay.innerHTML = '';
-                clubStatusAlert.textContent = '';
+                clubStatusBanner.style.display = 'none';
             }
 
             document.getElementById('prev-day').addEventListener('click', () => {
