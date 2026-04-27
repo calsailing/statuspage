@@ -1371,8 +1371,8 @@
                         } else if (currentClubStatus.isClosed) {
                             clubScheduleStatusEl.innerHTML = `<div style="font-weight: 600;">Closed</div><div style="font-size:0.75rem; color:var(--color-text-secondary); margin-top:2px;">for the day</div>`;
                         } else {
-                            const timeDiff = (targetDate) => {
-                                const diff = Math.max(0, targetDate - now);
+                            const timeDiffMs = (targetDate) => Math.max(0, targetDate - now);
+                            const formatTimeDiff = (diff) => {
                                 const h = Math.floor(diff / 3600000);
                                 const m = Math.floor((diff % 3600000) / 60000);
                                 return `${h > 0 ? h + 'h ' : ''}${m}m`;
@@ -1383,25 +1383,43 @@
 
                             if (currentClubStatus.openTime && now < currentClubStatus.openTime) {
                                 nextEventText = "Opens";
-                                nextEventTime = `in ${timeDiff(currentClubStatus.openTime)}`;
+                                nextEventTime = `in ${formatTimeDiff(timeDiffMs(currentClubStatus.openTime))}`;
                             } else if (currentClubStatus.midDayDockTime && currentClubStatus.midDayOpenTime) {
                                 if (now >= currentClubStatus.openTime && now < currentClubStatus.midDayDockTime) {
-                                    nextEventText = "Mid-Day Dock";
-                                    nextEventTime = `in ${timeDiff(currentClubStatus.midDayDockTime)}`;
+                                    const diff = timeDiffMs(currentClubStatus.midDayDockTime);
+                                    if (diff < 3600000) { // Less than 60 minutes
+                                        nextEventText = "Mid-Day Dock";
+                                        nextEventTime = `in ${formatTimeDiff(diff)}`;
+                                    } else {
+                                        nextEventText = "Open";
+                                        nextEventTime = `for ${formatTimeDiff(diff)}`;
+                                    }
                                 } else if (now >= currentClubStatus.midDayDockTime && now < currentClubStatus.midDayOpenTime) {
                                     nextEventText = "Re-opens";
-                                    nextEventTime = `in ${timeDiff(currentClubStatus.midDayOpenTime)}`;
+                                    nextEventTime = `in ${formatTimeDiff(timeDiffMs(currentClubStatus.midDayOpenTime))}`;
                                 } else if (now >= currentClubStatus.midDayOpenTime && now < currentClubStatus.dockTime) {
-                                    nextEventText = "Dock Time";
-                                    nextEventTime = `in ${timeDiff(currentClubStatus.dockTime)}`;
+                                    const diff = timeDiffMs(currentClubStatus.dockTime);
+                                    if (diff < 3600000) {
+                                        nextEventText = "Dock Time";
+                                        nextEventTime = `in ${formatTimeDiff(diff)}`;
+                                    } else {
+                                        nextEventText = "Open";
+                                        nextEventTime = `for ${formatTimeDiff(diff)}`;
+                                    }
                                 } else if (now >= currentClubStatus.dockTime) {
                                     nextEventText = "Closed";
                                     nextEventTime = "for the day";
                                 }
                             } else {
                                 if (now >= currentClubStatus.openTime && now < currentClubStatus.dockTime) {
-                                    nextEventText = "Dock Time";
-                                    nextEventTime = `in ${timeDiff(currentClubStatus.dockTime)}`;
+                                    const diff = timeDiffMs(currentClubStatus.dockTime);
+                                    if (diff < 3600000) {
+                                        nextEventText = "Dock Time";
+                                        nextEventTime = `in ${formatTimeDiff(diff)}`;
+                                    } else {
+                                        nextEventText = "Open";
+                                        nextEventTime = `for ${formatTimeDiff(diff)}`;
+                                    }
                                 } else if (now >= currentClubStatus.dockTime) {
                                     nextEventText = "Closed";
                                     nextEventTime = "for the day";
