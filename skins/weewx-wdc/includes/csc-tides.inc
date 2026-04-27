@@ -363,7 +363,7 @@
             
             <div id="status-boxes-container" class="status-boxes-container" style="display: none;">
                 <div class="status-box">
-                    <div class="status-label">Current Predicted Tide</div>
+                    <div class="status-label">Predicted Tide Now</div>
                     <div id="current-tide-status" class="status-value"></div>
                 </div>
                 <div class="status-box">
