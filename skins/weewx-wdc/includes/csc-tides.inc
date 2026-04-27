@@ -418,7 +418,11 @@
     <script>
         /* #raw */
         document.addEventListener('DOMContentLoaded', () => {
-            const initialDate = new Date();
+            // ALWAYS initialize core dates to Pacific Time to ensure out-of-state visitors see precise local Berkeley predictions
+            function getPTNow() {
+                return new Date(new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" }));
+            }
+            
             const DANGEROUS_LOW_TIDE = 1.5;
             const chartContainer = d3.select("#chart-container");
             const dateDisplay = document.getElementById('current-date');
@@ -437,7 +441,7 @@
             const tooltip = d3.select("#tide-chart-tooltip");
             tooltip.style("display", "block"); // Reveal to DOM layout so width is calculable, remains invisible via opacity: 0
             
-            let currentDate = new Date(initialDate);
+            let currentDate = getPTNow();
             let countdownInterval = null;
             
             // --- Caching Stores ---
@@ -471,6 +475,7 @@
             window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', redrawChartOnThemeChange);
 
             // --- HELPERS ---
+            // Parses NOAA predictions directly matching wall clock time
             const parseNOAADate = d3.timeParse("%Y-%m-%d %H:%M");
             
             // Returns a timezone-safe YYYYMMDD string for caching to prevent UTC roll-over bugs
@@ -511,9 +516,9 @@
                 const solarNoonMinutes = 720 - 4 * longitude - equationOfTime + berkeleyTimezoneOffsetMinutes;
                 const sunriseMinutes = solarNoonMinutes - hourAngle * 4;
                 const sunsetMinutes = solarNoonMinutes + hourAngle * 4;
-                const sunrise = new Date(date);
+                const sunrise = new Date(date.getTime());
                 sunrise.setHours(Math.floor(sunriseMinutes / 60), Math.round(sunriseMinutes % 60), 0, 0);
-                const sunset = new Date(date);
+                const sunset = new Date(date.getTime());
                 sunset.setHours(Math.floor(sunsetMinutes / 60), Math.round(sunsetMinutes % 60), 0, 0);
                 return { sunrise, sunset };
             }
@@ -618,7 +623,7 @@
                             if (!timeStr) return null;
                             timeStr = timeStr.toLowerCase().trim();
                             if (timeStr === 'sunset') return 'sunset';
-                            const d = new Date(date);
+                            const d = new Date(date.getTime());
                             if (timeStr === 'noon') { d.setHours(12, 0, 0, 0); return d; }
                             const pm = timeStr.includes('pm');
                             const parts = timeStr.replace(/am|pm/i, '').trim().split(':');
@@ -697,9 +702,8 @@
                         const predData = await predRes.json();
                         const obsData = await obsRes.json();
 
-                        // No observed data for this date (e.g. it's in the future)
+                        // Gracefully fail without permanently poisoning the historical cache
                         if (obsData.error || !obsData.data) {
-                            observedDataCache[cacheKey] = [];
                             return [];
                         }
 
@@ -945,7 +949,7 @@
                 yAxis.tickValues(uniqueRoundedTicks).tickFormat(d => `${d}`);
                 const yAxisGroup = svg.append("g").call(yAxis).attr("class", "axis y-axis");
                 
-                // Add "′" label neatly below the y-axis numbers
+                // Add "\" label neatly below the y-axis numbers
                 yAxisGroup.append("text")
                     .attr("x", -9) // Align with standard d3 left axis tick text
                     .attr("y", height + 15) // Position level with the x-axis text
@@ -1179,7 +1183,7 @@
                      let tableHTML = `<table><tbody>${uniqueEvents.map(e => { 
                          const icon = eventIcons[e.type] || ''; 
                          const eventTime = new Date(e.time);
-                         const nowForTable = new Date();
+                         const nowForTable = getPTNow();
                          let rowClass = "";
                          
                          // Determine visual styling for next event
@@ -1202,7 +1206,7 @@
             function updateNowIndicator() {
                 if (!svg || !xScale || !yScale || !chartDataForUpdate) return;
                 svg.selectAll(".now-indicator, .now-group").remove();
-                const now = new Date();
+                const now = getPTNow();
                 const startOfDay = d3.timeDay.floor(currentDate);
                 const endOfDay = d3.timeDay.ceil(currentDate);
                 if (currentDate.toDateString() === now.toDateString() && now >= startOfDay && now <= endOfDay) {
@@ -1293,7 +1297,8 @@
                     clearInterval(countdownInterval);
                     countdownInterval = null;
                 }
-                const isCurrentDay = currentDate.toDateString() === new Date().toDateString();
+                const nowForUI = getPTNow();
+                const isCurrentDay = currentDate.toDateString() === nowForUI.toDateString();
                 statusBoxesContainer.style.display = isCurrentDay ? 'grid' : 'none';
                 if (isCurrentDay) {
                     updateNextTideEvent();
@@ -1325,7 +1330,15 @@
 
             async function updateNextTideEvent() {
                  try {
-                    const now = new Date();
+                    const now = getPTNow();
+                    
+                    // If the real day has ticked over to tomorrow, auto-refresh the chart to ensure continuous operation
+                    if (currentDate.getDate() !== now.getDate() && (now.getTime() - initialDate.getTime()) < 86400000) {
+                        currentDate = new Date(now.getTime());
+                        drawChart();
+                        return;
+                    }
+
                     const [prevTides, currentTides, nextTides, nextNextTides] = await Promise.all([ 
                         fetchTideData(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)), 
                         fetchTideData(now), 
