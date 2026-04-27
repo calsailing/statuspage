@@ -259,36 +259,53 @@
             /* Default (Light Theme) Variables */
             --color-tooltip-bg: rgba(255, 255, 255, 0.95);
             --color-tooltip-text: #1f2937;
+            --color-tooltip-text-muted: #6b7280;
             --color-tooltip-border: #e5e7eb;
 
             position: absolute;
             pointer-events: none;
             opacity: 0;
-            transition: opacity 0.2s;
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
+            transition: opacity 0.2s ease-in-out;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             font-family: 'Inter', sans-serif;
-            font-size: 0.875rem;
             border-radius: 0.5rem;
-            padding: 2px;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            padding: 0.5rem 0.75rem;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
             background-color: var(--color-tooltip-bg);
-            color: var(--color-tooltip-text);
             border: 1px solid var(--color-tooltip-border);
             z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            text-align: center;
+            min-width: 80px;
         }
         #tide-chart-tooltip p {
             margin: 0;
             padding: 0;
-            line-height: 1.1;
+            line-height: 1;
         }
         .dark #tide-chart-tooltip {
             /* Dark Theme Override Variables */
-            --color-tooltip-bg: rgba(17, 24, 39, 0.95);
+            --color-tooltip-bg: rgba(31, 41, 55, 0.95);
             --color-tooltip-text: #f9fafb;
-            --color-tooltip-border: #374151;
+            --color-tooltip-text-muted: #9ca3af;
+            --color-tooltip-border: #4b5563;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
         }
-        #tide-chart-tooltip #tooltip-height { font-weight: 700; }
+        #tide-chart-tooltip #tooltip-time { 
+            font-size: 0.7rem; 
+            color: var(--color-tooltip-text-muted); 
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        #tide-chart-tooltip #tooltip-height { 
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--color-tooltip-text);
+        }
 
         #tide-chart-widget-container .axis path,
         #tide-chart-widget-container .axis line { stroke: var(--color-axis-stroke); }
@@ -832,7 +849,30 @@
                 }
                 
                 segments.forEach(seg => svg.append("path").datum(seg.data).attr("fill", seg.rising ? risingColor : fallingColor).attr("d", areaGenerator(height)));
-                svg.append("path").datum(chartData).attr("fill", "none").attr("stroke", tideLineColor).attr("stroke-width", 2).attr("d", lineGenerator);
+                
+                // --- LINE GRADIENT FOR DANGER ZONE ---
+                const dangerColor = computedStyles.getPropertyValue('--color-text-danger').trim();
+                const dangerY = yScale(DANGEROUS_LOW_TIDE);
+                const dangerOffset = Math.max(0, Math.min(1, dangerY / height));
+                
+                const defs = svg.append("defs");
+                defs.append("linearGradient")
+                    .attr("id", "tide-line-gradient")
+                    .attr("gradientUnits", "userSpaceOnUse")
+                    .attr("x1", 0).attr("y1", 0)
+                    .attr("x2", 0).attr("y2", height)
+                    .selectAll("stop")
+                    .data([
+                        {offset: 0, color: tideLineColor},
+                        {offset: dangerOffset, color: tideLineColor},
+                        {offset: dangerOffset, color: dangerColor},
+                        {offset: 1, color: dangerColor}
+                    ])
+                    .enter().append("stop")
+                    .attr("offset", d => d.offset)
+                    .attr("stop-color", d => d.color);
+
+                svg.append("path").datum(chartData).attr("fill", "none").attr("stroke", "url(#tide-line-gradient)").attr("stroke-width", 2).attr("d", lineGenerator);
                 
                 if (berkeleyObserved.length > 0) {
                     const observedLineGenerator = d3.line().x(d => xScale(d.time)).y(d => yScale(d.height)).curve(curve);
@@ -861,8 +901,27 @@
                 
                 // --- Tide Event Markers (High / Low) ---
                 const eventsGroup = svg.selectAll(".event").data(tideEvents).enter().append("g").attr("class", "event").attr("transform", d => `translate(${xScale(d.time)},${yScale(d.height)})`);
-                eventsGroup.append("circle").attr("r", 3.5).attr("fill", tideLineColor);
+                
                 eventsGroup.each(function(d) {
+                    const g = d3.select(this);
+                    
+                    if (d.height < DANGEROUS_LOW_TIDE) {
+                        // Red circle background
+                        g.append("circle")
+                         .attr("r", 4.5)
+                         .attr("fill", dangerColor);
+                        // White X inside
+                        g.append("path")
+                         .attr("d", "M-2,-2 L2,2 M-2,2 L2,-2")
+                         .attr("stroke", "#ffffff")
+                         .attr("stroke-width", 1.5)
+                         .attr("stroke-linecap", "round");
+                    } else {
+                        g.append("circle")
+                         .attr("r", 3.5)
+                         .attr("fill", tideLineColor);
+                    }
+
                     const tStr = d3.timeFormat("%H:%M")(d.time);
                     const hStr = `${d.height.toFixed(1)}ft`;
 
@@ -921,7 +980,9 @@
                     const boxWidth = 66;
                     const boxHeight = 18;
                     const xPos = xScale(label.time);
-                    let rectX = xPos - (boxWidth / 2);
+                    
+                    // Open box to the left, Dock box to the right, overlapping the line slightly
+                    let rectX = label.isOpen ? (xPos - boxWidth + 6) : (xPos - 6);
                     
                     // Prevent overflow off the edges of the chart
                     if (rectX < 0) rectX = 0;
