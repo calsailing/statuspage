@@ -391,7 +391,7 @@
                     <div id="next-tide-event" class="status-value"></div>
                 </div>
                 <div id="club-schedule-box" class="status-box box-secondary">
-                    <div id="club-schedule-label" class="status-label">Club Schedule</div>
+                    <div id="club-schedule-label" class="status-label">Schedule</div>
                     <div id="club-schedule-status" class="status-value"></div>
                 </div>
             </div>
@@ -1374,9 +1374,9 @@
                             
                             const sign = visualAnomaly > 0 ? '+' : '';
                             
-                            observedStatusEl.innerHTML = `<div style="font-size: 0.75rem; color: var(--color-text-secondary);">Observed: ${roundedObserved.toFixed(1)}\u2032 <span style="font-size: 0.7rem; color: var(--color-text-tertiary);">(${sign}${visualAnomaly.toFixed(1)}\u2032)</span></div>`;
+                            observedStatusEl.innerHTML = `<div style="font-size: 0.65rem; color: var(--color-text-secondary);">Observed: ${roundedObserved.toFixed(1)}\u2032 <span style="font-size: 0.6rem; color: var(--color-text-tertiary);">(${sign}${visualAnomaly.toFixed(1)}\u2032)</span></div>`;
                         } else {
-                            observedStatusEl.innerHTML = `<div style="font-size: 0.75rem; color: var(--color-text-secondary);">Waiting for observed data...</div>`;
+                            observedStatusEl.innerHTML = `<div style="font-size: 0.65rem; color: var(--color-text-secondary);">Waiting for observed data...</div>`;
                         }
                         
                         // Handle Dynamic Club Schedule Countdown
