@@ -53,7 +53,7 @@
             --color-chart-danger-area: rgba(239, 68, 68, 0.7);
             --color-chart-rising: #a0c0e0;
             --color-chart-falling: #80a8d0;
-            --color-chart-tide-line: #4070a0;
+            --color-chart-tide-line: #4575a5;
             --color-open-line: #22c55e;
             --color-dock-line: #f97316;
             --color-event-circle-fill: #f3f4f6;
@@ -97,7 +97,7 @@
             --color-chart-danger-area: rgba(220, 38, 38, 0.6);
             --color-chart-rising: #375a7f;
             --color-chart-falling: #223e5e;
-            --color-chart-tide-line: #74a8d0;
+            --color-chart-tide-line: #1c3d5a;
             --color-open-line: #4ade80;
             --color-dock-line: #fb923c;
             --color-event-circle-fill: #374151;
@@ -783,7 +783,7 @@
                 
                 // --- Tide Event Markers (High / Low) ---
                 const eventsGroup = svg.selectAll(".event").data(tideEvents).enter().append("g").attr("class", "event").attr("transform", d => `translate(${xScale(d.time)},${yScale(d.height)})`);
-                eventsGroup.append("circle").attr("r", 5).attr("fill", eventCircleFill).attr("stroke", eventCircleStroke).attr("stroke-width", 1.5);
+                eventsGroup.append("circle").attr("r", 3.5).attr("fill", tideLineColor);
                 eventsGroup.each(function(d) {
                     const tStr = d3.timeFormat("%H:%M")(d.time);
                     const hStr = `${d.height.toFixed(1)}ft`;
@@ -794,8 +794,8 @@
 
                     // Draw text (styling is now handled purely by the .event-label CSS class to prevent conflicts)
                     const textGroup = d3.select(this).append("text").attr("class", "event-label").attr("text-anchor", "middle");
-                    textGroup.append("tspan").attr("x", 0).attr("y", textY1).text(tStr);
-                    textGroup.append("tspan").attr("x", 0).attr("y", textY2).text(hStr);
+                    textGroup.append("tspan").attr("x", 0).attr("y", textY1).text(tStr).style("font-size", "0.65rem");
+                    textGroup.append("tspan").attr("x", 0).attr("y", textY2).text(hStr).style("font-weight", "bold");
                 });
 
                 // --- Open and Dock Icons on Tideline ---
