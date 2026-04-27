@@ -97,7 +97,7 @@
             --color-chart-danger-area: rgba(220, 38, 38, 0.6);
             --color-chart-rising: #375a7f;
             --color-chart-falling: #223e5e;
-            --color-chart-tide-line: #1c3d5a;
+            --color-chart-tide-line: #6ea8e0;
             --color-open-line: #4ade80;
             --color-dock-line: #fb923c;
             --color-event-circle-fill: #374151;
