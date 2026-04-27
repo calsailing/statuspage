@@ -56,6 +56,8 @@
             --color-chart-tide-line: #4575a5;
             --color-open-line: #22c55e;
             --color-dock-line: #f97316;
+            --color-open-bg: rgba(34, 197, 94, 0.15);
+            --color-dock-bg: rgba(249, 115, 22, 0.15);
             --color-event-circle-fill: #f3f4f6;
             --color-event-circle-stroke: #1f2937;
             --color-hover-line: #9ca3af;
@@ -106,6 +108,8 @@
             --color-chart-tide-line: #6ea8e0;
             --color-open-line: #4ade80;
             --color-dock-line: #fb923c;
+            --color-open-bg: rgba(74, 222, 128, 0.15);
+            --color-dock-bg: rgba(251, 146, 60, 0.15);
             --color-event-circle-fill: #374151;
             --color-event-circle-stroke: #d1d5db;
             --color-hover-line: #6b7280;
@@ -259,7 +263,6 @@
         #tide-chart-widget-container #events-list td:last-child { text-align: right; }
         #tide-chart-widget-container #events-list strong { font-weight: 500; color: var(--color-text-primary); }
         
-        #tide-chart-widget-container .event-row-past { opacity: 0.45; }
         #tide-chart-widget-container .event-row-next { font-weight: 700; background-color: var(--color-button-hover-bg); }
         #tide-chart-widget-container .event-row-next td { color: var(--color-text-primary); }
         #tide-chart-widget-container .event-row-next td:first-child { padding-left: 0.25rem; border-top-left-radius: 0.25rem; border-bottom-left-radius: 0.25rem; }
@@ -389,8 +392,8 @@
                     <div class="status-label">Next Tide</div>
                     <div id="next-tide-event" class="status-value"></div>
                 </div>
-                <div class="status-box box-secondary">
-                    <div class="status-label">Club Schedule</div>
+                <div id="club-schedule-box" class="status-box box-secondary">
+                    <div id="club-schedule-label" class="status-label">Club Schedule</div>
                     <div id="club-schedule-status" class="status-value"></div>
                 </div>
             </div>
@@ -424,6 +427,8 @@
             const clubStatusBanner = document.getElementById('club-status-banner');
             const currentTideStatus = document.getElementById('current-tide-status');
             const observedStatusEl = document.getElementById('observed-tide-status');
+            const clubScheduleBoxEl = document.getElementById('club-schedule-box');
+            const clubScheduleLabelEl = document.getElementById('club-schedule-label');
             const clubScheduleStatusEl = document.getElementById('club-schedule-status');
             const statusBoxesContainer = document.getElementById('status-boxes-container');
             const eventsList = document.getElementById('events-list');
@@ -904,26 +909,6 @@
                 }
 
                 redSegments.forEach(segment => svg.append("path").datum(segment).attr("fill", redAreaColor).attr("d", redAreaGenerator));
-
-                // --- PAST FADE OVERLAY ---
-                const nowForFade = new Date();
-                if (currentDate.toDateString() === nowForFade.toDateString() && nowForFade >= startOfDay && nowForFade <= endOfDay) {
-                    svg.append("rect")
-                        .attr("x", 0)
-                        .attr("y", 0)
-                        .attr("width", xScale(nowForFade))
-                        .attr("height", height)
-                        .attr("fill", "var(--color-fade-overlay)")
-                        .style("pointer-events", "none");
-                } else if (currentDate < nowForFade) {
-                    svg.append("rect")
-                        .attr("x", 0)
-                        .attr("y", 0)
-                        .attr("width", width)
-                        .attr("height", height)
-                        .attr("fill", "var(--color-fade-overlay)")
-                        .style("pointer-events", "none");
-                }
                 
                 // Hide the midnight labels (00:00) so the graph text doesn't clip on the zero-margin edges
                 svg.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(xScale).ticks(d3.timeHour.every(6)).tickFormat(d => {
@@ -1173,16 +1158,12 @@
                          const nowForTable = new Date();
                          let rowClass = "";
                          
-                         // Determine visual styling for past / next events
+                         // Determine visual styling for next event
                          if (currentDate.toDateString() === nowForTable.toDateString()) {
-                             if (eventTime < nowForTable) {
-                                 rowClass = "event-row-past";
-                             } else if (!foundNextTableEvent) {
+                             if (eventTime >= nowForTable && !foundNextTableEvent) {
                                  rowClass = "event-row-next";
                                  foundNextTableEvent = true;
                              }
-                         } else if (currentDate < nowForTable) {
-                             rowClass = "event-row-past";
                          }
                          
                          return `<tr class="${rowClass}"><td>${icon}</td><td>${e.text}</td><td><strong>${d3.timeFormat("%H:%M")(eventTime)}</strong></td></tr>`; 
@@ -1360,16 +1341,21 @@
                             
                             const sign = visualAnomaly > 0 ? '+' : '';
                             
-                            observedStatusEl.innerHTML = `<div style="font-size: 0.75rem; color: var(--color-text-secondary);">Observed: ${roundedObserved.toFixed(1)} ft (${sign}${visualAnomaly.toFixed(1)} ft)</div>`;
+                            observedStatusEl.innerHTML = `<div style="font-size: 0.75rem; color: var(--color-text-secondary);">Observed: ${roundedObserved.toFixed(1)} ft</div><div style="font-size: 0.7rem; color: var(--color-text-tertiary); margin-top: 2px;">(${sign}${visualAnomaly.toFixed(1)} ft)</div>`;
                         } else {
                             observedStatusEl.innerHTML = `<div style="font-size: 0.75rem; color: var(--color-text-secondary);">Waiting for observed data...</div>`;
                         }
                         
                         // Handle Dynamic Club Schedule Countdown
+                        let isCurrentlyOpen = false;
+                        let hasScheduleData = true;
+
                         if (!currentClubStatus) {
                             clubScheduleStatusEl.innerHTML = "-";
+                            hasScheduleData = false;
                         } else if (currentClubStatus.isClosed) {
-                            clubScheduleStatusEl.innerHTML = `<div style="font-weight: 600;">Closed</div><div style="font-size:0.75rem; color:var(--color-text-secondary); margin-top:2px;">for the day</div>`;
+                            clubScheduleStatusEl.innerHTML = `<div style="font-weight: 600; color: var(--color-text-primary);">Closed</div><div style="font-size:0.75rem; color:var(--color-text-secondary); margin-top:2px;">for the day</div>`;
+                            isCurrentlyOpen = false;
                         } else {
                             const timeDiffMs = (targetDate) => Math.max(0, targetDate - now);
                             const formatTimeDiff = (diff) => {
@@ -1384,6 +1370,7 @@
                             if (currentClubStatus.openTime && now < currentClubStatus.openTime) {
                                 nextEventText = "Opens";
                                 nextEventTime = `in ${formatTimeDiff(timeDiffMs(currentClubStatus.openTime))}`;
+                                isCurrentlyOpen = false;
                             } else if (currentClubStatus.midDayDockTime && currentClubStatus.midDayOpenTime) {
                                 if (now >= currentClubStatus.openTime && now < currentClubStatus.midDayDockTime) {
                                     const diff = timeDiffMs(currentClubStatus.midDayDockTime);
@@ -1394,9 +1381,11 @@
                                         nextEventText = "Open";
                                         nextEventTime = `for ${formatTimeDiff(diff)}`;
                                     }
+                                    isCurrentlyOpen = true;
                                 } else if (now >= currentClubStatus.midDayDockTime && now < currentClubStatus.midDayOpenTime) {
                                     nextEventText = "Re-opens";
                                     nextEventTime = `in ${formatTimeDiff(timeDiffMs(currentClubStatus.midDayOpenTime))}`;
+                                    isCurrentlyOpen = false;
                                 } else if (now >= currentClubStatus.midDayOpenTime && now < currentClubStatus.dockTime) {
                                     const diff = timeDiffMs(currentClubStatus.dockTime);
                                     if (diff < 3600000) {
@@ -1406,9 +1395,11 @@
                                         nextEventText = "Open";
                                         nextEventTime = `for ${formatTimeDiff(diff)}`;
                                     }
+                                    isCurrentlyOpen = true;
                                 } else if (now >= currentClubStatus.dockTime) {
                                     nextEventText = "Closed";
                                     nextEventTime = "for the day";
+                                    isCurrentlyOpen = false;
                                 }
                             } else {
                                 if (now >= currentClubStatus.openTime && now < currentClubStatus.dockTime) {
@@ -1420,21 +1411,38 @@
                                         nextEventText = "Open";
                                         nextEventTime = `for ${formatTimeDiff(diff)}`;
                                     }
+                                    isCurrentlyOpen = true;
                                 } else if (now >= currentClubStatus.dockTime) {
                                     nextEventText = "Closed";
                                     nextEventTime = "for the day";
+                                    isCurrentlyOpen = false;
                                 }
                             }
 
                             if (nextEventText) {
-                                clubScheduleStatusEl.innerHTML = `<div style="font-weight: 600;">${nextEventText}</div><div style="font-size:0.75rem; color:var(--color-text-secondary); margin-top:2px;">${nextEventTime}</div>`;
+                                clubScheduleStatusEl.innerHTML = `<div style="font-weight: 600; color: var(--color-text-primary);">${nextEventText}</div><div style="font-size:0.75rem; color:var(--color-text-secondary); margin-top:2px;">${nextEventTime}</div>`;
                             } else {
                                 clubScheduleStatusEl.innerHTML = "-";
+                                hasScheduleData = false;
                             }
+                        }
+
+                        // Apply Dynamic Box Styling safely for Mobile Safari
+                        if (hasScheduleData) {
+                            clubScheduleBoxEl.style.setProperty('background-color', isCurrentlyOpen ? 'var(--color-open-bg)' : 'var(--color-dock-bg)', 'important');
+                            clubScheduleBoxEl.style.setProperty('border-color', isCurrentlyOpen ? 'var(--color-open-line)' : 'var(--color-dock-line)', 'important');
+                            clubScheduleLabelEl.style.setProperty('color', isCurrentlyOpen ? 'var(--color-open-line)' : 'var(--color-dock-line)', 'important');
+                        } else {
+                            clubScheduleBoxEl.style.removeProperty('background-color');
+                            clubScheduleBoxEl.style.removeProperty('border-color');
+                            clubScheduleLabelEl.style.removeProperty('color');
                         }
                     } else {
                         observedStatusEl.innerHTML = '';
                         clubScheduleStatusEl.innerHTML = '';
+                        clubScheduleBoxEl.style.removeProperty('background-color');
+                        clubScheduleBoxEl.style.removeProperty('border-color');
+                        clubScheduleLabelEl.style.removeProperty('color');
                     }
 
                     const allRawTides = [...prevTides, ...currentTides, ...nextTides, ...nextNextTides];
@@ -1459,6 +1467,9 @@
                 currentTideStatus.innerHTML = '';
                 observedStatusEl.innerHTML = '';
                 clubScheduleStatusEl.innerHTML = '';
+                clubScheduleBoxEl.style.removeProperty('background-color');
+                clubScheduleBoxEl.style.removeProperty('border-color');
+                clubScheduleLabelEl.style.removeProperty('color');
                 nextTideDisplay.innerHTML = '';
                 clubStatusBanner.style.display = 'none';
             }
