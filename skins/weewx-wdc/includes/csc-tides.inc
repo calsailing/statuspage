@@ -1365,7 +1365,7 @@
                             
                             const sign = visualAnomaly > 0 ? '+' : '';
                             
-                            observedStatusEl.innerHTML = `<div style="font-size: 0.75rem; color: var(--color-text-secondary);">Observed: ${roundedObserved.toFixed(1)}\u2032</div><div style="font-size: 0.7rem; color: var(--color-text-tertiary); margin-top: 2px;">(${sign}${visualAnomaly.toFixed(1)}\u2032)</div>`;
+                            observedStatusEl.innerHTML = `<div style="font-size: 0.75rem; color: var(--color-text-secondary);">Observed: ${roundedObserved.toFixed(1)}\u2032 <span style="font-size: 0.7rem; color: var(--color-text-tertiary);">(${sign}${visualAnomaly.toFixed(1)}\u2032)</span></div>`;
                         } else {
                             observedStatusEl.innerHTML = `<div style="font-size: 0.75rem; color: var(--color-text-secondary);">Waiting for observed data...</div>`;
                         }
