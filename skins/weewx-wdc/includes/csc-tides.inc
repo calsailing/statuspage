@@ -921,12 +921,12 @@
                 yAxis.tickValues(uniqueRoundedTicks).tickFormat(d => `${d}`);
                 const yAxisGroup = svg.append("g").call(yAxis).attr("class", "axis y-axis");
                 
-                // Add "ft" label neatly below the y-axis numbers
+                // Add "′" label neatly below the y-axis numbers
                 yAxisGroup.append("text")
                     .attr("x", -9) // Align with standard d3 left axis tick text
                     .attr("y", height + 15) // Position level with the x-axis text
                     .attr("text-anchor", "end")
-                    .text("ft");
+                    .text("′");
                 
                 // --- Tide Event Markers (High / Low) ---
                 const eventsGroup = svg.selectAll(".event").data(tideEvents).enter().append("g").attr("class", "event").attr("transform", d => `translate(${xScale(d.time)},${yScale(d.height)})`);
@@ -952,7 +952,7 @@
                     }
 
                     const tStr = d3.timeFormat("%H:%M")(d.time);
-                    const hStr = `${d.height.toFixed(1)}'`;
+                    const hStr = `${d.height.toFixed(1)}′`;
 
                     // Hardcoded to strictly place text below the tide marker
                     const textY1 = 20;
@@ -1059,7 +1059,7 @@
                     
                     // 1. Update text FIRST so the tooltip resizes to the correct width
                     tooltip.select("#tooltip-time").text(`Event: ${d3.timeFormat("%H:%M")(d.time)}`); 
-                    tooltip.select("#tooltip-height").text(`${d.height.toFixed(1)}'`); 
+                    tooltip.select("#tooltip-height").text(`${d.height.toFixed(1)}′`); 
 
                     // 2. Measure dimensions
                     const tooltipNode = tooltip.node();
@@ -1106,7 +1106,7 @@
                     
                     // 1. Update text FIRST so the tooltip resizes to the correct width
                     tooltip.select("#tooltip-time").text(d3.timeFormat("%H:%M")(d.time));
-                    tooltip.select("#tooltip-height").text(`${d.height.toFixed(1)}'`);
+                    tooltip.select("#tooltip-height").text(`${d.height.toFixed(1)}′`);
 
                     // 2. Measure dimensions
                     const tooltipNode = tooltip.node();
@@ -1135,7 +1135,7 @@
                 
                 tideEvents.forEach(event => {
                     if (event.time >= sunriseTime && event.time <= sunsetTime) {
-                        dayEvents.push({ time: event.time, text: `${event.type} Tide: ${event.height.toFixed(1)}'`, type: event.type.toLowerCase() });
+                        dayEvents.push({ time: event.time, text: `${event.type} Tide: ${event.height.toFixed(1)}′`, type: event.type.toLowerCase() });
                     }
                 });
                 dayEvents.push({ time: sunsetTime, text: "Sunset", type: 'sunset' });
@@ -1296,7 +1296,7 @@
                         <span>Dock Time</span>
                     </div>
                     <div><div style="width: 0.75rem; height: 0.75rem; border-radius: 9999px; background-color: var(--color-now-indicator);"></div><span>Now</span></div>
-                    <div><div style="width: 0.75rem; height: 0.75rem; background-color: var(--color-chart-danger-area);"></div><span>Club Closed &lt; 1.5'</span></div>`;
+                    <div><div style="width: 0.75rem; height: 0.75rem; background-color: var(--color-chart-danger-area);"></div><span>Club Closed &lt; 1.5′</span></div>`;
             }
 
             async function updateNextTideEvent() {
@@ -1326,7 +1326,7 @@
                     if (futureHeight > currentHeight) directionArrow = `<svg class="icon-sm" style="display: inline-block; vertical-align: middle; color: var(--icon-color-high);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>`;
                     else if (futureHeight < currentHeight) directionArrow = `<svg class="icon-sm" style="display: inline-block; vertical-align: middle; color: var(--icon-color-low);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>`;
                     
-                    currentTideStatus.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.25rem;">${directionArrow}<span style="margin-left: 0.25rem;">${currentHeightDisplay}'</span></div>`;
+                    currentTideStatus.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.25rem;">${directionArrow}<span style="margin-left: 0.25rem;">${currentHeightDisplay}′</span></div>`;
                     
                     // Handle accurate real-time observed status mapping anomaly to current interpolation
                     if (currentDate.toDateString() === now.toDateString()) {
@@ -1341,7 +1341,7 @@
                             
                             const sign = visualAnomaly > 0 ? '+' : '';
                             
-                            observedStatusEl.innerHTML = `<div style="font-size: 0.75rem; color: var(--color-text-secondary);">Observed: ${roundedObserved.toFixed(1)}'</div><div style="font-size: 0.7rem; color: var(--color-text-tertiary); margin-top: 2px;">(${sign}${visualAnomaly.toFixed(1)}')</div>`;
+                            observedStatusEl.innerHTML = `<div style="font-size: 0.75rem; color: var(--color-text-secondary);">Observed: ${roundedObserved.toFixed(1)}′</div><div style="font-size: 0.7rem; color: var(--color-text-tertiary); margin-top: 2px;">(${sign}${visualAnomaly.toFixed(1)}′)</div>`;
                         } else {
                             observedStatusEl.innerHTML = `<div style="font-size: 0.75rem; color: var(--color-text-secondary);">Waiting for observed data...</div>`;
                         }
@@ -1450,7 +1450,7 @@
                     const nextEvent = allTideExtremes.find(event => event.time > now);
                     if (nextEvent) {
                         const diff = nextEvent.time - now, hours = Math.floor(diff / 3600000), minutes = Math.floor((diff % 3600000) / 60000);
-                        nextTideDisplay.innerHTML = `<div style="font-weight: 600;">${nextEvent.type} Tide ${nextEvent.height.toFixed(1)}'</div><div style="font-size:0.75rem; color:var(--color-text-secondary); margin-top:2px;">in ${hours}h ${minutes}m</div>`;
+                        nextTideDisplay.innerHTML = `<div style="font-weight: 600;">${nextEvent.type} Tide ${nextEvent.height.toFixed(1)}′</div><div style="font-size:0.75rem; color:var(--color-text-secondary); margin-top:2px;">in ${hours}h ${minutes}m</div>`;
                     } else {
                         nextTideDisplay.innerHTML = "-";
                     }
