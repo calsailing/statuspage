@@ -289,16 +289,16 @@
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             font-family: 'Inter', sans-serif;
-            padding: 0.5rem 0.75rem;
+            padding: 0.35rem 0.5rem;
             box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
             background-color: var(--color-tooltip-bg);
             border: 1px solid var(--color-tooltip-border);
             z-index: 9999;
             display: flex;
             flex-direction: column;
-            gap: 0.25rem;
+            gap: 0.15rem;
             text-align: center;
-            min-width: 80px;
+            min-width: 70px;
         }
         #tide-chart-tooltip p {
             margin: 0;
@@ -314,14 +314,14 @@
             box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
         }
         #tide-chart-tooltip #tooltip-time { 
-            font-size: 0.7rem; 
+            font-size: 0.6rem; 
             color: var(--color-tooltip-text-muted); 
             font-weight: 500;
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
         #tide-chart-tooltip #tooltip-height { 
-            font-size: 1rem;
+            font-size: 0.85rem;
             font-weight: 700;
             color: var(--color-tooltip-text);
         }
@@ -1224,13 +1224,29 @@
                          // Create a group for the now indicator to keep things organized and prevent hover interference
                          const nowGroup = svg.append("g").attr("class", "now-group").style("pointer-events", "none");
                          
+                         // Flag dimensions
+                         const flagWidth = 28;
+                         const flagHeight = 14;
+                         let flagX = xPos;
+                         
+                         // Flip the flag to the left side of the pole if it's too close to the right edge
+                         if (xPos + flagWidth > chartWidth) {
+                             flagX = xPos - flagWidth;
+                         }
+                         
                          // Determine dynamic Y position to avoid overlapping the top labels (Open/Dock boxes)
                          let maxLabelY = 0;
                          svg.selectAll(".top-time-label rect").each(function() {
-                             const y = parseFloat(d3.select(this).attr("y"));
-                             const h = parseFloat(d3.select(this).attr("height"));
-                             if (!isNaN(y) && !isNaN(h) && (y + h > maxLabelY)) {
-                                 maxLabelY = y + h;
+                             const lx = parseFloat(d3.select(this).attr("x"));
+                             const lw = parseFloat(d3.select(this).attr("width"));
+                             const ly = parseFloat(d3.select(this).attr("y"));
+                             const lh = parseFloat(d3.select(this).attr("height"));
+                             
+                             // Check for horizontal intersection (with 2px padding)
+                             if (!isNaN(lx) && !isNaN(lw) && (flagX < lx + lw + 2) && (flagX + flagWidth + 2 > lx)) {
+                                 if (!isNaN(ly) && !isNaN(lh) && (ly + lh > maxLabelY)) {
+                                     maxLabelY = ly + lh;
+                                 }
                              }
                          });
                          const flagY = maxLabelY > 0 ? maxLabelY + 4 : 0;
@@ -1251,16 +1267,6 @@
                              .attr("r", 5)
                              .attr("fill", nowIndicatorColor);
                              
-                         // Flag dimensions
-                         const flagWidth = 28;
-                         const flagHeight = 14;
-                         let flagX = xPos;
-                         
-                         // Flip the flag to the left side of the pole if it's too close to the right edge
-                         if (xPos + flagWidth > chartWidth) {
-                             flagX = xPos - flagWidth;
-                         }
-                         
                          // Flag background
                          nowGroup.append("rect")
                              .attr("x", flagX)
