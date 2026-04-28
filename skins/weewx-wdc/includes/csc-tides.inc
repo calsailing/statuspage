@@ -931,7 +931,7 @@
                 
                 if (berkeleyObserved.length > 0) {
                     const observedLineGenerator = d3.line().x(d => xScale(d.time)).y(d => yScale(d.height)).curve(curve);
-                    svg.append("path").datum(berkeleyObserved).attr("fill", "none").attr("stroke", "var(--color-observed-line)").attr("stroke-width", 1).style("opacity", 0.85).attr("d", observedLineGenerator);
+                    svg.append("path").datum(berkeleyObserved).attr("fill", "none").attr("stroke", "var(--color-observed-line)").attr("stroke-width", 1).style("opacity", 0.9).attr("d", observedLineGenerator);
                 }
 
                 redSegments.forEach(segment => svg.append("path").datum(segment).attr("fill", redAreaColor).attr("d", redAreaGenerator));
@@ -1310,7 +1310,7 @@
                 // Reflected the updated Circular Icons logic in the Legend UI
                 document.getElementById('legend').innerHTML = `
                     <div><div style="width: 0.75rem; height: 0.75rem; background-color: var(--color-chart-open-overlay);"></div><span>Club Open</span></div>
-                    <div><div style="width: 1rem; height: 1px; background-color: var(--color-observed-line); opacity: 0.85;"></div><span>Observed tide</span></div>
+                    <div><div style="width: 1rem; height: 1px; background-color: var(--color-observed-line); opacity: 0.9;"></div><span>Observed tide</span></div>
                     <div>
                         <svg style="width:0.875rem;height:0.875rem;color:var(--icon-color-open);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="9" fill="var(--color-icon-bg)" stroke="none"></circle>
