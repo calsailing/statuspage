@@ -441,6 +441,7 @@
             
             let currentDate = getPTNow();
             let countdownInterval = null;
+            let lastRealDateString = getPTNow().toDateString();
             
             // --- Caching Stores ---
             const tideDataCache = {};
@@ -1333,13 +1334,6 @@
             async function updateNextTideEvent() {
                  try {
                     const now = getPTNow();
-                    
-                    // If the real day has ticked over to tomorrow, auto-refresh the chart to ensure continuous operation
-                    if (currentDate.getDate() !== now.getDate() && (now.getTime() - initialDate.getTime()) < 86400000) {
-                        currentDate = new Date(now.getTime());
-                        drawChart();
-                        return;
-                    }
 
                     const [prevTides, currentTides, nextTides, nextNextTides] = await Promise.all([ 
                         fetchTideData(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)), 
@@ -1541,6 +1535,17 @@
                 clearTimeout(resizeTimeout);
                 resizeTimeout = setTimeout(drawChart, 200);
             });
+
+            // Midnight checker: Auto-refresh chart to the new "today" if local day rolls over while browser is left open
+            setInterval(() => {
+                const currentRealDateString = getPTNow().toDateString();
+                if (currentRealDateString !== lastRealDateString) {
+                    lastRealDateString = currentRealDateString;
+                    currentDate = getPTNow();
+                    clearHeaderInfo();
+                    drawChart();
+                }
+            }, 60000);
 
             drawChart();
         });
