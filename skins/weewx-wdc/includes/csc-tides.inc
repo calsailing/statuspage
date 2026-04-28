@@ -1386,7 +1386,7 @@
                         }
                         
                         // Handle Dynamic Club Schedule Countdown
-                        let isCurrentlyOpen = false;
+                        let scheduleColorState = 'neutral';
                         let hasScheduleData = true;
 
                         if (!currentClubStatus) {
@@ -1394,7 +1394,7 @@
                             hasScheduleData = false;
                         } else if (currentClubStatus.isClosed) {
                             clubScheduleStatusEl.innerHTML = `<div style="font-weight: 600; color: var(--color-text-primary);">Closed</div><div style="font-size:0.75rem; color:var(--color-text-secondary); margin-top:2px;">for the day</div>`;
-                            isCurrentlyOpen = false;
+                            scheduleColorState = 'neutral';
                         } else {
                             const timeDiffMs = (targetDate) => Math.max(0, targetDate - now);
                             const formatTimeDiff = (diff) => {
@@ -1407,9 +1407,9 @@
                             let nextEventTime = "";
 
                             if (currentClubStatus.openTime && now < currentClubStatus.openTime) {
-                                nextEventText = "Opens";
+                                nextEventText = "Club Opens";
                                 nextEventTime = `in ${formatTimeDiff(timeDiffMs(currentClubStatus.openTime))}`;
-                                isCurrentlyOpen = false;
+                                scheduleColorState = 'neutral';
                             } else if (currentClubStatus.midDayDockTime && currentClubStatus.midDayOpenTime) {
                                 if (now >= currentClubStatus.openTime && now < currentClubStatus.midDayDockTime) {
                                     const diff = timeDiffMs(currentClubStatus.midDayDockTime);
@@ -1420,11 +1420,11 @@
                                         nextEventText = "Open";
                                         nextEventTime = `for ${formatTimeDiff(diff)}`;
                                     }
-                                    isCurrentlyOpen = true;
+                                    scheduleColorState = 'open';
                                 } else if (now >= currentClubStatus.midDayDockTime && now < currentClubStatus.midDayOpenTime) {
                                     nextEventText = "Re-opens";
                                     nextEventTime = `in ${formatTimeDiff(timeDiffMs(currentClubStatus.midDayOpenTime))}`;
-                                    isCurrentlyOpen = false;
+                                    scheduleColorState = 'dock';
                                 } else if (now >= currentClubStatus.midDayOpenTime && now < currentClubStatus.dockTime) {
                                     const diff = timeDiffMs(currentClubStatus.dockTime);
                                     if (diff < 3600000) {
@@ -1434,11 +1434,11 @@
                                         nextEventText = "Open";
                                         nextEventTime = `for ${formatTimeDiff(diff)}`;
                                     }
-                                    isCurrentlyOpen = true;
+                                    scheduleColorState = 'open';
                                 } else if (now >= currentClubStatus.dockTime) {
                                     nextEventText = "Closed";
                                     nextEventTime = "for the day";
-                                    isCurrentlyOpen = false;
+                                    scheduleColorState = 'dock';
                                 }
                             } else {
                                 if (now >= currentClubStatus.openTime && now < currentClubStatus.dockTime) {
@@ -1450,11 +1450,11 @@
                                         nextEventText = "Open";
                                         nextEventTime = `for ${formatTimeDiff(diff)}`;
                                     }
-                                    isCurrentlyOpen = true;
+                                    scheduleColorState = 'open';
                                 } else if (now >= currentClubStatus.dockTime) {
                                     nextEventText = "Closed";
                                     nextEventTime = "for the day";
-                                    isCurrentlyOpen = false;
+                                    scheduleColorState = 'dock';
                                 }
                             }
 
@@ -1467,10 +1467,10 @@
                         }
 
                         // Apply Dynamic Box Styling safely for Mobile Safari
-                        if (hasScheduleData) {
-                            clubScheduleBoxEl.style.setProperty('background-color', isCurrentlyOpen ? 'var(--color-open-bg)' : 'var(--color-dock-bg)', 'important');
-                            clubScheduleBoxEl.style.setProperty('border-color', isCurrentlyOpen ? 'var(--color-open-line)' : 'var(--color-dock-line)', 'important');
-                            clubScheduleLabelEl.style.setProperty('color', isCurrentlyOpen ? 'var(--color-open-line)' : 'var(--color-dock-line)', 'important');
+                        if (hasScheduleData && scheduleColorState !== 'neutral') {
+                            clubScheduleBoxEl.style.setProperty('background-color', scheduleColorState === 'open' ? 'var(--color-open-bg)' : 'var(--color-dock-bg)', 'important');
+                            clubScheduleBoxEl.style.setProperty('border-color', scheduleColorState === 'open' ? 'var(--color-open-line)' : 'var(--color-dock-line)', 'important');
+                            clubScheduleLabelEl.style.setProperty('color', scheduleColorState === 'open' ? 'var(--color-open-line)' : 'var(--color-dock-line)', 'important');
                         } else {
                             clubScheduleBoxEl.style.removeProperty('background-color');
                             clubScheduleBoxEl.style.removeProperty('border-color');
