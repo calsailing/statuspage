@@ -906,6 +906,9 @@
                 
                 segments.forEach(seg => svg.append("path").datum(seg.data).attr("fill", seg.rising ? risingColor : fallingColor).attr("d", areaGenerator(height)));
                 
+                // Draw red danger areas before the stroke lines so they sit in the background
+                redSegments.forEach(segment => svg.append("path").datum(segment).attr("fill", redAreaColor).attr("d", redAreaGenerator));
+                
                 // --- LINE GRADIENT FOR DANGER ZONE ---
                 const dangerColor = computedStyles.getPropertyValue('--color-text-danger').trim();
                 const dangerY = yScale(DANGEROUS_LOW_TIDE);
@@ -934,8 +937,6 @@
                     const observedLineGenerator = d3.line().x(d => xScale(d.time)).y(d => yScale(d.height)).curve(curve);
                     svg.append("path").datum(berkeleyObserved).attr("fill", "none").attr("stroke", "var(--color-observed-line)").attr("stroke-width", 1).style("opacity", 0.9).attr("d", observedLineGenerator);
                 }
-
-                redSegments.forEach(segment => svg.append("path").datum(segment).attr("fill", redAreaColor).attr("d", redAreaGenerator));
                 
                 // Hide the midnight labels (00:00) so the graph text doesn't clip on the zero-margin edges
                 svg.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(xScale).ticks(d3.timeHour.every(6)).tickFormat(d => {
