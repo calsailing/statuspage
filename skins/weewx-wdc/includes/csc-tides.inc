@@ -264,8 +264,6 @@
         
         #tide-chart-widget-container .event-row-next { font-weight: 700; background-color: var(--color-button-hover-bg); }
         #tide-chart-widget-container .event-row-next td { color: var(--color-text-primary); }
-        #tide-chart-widget-container .event-row-next td:first-child { padding-left: 0.25rem; }
-        #tide-chart-widget-container .event-row-next td:last-child { padding-right: 0.25rem; }
         
         #tide-chart-widget-container .icon-sm { width: 1rem; height: 1rem; }
         #tide-chart-widget-container .icon-open { color: var(--icon-color-open); }
