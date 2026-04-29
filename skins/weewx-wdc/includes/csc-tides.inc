@@ -154,8 +154,12 @@
             border-radius: 9999px; /* Keeping round buttons */
             transition: background-color 0.2s;
         }
-        #tide-chart-widget-container .nav-button:hover {
+        #tide-chart-widget-container .nav-button:hover:not(:disabled) {
             background-color: var(--color-button-hover-bg);
+        }
+        #tide-chart-widget-container .nav-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
         #tide-chart-widget-container .nav-button svg {
             width: 1.5rem;
@@ -194,7 +198,19 @@
         }
 
         #tide-chart-widget-container .status-boxes-container {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; width: 100%;
+            /* display is handled dynamically in JS */
+            grid-template-columns: repeat(3, 1fr); gap: 0.5rem; width: 100%;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            margin-top: -0.75rem; /* Negates parent flex gap when collapsed */
+            transition: max-height 0.4s ease-in-out, opacity 0.4s ease-in-out, margin-top 0.4s ease-in-out;
+        }
+        
+        #tide-chart-widget-container .status-boxes-container.visible {
+            max-height: 200px;
+            opacity: 1;
+            margin-top: 0;
         }
 
         #tide-chart-widget-container .status-box {
@@ -219,16 +235,32 @@
         }
 
         #tide-chart-widget-container .status-banner {
-            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-            padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 500; text-align: center;
+            /* display is handled dynamically in JS */
+            align-items: center; justify-content: center; gap: 0.5rem;
+            font-size: 0.875rem; font-weight: 500; text-align: center;
+            max-height: 0; opacity: 0; overflow: hidden;
+            padding: 0 1rem;
+            margin-top: -0.75rem; /* Negates parent flex gap when collapsed */
+            transition: max-height 0.4s ease-in-out, opacity 0.4s ease-in-out, padding 0.4s ease-in-out, margin-top 0.4s ease-in-out;
         }
+        
+        #tide-chart-widget-container .status-banner.visible {
+            max-height: 100px;
+            opacity: 1;
+            padding: 0.5rem 1rem;
+            margin-top: 0;
+        }
+        
         #tide-chart-widget-container .banner-yellow { background-color: #fef08a; color: #854d0e; }
         #tide-chart-widget-container .banner-red { background-color: #fecaca; color: #991b1b; }
         .dark #tide-chart-widget-container .banner-yellow { background-color: rgba(234, 179, 8, 0.15); color: #fde047; border: 1px solid rgba(234, 179, 8, 0.3); }
         .dark #tide-chart-widget-container .banner-red { background-color: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
 
         #tide-chart-widget-container .chart-aspect-wrapper { position: relative; width: 100%; }
-        #tide-chart-widget-container #chart-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        #tide-chart-widget-container #chart-container { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            overflow: hidden; 
+        }
 
         #tide-chart-widget-container #legend {
             display: flex;
@@ -264,6 +296,8 @@
         
         #tide-chart-widget-container .event-row-next { font-weight: 700; background-color: var(--color-button-hover-bg); }
         #tide-chart-widget-container .event-row-next td { color: var(--color-text-primary); }
+        #tide-chart-widget-container .event-row-next td:first-child { padding-left: 0.25rem; border-top-left-radius: 0.25rem; border-bottom-left-radius: 0.25rem; }
+        #tide-chart-widget-container .event-row-next td:last-child { padding-right: 0.25rem; border-top-right-radius: 0.25rem; border-bottom-right-radius: 0.25rem; }
         
         #tide-chart-widget-container .icon-sm { width: 1rem; height: 1rem; }
         #tide-chart-widget-container .icon-open { color: var(--icon-color-open); }
@@ -440,11 +474,12 @@
             let currentDate = getPTNow();
             let countdownInterval = null;
             let lastRealDateString = getPTNow().toDateString();
+            let isRendering = false; // Lock to prevent race conditions during rapid clicking
             
             // --- Caching Stores ---
             const tideDataCache = {};
             const observedDataCache = {};
-            const clubStatusCache = {}; // Added cache to prevent API spam on resize
+            const clubStatusCache = {}; 
             
             const NOAA_STATION_ID = "9414816";
             const RICHMOND_STATION_ID = "9414863";
@@ -458,7 +493,7 @@
             let resizeTimeout;
             const redrawChartOnThemeChange = () => {
                 if (chartContainer.node() && chartContainer.select("svg").node()) {
-                    drawChart();
+                    drawChart(currentDate, 0);
                 }
             };
             const observer = new MutationObserver((mutationsList) => {
@@ -547,12 +582,12 @@
                         const response = await fetch(url);
                         if (!response.ok) throw new Error(`NOAA API request failed: ${response.statusText} (Attempt ${attempt})`);
                         const data = await response.json();
-                        if (data.error || !data.predictions) {
-                            console.warn(`NOAA returned no predictions for ${cacheKey} (Attempt ${attempt})`);
+                        if (data.error || !data.predictions || !Array.isArray(data.predictions)) {
+                            console.warn(`NOAA returned no valid predictions for ${cacheKey} (Attempt ${attempt})`);
                             tideDataCache[cacheKey] = [];
                             return [];
                         }
-                        const formattedData = data.predictions.map(p => ({ time: parseNOAADate(p.t), height: parseFloat(p.v) })).filter(p => p.time !== null);
+                        const formattedData = data.predictions.map(p => ({ time: parseNOAADate(p.t), height: parseFloat(p.v) })).filter(p => p.time !== null && !isNaN(p.height));
                         tideDataCache[cacheKey] = formattedData;
                         return formattedData;
                     } catch (error) {
@@ -597,7 +632,7 @@
 
             async function fetchClubStatus(date) {
                 const cacheKey = getLocalCacheKey(date);
-                if (clubStatusCache[cacheKey]) return clubStatusCache[cacheKey]; // Resolves network spam issue on resize
+                if (clubStatusCache[cacheKey]) return clubStatusCache[cacheKey];
                 
                 const yyyymmdd = date.getFullYear() + '-' + ('0' + (date.getMonth() + 1)).slice(-2) + '-' + ('0' + date.getDate()).slice(-2);
                 const url = `https://www.cal-sailing.org/index.php?option=com_csctides&view=gettidedatalist&task=gettidedatalist&tmpl=component&output=json&tidedate=${yyyymmdd}`;
@@ -616,11 +651,11 @@
 
                         if (!clubData) throw new Error("Malformed club status JSON: 'data' property is missing.");
 
-                        const parseClubTime = (timeStr) => {
+                        const parseClubTime = (timeStr, baseDate) => {
                             if (!timeStr) return null;
                             timeStr = timeStr.toLowerCase().trim();
-                            if (timeStr === 'sunset') return 'sunset';
-                            const d = new Date(date.getTime());
+                            if (timeStr === 'sunset') return 'sunset'; // Prevent string from corrupting D3 scale
+                            const d = new Date(baseDate.getTime());
                             if (timeStr === 'noon') { d.setHours(12, 0, 0, 0); return d; }
                             const pm = timeStr.includes('pm');
                             const parts = timeStr.replace(/am|pm/i, '').trim().split(':');
@@ -634,7 +669,7 @@
                         };
                         
                         const isClosed = clubData.clubclosed === true || clubData.clubclosed === 'true';
-                        const sunsetTime = parseClubTime(clubData.sunsettime);
+                        const sunsetTime = parseClubTime(clubData.sunsettime, date);
 
                         if (isClosed) {
                             const result = { isClosed: true, alertMessage: 'Club Closed Due To Tide', sunsetTime };
@@ -642,8 +677,8 @@
                             return result;
                         }
 
-                        const openTime = parseClubTime(clubData.opentime);
-                        const dockTime = parseClubTime(clubData.docktime);
+                        const openTime = parseClubTime(clubData.opentime, date);
+                        const dockTime = parseClubTime(clubData.docktime, date);
                         let midDayDockTime = null;
                         let midDayOpenTime = null;
                         const alerts = new Set();
@@ -657,8 +692,8 @@
                             alerts.add('Mid-Day Closure Due To Tide');
                             const times = clubData.middayclosetext.match(/(\d{1,2}:\d{2}\s*(am|pm))/gi);
                             if (times && times.length >= 2) {
-                                midDayDockTime = parseClubTime(times[0]);
-                                midDayOpenTime = parseClubTime(times[1]);
+                                midDayDockTime = parseClubTime(times[0], date);
+                                midDayOpenTime = parseClubTime(times[1], date);
                             }
                         }
                         const alertMessage = Array.from(alerts).join(' & ');
@@ -734,32 +769,59 @@
                 return [];
             }
 
-            async function drawChart() {
-                tooltip.style("opacity", 0); // Hide tooltip proactively before re-render
+            async function drawChart(renderDate, direction = 0) {
+                if (isRendering) return; // Prevent concurrent renders if user clicks rapidly
+                isRendering = true;
                 
-                const loadingHTML = `<div class='wave-container'><div style='color: var(--color-text-secondary)'>Loading tide data...</div><div class='wave'><div class='bar'></div><div class='bar'></div><div class='bar'></div><div class='bar'></div></div></div>`;
-                chartContainer.html(loadingHTML);
-                clubStatusBanner.style.display = 'none';
-                observedStatusEl.innerHTML = '';
-                clubScheduleStatusEl.innerHTML = '';
-                eventsList.innerHTML = '';
-                const [currentTides, clubStatus, observedAnomalies] = await Promise.all([fetchTideData(currentDate), fetchClubStatus(currentDate), fetchObservedTideData(currentDate)]);
-                chartContainer.html("");
-                if (!currentTides || currentTides.length === 0) {
-                    const message = !currentTides ? "Could not load tide data." : "No tide data available for this date.";
-                    chartContainer.html(`<div style="color: red; padding: 1rem; display: flex; align-items: center; justify-content: center; height: 100%;">${message}</div>`);
-                    return;
-                }
-                const chartData = currentTides;
-                chartDataForUpdate = chartData;
-                const startOfDay = d3.timeDay.floor(currentDate);
-                const endOfDay = d3.timeDay.ceil(currentDate);
-                const prevDay = new Date(currentDate); prevDay.setDate(prevDay.getDate() - 1);
-                const nextDay = new Date(currentDate); nextDay.setDate(nextDay.getDate() + 1);
-                const [prevTides, nextTides] = await Promise.all([ fetchTideData(prevDay), fetchTideData(nextDay) ]);
-                const allTidesData = [...(prevTides || []), ...currentTides, ...(nextTides || [])];
-                const allExtremes = findTideExtremes(allTidesData);
-                const tideEvents = allExtremes.filter(event => event.time >= startOfDay && event.time < endOfDay);
+                const navButtons = document.querySelectorAll('.nav-button, #date-picker');
+                navButtons.forEach(btn => btn.disabled = true);
+                
+                try {
+                    tooltip.style("opacity", 0); 
+                    const isFirstLoad = !chartContainer.select("svg").node();
+                    
+                    // Show loading screen only if it's the very first time the widget spins up
+                    if (isFirstLoad) {
+                        chartContainer.html(""); 
+                        const loadingHTML = `<div class='wave-container'><div style='color: var(--color-text-secondary)'>Loading tide data...</div><div class='wave'><div class='bar'></div><div class='bar'></div><div class='bar'></div><div class='bar'></div></div></div>`;
+                        chartContainer.html(loadingHTML);
+                        
+                        clubStatusBanner.classList.remove('visible');
+                        clubStatusBanner.style.display = 'none';
+                        clubStatusBanner.className = 'status-banner';
+                        
+                        observedStatusEl.innerHTML = '';
+                        clubScheduleStatusEl.innerHTML = '';
+                        eventsList.innerHTML = '';
+                    }
+
+                    const [currentTides, clubStatus, observedAnomalies] = await Promise.all([
+                        fetchTideData(renderDate), 
+                        fetchClubStatus(renderDate), 
+                        fetchObservedTideData(renderDate)
+                    ]);
+                    
+                    if (!currentTides || currentTides.length === 0) {
+                        const message = !currentTides ? "Could not load tide data." : "No tide data available for this date.";
+                        chartContainer.html(`<div style="color: red; padding: 1rem; display: flex; align-items: center; justify-content: center; height: 100%;">${message}</div>`);
+                        clearHeaderInfo();
+                        isRendering = false;
+                        navButtons.forEach(btn => btn.disabled = false);
+                        return;
+                    }
+                    
+                    const chartData = currentTides;
+                    chartDataForUpdate = chartData;
+                    const startOfDay = d3.timeDay.floor(renderDate);
+                    const endOfDay = d3.timeDay.ceil(renderDate);
+                    const prevDay = new Date(renderDate); prevDay.setDate(prevDay.getDate() - 1);
+                    const nextDay = new Date(renderDate); nextDay.setDate(nextDay.getDate() + 1);
+                    
+                    // Fallbacks to empty arrays [] guarantee that map spreads don't crash if adjacent data failed to fetch
+                    const [prevTides, nextTides] = await Promise.all([ fetchTideData(prevDay), fetchTideData(nextDay) ]);
+                    const allTidesData = [...(prevTides || []), ...currentTides, ...(nextTides || [])];
+                    const allExtremes = findTideExtremes(allTidesData);
+                    const tideEvents = allExtremes.filter(event => event.time >= startOfDay && event.time < endOfDay);
                 
                 const berkeleyObserved = [];
                 const berkeleyPredsMap = new Map(chartData.map(p => [p.time.getTime(), p.height]));
@@ -773,7 +835,11 @@
                 currentClubStatus = clubStatus;
 
                 const widgetContainer = document.querySelector('#tide-chart-widget-container');
-                if (!widgetContainer) return;
+                if (!widgetContainer) {
+                    isRendering = false;
+                    navButtons.forEach(btn => btn.disabled = false);
+                    return;
+                }
                 const computedStyles = getComputedStyle(widgetContainer);
                 const nightColor = computedStyles.getPropertyValue('--color-chart-night').trim();
                 const dayColor = computedStyles.getPropertyValue('--color-chart-day').trim();
@@ -782,6 +848,7 @@
                 const fallingColor = computedStyles.getPropertyValue('--color-chart-falling').trim();
                 const tideLineColor = computedStyles.getPropertyValue('--color-chart-tide-line').trim();
                 const redAreaColor = computedStyles.getPropertyValue('--color-chart-danger-area').trim();
+                const dangerColor = computedStyles.getPropertyValue('--color-text-danger').trim();
                 const eventCircleFill = computedStyles.getPropertyValue('--color-event-circle-fill').trim();
                 const eventCircleStroke = computedStyles.getPropertyValue('--color-event-circle-stroke').trim();
                 const hoverLineColor = computedStyles.getPropertyValue('--color-hover-line').trim();
@@ -791,41 +858,105 @@
                 const containerRect = chartContainer.node().getBoundingClientRect();
                 const isMobile = window.innerWidth < 640;
                 
-                // PERFORMANCE/UI FIX: Margins properly adjusted to prevent axis text clipping on mobile
                 const margin = { top: isMobile ? 25 : 20, right: isMobile ? 0 : 20, bottom: isMobile ? 24 : 40, left: isMobile ? 32 : 45 };
                 
-                const width = containerRect.width - margin.left - margin.right;
-                const height = containerRect.height - margin.top - margin.bottom;
-                svg = chartContainer.append("svg").attr("width", containerRect.width).attr("height", containerRect.height)
-                    .append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+                // QA FIX: Protect against negative dimensions rendering fatal DOM exceptions if window scales out of bounds
+                const width = Math.max(0, containerRect.width - margin.left - margin.right);
+                const height = Math.max(0, containerRect.height - margin.top - margin.bottom);
+                
+                // --- SVG SKELETON SETUP (Only runs on initial load OR browser resize) ---
+                if (isFirstLoad || direction === 0) {
+                    chartContainer.html(""); // Safely clear only when data is finished processing to avoid flashing
+                    
+                    svg = chartContainer.append("svg").attr("width", containerRect.width).attr("height", containerRect.height)
+                        .append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+                        
+                    svg.append("defs").append("clipPath").attr("id", "chart-clip")
+                       .append("rect").attr("width", width).attr("height", height);
+                       
+                    svg.append("g").attr("class", "axis x-axis x-axis-group").attr("transform", `translate(0,${height})`);
+                    svg.append("g").attr("class", "axis y-axis y-axis-group");
+                    
+                    svg.select(".y-axis-group").append("text")
+                        .attr("class", "y-axis-label")
+                        .attr("x", -9).attr("y", height + 15)
+                        .attr("text-anchor", "end").text("\u2032");
+                        
+                    const chartWindow = svg.append("g").attr("class", "chart-window").attr("clip-path", "url(#chart-clip)");
+                    
+                    // Invisible overlay to catch all pointer events across the whole chart window
+                    chartWindow.append("rect").attr("class", "hover-overlay").attr("fill", "none").attr("pointer-events", "all");
+                    chartWindow.append("g").attr("class", "slides-container");
+                    
+                    const hoverGroup = chartWindow.append("g").attr("class", "hover-group").style("display", "none");
+                    hoverGroup.append("line").attr("class", "hover-line").attr("stroke-width", 1).attr("y1", 0);
+                    hoverGroup.append("circle").attr("class", "hover-circle").attr("r", 5).attr("stroke-width", 1.5);
+                }
+                
+                svg.select(".hover-overlay").attr("width", width).attr("height", height);
+                svg.select("#chart-clip rect").attr("width", width).attr("height", height);
+                
+                const hoverGroup = svg.select(".hover-group");
+                hoverGroup.select(".hover-line").attr("stroke", hoverLineColor).attr("y2", height);
+                hoverGroup.select(".hover-circle").attr("fill", hoverCircleFill).attr("stroke", hoverCircleStroke);
+                
                 xScale = d3.scaleTime().domain([startOfDay, endOfDay]).range([0, width]);
                 
-                // Incorporate both predicted and observed heights to ensure the graph scale covers all drawn lines
                 const allHeights = chartData.map(d => d.height).concat(berkeleyObserved.map(d => d.height));
                 const minTide = Math.min(...allHeights);
                 const maxTide = Math.max(...allHeights);
-                
-                // Scale the Y-axis to be exactly 2 feet below the lowest tide
                 yScale = d3.scaleLinear().domain([minTide - 2, maxTide + 1]).range([height, 0]);
                 
-                // PERFORMANCE FIX: Use curveMonotoneX instead of curveBasis to prevent the plotted
-                // line from overshooting or missing actual data points (tide chart integrity)
-                const curve = d3.curveMonotoneX;
+                // Kill any previous axis transitions to prevent bouncing
+                svg.select(".x-axis-group").interrupt();
+                svg.select(".y-axis-group").interrupt();
+
+                // Smoothly transition static axes
+                const t = d3.transition().duration(400).ease(d3.easeCubicInOut);
                 
+                const xAxis = d3.axisBottom(xScale).ticks(d3.timeHour.every(6)).tickFormat(d => {
+                    const timeStr = d3.timeFormat("%H:%M")(d);
+                    return timeStr === "00:00" ? "" : timeStr;
+                });
+                svg.select(".x-axis-group").transition(t).call(xAxis);
+                
+                const yAxis = d3.axisLeft(yScale);
+                const ticks = yScale.ticks(), uniqueRoundedTicks = [...new Set(ticks.map(tick => Math.round(tick)))];
+                yAxis.tickValues(uniqueRoundedTicks).tickFormat(d => `${d}`);
+                svg.select(".y-axis-group").transition(t).call(yAxis);
+                svg.select(".y-axis-label").attr("y", height + 15);
+                
+                const curve = d3.curveMonotoneX;
                 const areaGenerator = (y0) => d3.area().x(d => xScale(d.time)).y0(y0).y1(d => yScale(d.height)).curve(curve);
                 const lineGenerator = d3.line().x(d => xScale(d.time)).y(d => yScale(d.height)).curve(curve);
                 
-                const { sunrise: calculatedSunrise } = calculateSunriseSunset(currentDate, LOCATION_LAT, LOCATION_LNG);
+                const { sunrise: calculatedSunrise, sunset: calculatedSunset } = calculateSunriseSunset(renderDate, LOCATION_LAT, LOCATION_LNG);
                 const sunriseTime = calculatedSunrise; 
-                const sunsetTime = clubStatus.sunsetTime || calculateSunriseSunset(currentDate, LOCATION_LAT, LOCATION_LNG).sunset;
+                
+                // Strict safety catch to prevent the word 'sunset' from reaching the numeric xScale
+                let sunsetTime = clubStatus.sunsetTime;
+                if (!sunsetTime || sunsetTime === 'sunset') {
+                    sunsetTime = calculatedSunset;
+                }
 
                 if (clubStatus.dockTime === 'sunset') clubStatus.dockTime = sunsetTime;
                 if (clubStatus.midDayDockTime === 'sunset') clubStatus.midDayDockTime = sunsetTime;
+                if (clubStatus.openTime === 'sunset') clubStatus.openTime = sunsetTime;
+
+                // --- GENERATE SLIDE LAYER ---
+                const slidesContainer = svg.select(".slides-container");
+                const slideGroup = slidesContainer.append("g").attr("class", "slide-group");
+                
+                if (direction !== 0) {
+                    slideGroup.attr("transform", `translate(${direction > 0 ? width : -width}, 0)`);
+                }
 
                 const overlap = 1;
-                svg.append("rect").attr("x", xScale(startOfDay)).attr("width", (xScale(sunriseTime) - xScale(startOfDay)) + overlap).attr("height", height).attr("fill", nightColor);
-                svg.append("rect").attr("x", xScale(sunriseTime)).attr("width", (xScale(sunsetTime) - xScale(sunriseTime)) + overlap).attr("height", height).attr("fill", dayColor);
-                svg.append("rect").attr("x", xScale(sunsetTime)).attr("width", xScale(endOfDay) - xScale(sunsetTime)).attr("height", height).attr("fill", nightColor);
+                // QA FIX: Replaced direct width calculation with clamped Math.max boundaries
+                slideGroup.append("rect").attr("x", xScale(startOfDay)).attr("width", Math.max(0, (xScale(sunriseTime) - xScale(startOfDay)) + overlap)).attr("height", height).attr("fill", nightColor);
+                slideGroup.append("rect").attr("x", xScale(sunriseTime)).attr("width", Math.max(0, (xScale(sunsetTime) - xScale(sunriseTime)) + overlap)).attr("height", height).attr("fill", dayColor);
+                slideGroup.append("rect").attr("x", xScale(sunsetTime)).attr("width", Math.max(0, xScale(endOfDay) - xScale(sunsetTime))).attr("height", height).attr("fill", nightColor);
+                
                 const redAreaGenerator = d3.area().x(d => xScale(d.time)).y0(yScale(DANGEROUS_LOW_TIDE)).y1(d => yScale(d.height)).curve(curve);
                 const redSegments = []; let currentSegment = [];
                 for (let i = 0; i < chartData.length; i++) {
@@ -851,16 +982,35 @@
                 const topLabelsData = []; // For the top boxes
                 
                 // Update Warning Banner
+                let newBannerClass = '';
+                let bannerHTML = '';
+                
                 if (clubStatus.isClosed) {
-                    clubStatusBanner.className = 'status-banner banner-red';
-                    clubStatusBanner.innerHTML = `<svg class="icon-sm" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> <span>${clubStatus.alertMessage}</span>`;
-                    clubStatusBanner.style.display = 'flex';
+                    newBannerClass = 'banner-red';
+                    bannerHTML = `<svg class="icon-sm" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> <span>${clubStatus.alertMessage}</span>`;
                 } else if (clubStatus.alertMessage) {
-                    clubStatusBanner.className = 'status-banner banner-yellow';
-                    clubStatusBanner.innerHTML = `<svg class="icon-sm" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> <span>${clubStatus.alertMessage}</span>`;
+                    newBannerClass = 'banner-yellow';
+                    bannerHTML = `<svg class="icon-sm" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> <span>${clubStatus.alertMessage}</span>`;
+                }
+                
+                if (newBannerClass) {
+                    const isVisible = clubStatusBanner.classList.contains('visible');
+                    clubStatusBanner.className = `status-banner ${newBannerClass} ${isVisible ? 'visible' : ''}`;
+                    clubStatusBanner.innerHTML = bannerHTML;
                     clubStatusBanner.style.display = 'flex';
+                    
+                    if (!isVisible) {
+                        clubStatusBanner.offsetHeight; // Force reflow
+                        clubStatusBanner.classList.add('visible');
+                    }
                 } else {
-                    clubStatusBanner.style.display = 'none';
+                    clubStatusBanner.classList.remove('visible');
+                    setTimeout(() => {
+                        if (!clubStatusBanner.classList.contains('visible')) {
+                            clubStatusBanner.style.display = 'none';
+                            clubStatusBanner.className = 'status-banner';
+                        }
+                    }, 400); // 400ms matches the CSS transition duration
                 }
                 
                 if (!clubStatus.isClosed) {
@@ -872,17 +1022,17 @@
                     else if (clubStatus.openTime && clubStatus.dockTime > clubStatus.openTime) openPeriods.push({ start: clubStatus.openTime, end: clubStatus.dockTime, type: 'full_day' });
                     
                     openPeriods.forEach(({start, end, type}) => {
-                        svg.append("rect").attr("x", xScale(start)).attr("width", xScale(end) - xScale(start)).attr("height", height).attr("fill", openOverlayColor);
+                        slideGroup.append("rect").attr("x", xScale(start)).attr("width", Math.max(0, xScale(end) - xScale(start))).attr("height", height).attr("fill", openOverlayColor);
                         const openText = type === 'afternoon' ? "Club Re-Opens" : "Club Opens";
                         const dockText = type === 'morning' ? "Mid-Day Dock Time" : "Dock Time (Club Closes)";
                         if (start > startOfDay && start < endOfDay) {
-                            svg.append("line").attr("x1", xScale(start)).attr("x2", xScale(start)).attr("y1", 0).attr("y2", height).attr("stroke", "var(--color-open-line)").attr("stroke-width", 1);
+                            slideGroup.append("line").attr("x1", xScale(start)).attr("x2", xScale(start)).attr("y1", 0).attr("y2", height).attr("stroke", "var(--color-open-line)").attr("stroke-width", 1);
                             dayEvents.push({time: start, text: openText, type: 'open'});
                             specialIcons.push({ time: start, type: 'open', yHeight: getTideHeightAtTime(chartData, start) });
                             topLabelsData.push({ time: start, text: 'Open', isOpen: true });
                         }
                         if (end > start && end < endOfDay) {
-                             svg.append("line").attr("x1", xScale(end)).attr("x2", xScale(end)).attr("y1", 0).attr("y2", height).attr("stroke", "var(--color-dock-line)").attr("stroke-width", 1);
+                             slideGroup.append("line").attr("x1", xScale(end)).attr("x2", xScale(end)).attr("y1", 0).attr("y2", height).attr("stroke", "var(--color-dock-line)").attr("stroke-width", 1);
                              dayEvents.push({time: end, text: dockText, type: 'dock'});
                              specialIcons.push({ time: end, type: 'dock', yHeight: getTideHeightAtTime(chartData, end) });
                              topLabelsData.push({ time: end, text: 'Dock', isOpen: false });
@@ -890,7 +1040,8 @@
                     });
                 }
                 
-                const eventPoints = [chartData[0], ...tideEvents, chartData[chartData.length - 1]].sort((a, b) => a.time - b.time).filter((d, i, arr) => !d || i === 0 || d.time.getTime() !== arr[i-1].time.getTime());
+                // QA FIX: Placed safety `.filter(Boolean)` directly prior to `.sort()` so unexpected edge-case API responses cannot poison the sorting function
+                const eventPoints = [chartData[0], ...tideEvents, chartData[chartData.length - 1]].filter(Boolean).sort((a, b) => a.time - b.time).filter((d, i, arr) => !d || i === 0 || d.time.getTime() !== arr[i-1].time.getTime());
                 const segments = [];
                 for (let i = 0; i < eventPoints.length - 1; i++) {
                     const startPoint = eventPoints[i], endPoint = eventPoints[i+1];
@@ -902,19 +1053,19 @@
                     if (lastDataPoint.time < endOfDay) lastSegment.data.push({ time: endOfDay, height: lastDataPoint.height });
                 }
                 
-                segments.forEach(seg => svg.append("path").datum(seg.data).attr("fill", seg.rising ? risingColor : fallingColor).attr("d", areaGenerator(height)));
+                segments.forEach(seg => slideGroup.append("path").datum(seg.data).attr("fill", seg.rising ? risingColor : fallingColor).attr("d", areaGenerator(height)));
                 
                 // Draw red danger areas before the stroke lines so they sit in the background
-                redSegments.forEach(segment => svg.append("path").datum(segment).attr("fill", redAreaColor).attr("d", redAreaGenerator));
+                redSegments.forEach(segment => slideGroup.append("path").datum(segment).attr("fill", redAreaColor).attr("d", redAreaGenerator));
                 
-                // --- LINE GRADIENT FOR DANGER ZONE ---
-                const dangerColor = computedStyles.getPropertyValue('--color-text-danger').trim();
+                // --- UNIQUE LINE GRADIENT PER SLIDE FOR DANGER ZONE ---
+                const gradientId = "tide-gradient-" + Math.round(Math.random() * 1000000);
                 const dangerY = yScale(DANGEROUS_LOW_TIDE);
                 const dangerOffset = Math.max(0, Math.min(1, dangerY / height));
                 
-                const defs = svg.append("defs");
-                defs.append("linearGradient")
-                    .attr("id", "tide-line-gradient")
+                const localDefs = slideGroup.append("defs");
+                localDefs.append("linearGradient")
+                    .attr("id", gradientId)
                     .attr("gradientUnits", "userSpaceOnUse")
                     .attr("x1", 0).attr("y1", 0)
                     .attr("x2", 0).attr("y2", height)
@@ -929,43 +1080,23 @@
                     .attr("offset", d => d.offset)
                     .attr("stop-color", d => d.color);
 
-                svg.append("path").datum(chartData).attr("fill", "none").attr("stroke", "url(#tide-line-gradient)").attr("stroke-width", 2).attr("d", lineGenerator);
+                slideGroup.append("path").datum(chartData).attr("fill", "none").attr("stroke", `url(#${gradientId})`).attr("stroke-width", 2).attr("d", lineGenerator);
                 
                 if (berkeleyObserved.length > 0) {
                     const observedLineGenerator = d3.line().x(d => xScale(d.time)).y(d => yScale(d.height)).curve(curve);
-                    svg.append("path").datum(berkeleyObserved).attr("fill", "none").attr("stroke", "var(--color-observed-line)").attr("stroke-width", 1).style("opacity", 0.9).attr("d", observedLineGenerator);
+                    slideGroup.append("path").datum(berkeleyObserved).attr("fill", "none").attr("stroke", "var(--color-observed-line)").attr("stroke-width", 1).style("opacity", 0.9).attr("d", observedLineGenerator);
                 }
                 
-                // Hide the midnight labels (00:00) so the graph text doesn't clip on the zero-margin edges
-                svg.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(xScale).ticks(d3.timeHour.every(6)).tickFormat(d => {
-                    const timeStr = d3.timeFormat("%H:%M")(d);
-                    return timeStr === "00:00" ? "" : timeStr;
-                })).attr("class", "axis x-axis");
-                
-                const yAxis = d3.axisLeft(yScale), ticks = yScale.ticks(), uniqueRoundedTicks = [...new Set(ticks.map(t => Math.round(t)))];
-                
-                yAxis.tickValues(uniqueRoundedTicks).tickFormat(d => `${d}`);
-                const yAxisGroup = svg.append("g").call(yAxis).attr("class", "axis y-axis");
-                
-                // Add "\" label neatly below the y-axis numbers
-                yAxisGroup.append("text")
-                    .attr("x", -9) // Align with standard d3 left axis tick text
-                    .attr("y", height + 15) // Position level with the x-axis text
-                    .attr("text-anchor", "end")
-                    .text("\u2032");
-                
                 // --- Tide Event Markers (High / Low) ---
-                const eventsGroup = svg.selectAll(".event").data(tideEvents).enter().append("g").attr("class", "event").attr("transform", d => `translate(${xScale(d.time)},${yScale(d.height)})`);
+                const eventsGroup = slideGroup.selectAll(".event").data(tideEvents).enter().append("g").attr("class", "event").attr("transform", d => `translate(${xScale(d.time)},${yScale(d.height)})`);
                 
                 eventsGroup.each(function(d) {
                     const g = d3.select(this);
                     
                     if (d.height < DANGEROUS_LOW_TIDE) {
-                        // Red circle background
                         g.append("circle")
                          .attr("r", 4.5)
                          .attr("fill", dangerColor);
-                        // White X inside
                         g.append("path")
                          .attr("d", "M-2,-2 L2,2 M-2,2 L2,-2")
                          .attr("stroke", "#ffffff")
@@ -980,18 +1111,16 @@
                     const tStr = d3.timeFormat("%H:%M")(d.time);
                     const hStr = `${d.height.toFixed(1)}\u2032`;
 
-                    // Hardcoded to strictly place text below the tide marker
                     const textY1 = 20;
                     const textY2 = 34;
 
-                    // Draw text (styling is now handled purely by the .event-label CSS class to prevent conflicts)
                     const textGroup = d3.select(this).append("text").attr("class", "event-label").attr("text-anchor", "middle");
                     textGroup.append("tspan").attr("x", 0).attr("y", textY1).text(tStr).style("font-size", "0.65rem");
                     textGroup.append("tspan").attr("x", 0).attr("y", textY2).text(hStr).style("font-weight", "bold");
                 });
 
                 // --- Open and Dock Icons on Tideline ---
-                const specialIconGroup = svg.selectAll(".special-icon")
+                const specialIconGroup = slideGroup.selectAll(".special-icon")
                     .data(specialIcons)
                     .enter()
                     .append("g")
@@ -1011,7 +1140,6 @@
                         .attr("stroke-linecap", "round")
                         .attr("stroke-linejoin", "round");
                         
-                    // Background covering the icon area
                     svgIcon.append("circle")
                         .attr("cx", 12)
                         .attr("cy", 12)
@@ -1036,34 +1164,33 @@
                     const boxHeight = 18;
                     const xPos = xScale(label.time);
                     
-                    // Open box to the left, Dock box to the right, overlapping the line slightly
                     let rectX = label.isOpen ? (xPos - boxWidth + 6) : (xPos - 6);
                     
-                    // Prevent overflow off the edges of the chart
                     if (rectX < 0) rectX = 0;
                     if (rectX + boxWidth > width) rectX = width - boxWidth;
                     
                     let rectY = 4;
                     let collision = true;
-                    // Collision detection loop to prevent boxes from overlapping horizontally
-                    while(collision) {
+                    let loopCounter = 0; // Prevent infinite loop in edge case stacking
+                    while(collision && loopCounter < 15) {
                         collision = false;
                         for (let b of topBoxes) {
                             if (rectX < b.x + b.w && rectX + boxWidth > b.x &&
                                 rectY < b.y + b.h && rectY + boxHeight > b.y) {
-                                rectY += boxHeight + 4; // Shift down if overlapped
+                                rectY += boxHeight + 4; 
                                 collision = true;
                                 break;
                             }
                         }
+                        loopCounter++;
                     }
                     topBoxes.push({x: rectX, y: rectY, w: boxWidth, h: boxHeight});
 
-                    const g = svg.append("g").attr("class", "top-time-label");
+                    const g = slideGroup.append("g").attr("class", "top-time-label");
                     
                     g.append("rect")
                         .attr("x", rectX).attr("y", rectY)
-                        .attr("width", boxWidth).attr("height", boxHeight)
+                        .attr("width", Math.max(0, boxWidth)).attr("height", Math.max(0, boxHeight))
                         .attr("fill", label.isOpen ? "var(--color-open-line)" : "var(--color-dock-line)")
                         .attr("stroke", "none");
                         
@@ -1072,84 +1199,51 @@
                         .attr("y", rectY + (boxHeight / 2) + 1)
                         .attr("text-anchor", "middle").attr("dominant-baseline", "middle")
                         .attr("font-size", "0.6rem").attr("font-weight", "600")
-                        .attr("fill", "#000000") // Black text for contrast
+                        .attr("fill", "#000000")
                         .text(labelText);
                 });
 
-                updateNowIndicator();
+                updateNowIndicator(renderDate, slideGroup);
 
-                // Hover functionality
-                eventsGroup.on("mouseover", (event, d) => { 
-                    isHoveringOnEvent = true; 
-                    
-                    // 1. Update text FIRST so the tooltip resizes to the correct width
-                    tooltip.select("#tooltip-time").text(`Event: ${d3.timeFormat("%H:%M")(d.time)}`); 
-                    tooltip.select("#tooltip-height").text(`${d.height.toFixed(1)}\u2032`); 
-
-                    // 2. Measure dimensions
-                    const tooltipNode = tooltip.node();
-                    const tooltipRect = tooltipNode.getBoundingClientRect();
-                    const containerRect = chartContainer.node().getBoundingClientRect();
-                    
-                    // 3. Align perfectly with the marker's X position, relative to wrapper
-                    const snappedX = margin.left + xScale(d.time);
-                    let leftPos = snappedX - (tooltipRect.width / 2);
-                    
-                    // Prevent tooltip from overflowing the widget edges
-                    leftPos = Math.max(0, Math.min(leftPos, containerRect.width - tooltipRect.width));
-                    
-                    tooltip.style("opacity", 1)
-                           .style("left", `${leftPos}px`)
-                           .style("top", `10px`); 
-                }).on("mouseout", () => { 
-                    isHoveringOnEvent = false; 
-                    tooltip.style("opacity", 0); 
-                });
-                
-                const hoverGroup = svg.append("g").attr("class", "hover-group").style("display", "none");
-                hoverGroup.append("line").attr("stroke", hoverLineColor).attr("stroke-width", 1).attr("y1", 0).attr("y2", height);
-                const hoverCircle = hoverGroup.append("circle").attr("r", 5).attr("fill", hoverCircleFill).attr("stroke", hoverCircleStroke).attr("stroke-width", 1.5);
-                
+                // --- INTERACTION & HOVER BINDING ---
                 function handleInteractionMove(event) {
                     event.preventDefault();
                     if (isHoveringOnEvent) { hoverGroup.style("display", "none"); return; }
                     hoverGroup.style("display", null);
                     const pointer = event.touches ? event.touches[0] : event;
-                    if (!pointer) return; // Prevent errors on fast touch actions
+                    if (!pointer) return; 
                     
-                    const [mx] = d3.pointer(pointer, chartContainer.node());
-                    const innerX = mx - margin.left; // Fix: Adjust for the left margin offset
-                    const time = xScale.invert(innerX);
+                    // Chart window is translated by margin.left, so mx maps exactly to chart coordinates
+                    const [mx] = d3.pointer(pointer, svg.select(".chart-window").node());
+                    const time = xScale.invert(mx);
                     
                     const bisect = d3.bisector(d => d.time).left;
-                    const index = bisect(chartData, time, 1);
-                    const a = chartData[index - 1], b = chartData[index];
+                    const index = bisect(chartDataForUpdate, time, 1);
+                    const a = chartDataForUpdate[index - 1], b = chartDataForUpdate[index];
                     let d = !a ? b : !b ? a : (time - a.time > b.time - time) ? b : a;
                     if (!d) return;
                     hoverGroup.attr("transform", `translate(${xScale(d.time)}, 0)`);
-                    hoverCircle.attr("cy", yScale(d.height));
+                    hoverGroup.select(".hover-circle").attr("cy", yScale(d.height));
                     
-                    // 1. Update text FIRST so the tooltip resizes to the correct width
                     tooltip.select("#tooltip-time").text(d3.timeFormat("%H:%M")(d.time));
                     tooltip.select("#tooltip-height").text(`${d.height.toFixed(1)}\u2032`);
 
-                    // 2. Measure dimensions
                     const tooltipNode = tooltip.node();
                     const tooltipRect = tooltipNode.getBoundingClientRect();
                     const containerRect = chartContainer.node().getBoundingClientRect();
                     
-                    // 3. Align perfectly with the vertical hover line's X position, relative to wrapper
                     const snappedX = margin.left + xScale(d.time);
                     let leftPos = snappedX - (tooltipRect.width / 2);
                     
-                    // Prevent tooltip from overflowing the widget edges
-                    leftPos = Math.max(0, Math.min(leftPos, containerRect.width - tooltipRect.width));
+                    // Clamp tooltip strictly within the widget bounds
+                    leftPos = Math.max(10, Math.min(leftPos, containerRect.width - tooltipRect.width - 10));
                     
                     tooltip.style("left", `${leftPos}px`)
                            .style("top", `10px`);
                 }
-                
-                svg.append("rect").attr("width", width).attr("height", height).attr("fill", "none").attr("pointer-events", "all")
+
+                // Re-bind hover logic cleanly on every draw to ensure closures hold the newest data scale
+                svg.select(".hover-overlay")
                     .on("mouseover", () => { if (!isHoveringOnEvent) { hoverGroup.style("display", null); tooltip.style("opacity", 1); }})
                     .on("mouseout", () => { hoverGroup.style("display", "none"); if (!isHoveringOnEvent) tooltip.style("opacity", 0); })
                     .on("mousemove", handleInteractionMove)
@@ -1158,6 +1252,23 @@
                     .on("touchend", () => { hoverGroup.style("display", "none"); if (!isHoveringOnEvent) tooltip.style("opacity", 0);})
                     .on("touchcancel", () => { hoverGroup.style("display", "none"); if (!isHoveringOnEvent) tooltip.style("opacity", 0);});
                 
+                eventsGroup.on("mouseover", (event, d) => { 
+                    isHoveringOnEvent = true; 
+                    tooltip.select("#tooltip-time").text(`Event: ${d3.timeFormat("%H:%M")(d.time)}`); 
+                    tooltip.select("#tooltip-height").text(`${d.height.toFixed(1)}\u2032`); 
+                    const tooltipNode = tooltip.node();
+                    const tooltipRect = tooltipNode.getBoundingClientRect();
+                    const containerRect = chartContainer.node().getBoundingClientRect();
+                    const snappedX = margin.left + xScale(d.time);
+                    let leftPos = snappedX - (tooltipRect.width / 2);
+                    leftPos = Math.max(10, Math.min(leftPos, containerRect.width - tooltipRect.width - 10));
+                    tooltip.style("opacity", 1).style("left", `${leftPos}px`).style("top", `10px`); 
+                }).on("mouseout", () => { 
+                    isHoveringOnEvent = false; 
+                    tooltip.style("opacity", 0); 
+                });
+
+                // Update text below the chart
                 tideEvents.forEach(event => {
                     if (event.time >= sunriseTime && event.time <= sunsetTime) {
                         dayEvents.push({ time: event.time, text: `${event.type} Tide: ${event.height.toFixed(1)}\u2032`, type: event.type.toLowerCase() });
@@ -1183,8 +1294,7 @@
                          const nowForTable = getPTNow();
                          let rowClass = "";
                          
-                         // Determine visual styling for next event
-                         if (currentDate.toDateString() === nowForTable.toDateString()) {
+                         if (renderDate.toDateString() === nowForTable.toDateString()) {
                              if (eventTime >= nowForTable && !foundNextTableEvent) {
                                  rowClass = "event-row-next";
                                  foundNextTableEvent = true;
@@ -1197,20 +1307,69 @@
                 } else {
                      eventsList.innerHTML = `<p>No scheduled events during daylight hours.</p>`;
                 }
-                updateUI();
+                updateUI(renderDate);
+                
+                // --- EXECUTE D3 SLIDE ANIMATION ON THE GRAPH DATA GROUP ---
+                if (direction !== 0) {
+                    const oldSlideGroup = slidesContainer.select(".slide-group.active");
+                    
+                    // Cancel any previous transitions gracefully to prevent jumping
+                    oldSlideGroup.interrupt();
+                    
+                    // Temporarily disable hover interactions during slide to prevent ghost tooltips
+                    if (svg && svg.select(".hover-overlay").node()) {
+                         svg.select(".hover-overlay").style("pointer-events", "none");
+                    }
+                    
+                    oldSlideGroup.classed("active", false)
+                        .transition(t)
+                        .attr("transform", `translate(${direction > 0 ? -width : width}, 0)`)
+                        .remove();
+                        
+                    slideGroup.classed("active", true)
+                        .transition(t)
+                        .attr("transform", `translate(0, 0)`)
+                        .on("end", () => {
+                            if (svg && svg.select(".hover-overlay").node()) {
+                                 svg.select(".hover-overlay").style("pointer-events", "all");
+                            }
+                            isRendering = false;
+                            navButtons.forEach(btn => btn.disabled = false);
+                        });
+                        
+                } else {
+                    slidesContainer.selectAll(".slide-group.active").remove();
+                    slideGroup.classed("active", true).attr("transform", "translate(0,0)");
+                    if (svg && svg.select(".hover-overlay").node()) {
+                         svg.select(".hover-overlay").style("pointer-events", "all");
+                    }
+                    isRendering = false;
+                    navButtons.forEach(btn => btn.disabled = false);
+                }
+                
+                } catch (error) {
+                    console.error("Critical rendering error:", error);
+                    chartContainer.html(`<div style="color: red; padding: 1rem; text-align: center; display: flex; align-items: center; justify-content: center; height: 100%;">An error occurred generating the chart. Check developer console for details.</div>`);
+                    isRendering = false;
+                    navButtons.forEach(btn => btn.disabled = false);
+                }
             }
 
-            function updateNowIndicator() {
-                if (!svg || !xScale || !yScale || !chartDataForUpdate) return;
-                svg.selectAll(".now-indicator, .now-group").remove();
+            function updateNowIndicator(renderDate, targetSlideGroup = null) {
+                const activeSlide = targetSlideGroup || (svg ? svg.select(".slide-group.active") : null);
+                if (!activeSlide || activeSlide.empty() || !xScale || !yScale || !chartDataForUpdate) return;
+                
+                activeSlide.selectAll(".now-indicator, .now-group").remove();
                 const now = getPTNow();
-                const startOfDay = d3.timeDay.floor(currentDate);
-                const endOfDay = d3.timeDay.ceil(currentDate);
-                if (currentDate.toDateString() === now.toDateString() && now >= startOfDay && now <= endOfDay) {
+                const startOfDay = d3.timeDay.floor(renderDate);
+                const endOfDay = d3.timeDay.ceil(renderDate);
+
+                if (renderDate.toDateString() === now.toDateString() && now >= startOfDay && now <= endOfDay) {
                     const bisect = d3.bisector(d => d.time).left;
                     const index = bisect(chartDataForUpdate, now, 1);
                     const a = chartDataForUpdate[index - 1], b = chartDataForUpdate[index];
                     const currentDataPoint = !a ? b : !b ? a : (now - a.time > b.time - now) ? b : a;
+                    
                     if (currentDataPoint) {
                          const widgetContainer = document.querySelector('#tide-chart-widget-container');
                          if (!widgetContainer) return;
@@ -1221,28 +1380,23 @@
                          const yPos = yScale(currentDataPoint.height);
                          const chartWidth = xScale.range()[1];
                          
-                         // Create a group for the now indicator to keep things organized and prevent hover interference
-                         const nowGroup = svg.append("g").attr("class", "now-group").style("pointer-events", "none");
+                         const nowGroup = activeSlide.append("g").attr("class", "now-group").style("pointer-events", "none");
                          
-                         // Flag dimensions
                          const flagWidth = 28;
                          const flagHeight = 14;
                          let flagX = xPos;
                          
-                         // Flip the flag to the left side of the pole if it's too close to the right edge
                          if (xPos + flagWidth > chartWidth) {
                              flagX = xPos - flagWidth;
                          }
                          
-                         // Determine dynamic Y position to avoid overlapping the top labels (Open/Dock boxes)
                          let maxLabelY = 0;
-                         svg.selectAll(".top-time-label rect").each(function() {
+                         activeSlide.selectAll(".top-time-label rect").each(function() {
                              const lx = parseFloat(d3.select(this).attr("x"));
                              const lw = parseFloat(d3.select(this).attr("width"));
                              const ly = parseFloat(d3.select(this).attr("y"));
                              const lh = parseFloat(d3.select(this).attr("height"));
                              
-                             // Check for horizontal intersection (with 2px padding)
                              if (!isNaN(lx) && !isNaN(lw) && (flagX < lx + lw + 2) && (flagX + flagWidth + 2 > lx)) {
                                  if (!isNaN(ly) && !isNaN(lh) && (ly + lh > maxLabelY)) {
                                      maxLabelY = ly + lh;
@@ -1251,7 +1405,6 @@
                          });
                          const flagY = maxLabelY > 0 ? maxLabelY + 4 : 0;
                          
-                         // 2px thick vertical line (pole)
                          nowGroup.append("line")
                              .attr("x1", xPos)
                              .attr("x2", xPos)
@@ -1260,26 +1413,23 @@
                              .attr("stroke", nowIndicatorColor)
                              .attr("stroke-width", 2);
 
-                         // Original now circle
                          nowGroup.append("circle")
                              .attr("cx", xPos)
                              .attr("cy", yPos)
                              .attr("r", 5)
                              .attr("fill", nowIndicatorColor);
                              
-                         // Flag background
                          nowGroup.append("rect")
                              .attr("x", flagX)
                              .attr("y", flagY)
-                             .attr("width", flagWidth)
-                             .attr("height", flagHeight)
-                             .attr("fill", nowIndicatorColor); // Removed rounded corners here
+                             .attr("width", Math.max(0, flagWidth))
+                             .attr("height", Math.max(0, flagHeight))
+                             .attr("fill", nowIndicatorColor); 
                              
-                         // Flag text
                          nowGroup.append("text")
                              .attr("x", flagX + (flagWidth / 2))
-                             .attr("y", flagY + 10.5) // Adjust for vertical centering
-                             .attr("fill", "#000000") // Black text for maximum contrast on yellow
+                             .attr("y", flagY + 10.5) 
+                             .attr("fill", "#000000") 
                              .attr("font-size", "0.6rem")
                              .attr("font-weight", "bold")
                              .attr("text-anchor", "middle")
@@ -1288,23 +1438,35 @@
                 }
             }
 
-            function updateUI() {
+            function updateUI(renderDate) {
                 const isMobile = window.innerWidth < 640;
                 const dateFormatOptions = { weekday: 'long', month: 'long', day: 'numeric' };
                 if (!isMobile) dateFormatOptions.year = 'numeric';
-                dateDisplay.textContent = currentDate.toLocaleString(undefined, dateFormatOptions);
-                const yyyy = currentDate.getFullYear(), mm = String(currentDate.getMonth() + 1).padStart(2, '0'), dd = String(currentDate.getDate()).padStart(2, '0');
+                dateDisplay.textContent = renderDate.toLocaleString(undefined, dateFormatOptions);
+                const yyyy = renderDate.getFullYear(), mm = String(renderDate.getMonth() + 1).padStart(2, '0'), dd = String(renderDate.getDate()).padStart(2, '0');
                 datePicker.value = `${yyyy}-${mm}-${dd}`;
                 if(countdownInterval) {
                     clearInterval(countdownInterval);
                     countdownInterval = null;
                 }
                 const nowForUI = getPTNow();
-                const isCurrentDay = currentDate.toDateString() === nowForUI.toDateString();
-                statusBoxesContainer.style.display = isCurrentDay ? 'grid' : 'none';
+                const isCurrentDay = renderDate.toDateString() === nowForUI.toDateString();
+                
+                // Smoothly animate the appearance/disappearance of the status boxes
                 if (isCurrentDay) {
+                    statusBoxesContainer.style.display = 'grid';
+                    statusBoxesContainer.offsetHeight; // Force reflow to ensure CSS transition triggers
+                    statusBoxesContainer.classList.add('visible');
+                    
                     updateNextTideEvent();
                     countdownInterval = setInterval(updateNextTideEvent, 60000); 
+                } else {
+                    statusBoxesContainer.classList.remove('visible');
+                    setTimeout(() => {
+                        if (!statusBoxesContainer.classList.contains('visible')) {
+                            statusBoxesContainer.style.display = 'none';
+                        }
+                    }, 400); // 400ms matches the CSS transition duration
                 }
                 
                 // Reflected the updated Circular Icons logic in the Legend UI
@@ -1486,7 +1648,7 @@
                     } else {
                         nextTideDisplay.innerHTML = "-";
                     }
-                    updateNowIndicator();
+                    updateNowIndicator(currentDate);
                 } catch (error) {
                     console.error("Error during periodic tide update:", error);
                     currentTideStatus.innerHTML = "-";
@@ -1503,50 +1665,62 @@
                 clubScheduleBoxEl.style.removeProperty('border-color');
                 clubScheduleLabelEl.style.removeProperty('color');
                 nextTideDisplay.innerHTML = '';
+                
+                clubStatusBanner.classList.remove('visible');
                 clubStatusBanner.style.display = 'none';
+                clubStatusBanner.className = 'status-banner';
             }
 
             document.getElementById('prev-day').addEventListener('click', () => {
+                if (isRendering) return;
                 currentDate.setDate(currentDate.getDate() - 1);
-                clearHeaderInfo();
-                drawChart();
+                drawChart(new Date(currentDate), -1);
             });
             document.getElementById('next-day').addEventListener('click', () => {
+                if (isRendering) return;
                 currentDate.setDate(currentDate.getDate() + 1);
-                clearHeaderInfo();
-                drawChart();
+                drawChart(new Date(currentDate), 1);
             });
             datePicker.addEventListener('change', (event) => {
+                if (isRendering) return;
                 const dateString = event.target.value;
                 if (!dateString) return;
+                
                 const [year, month, day] = dateString.split('-').map(Number);
+                
+                // Safely update the date without running into the JS 31st Day Bug
                 const selectedDate = new Date(currentDate.getTime());
                 selectedDate.setFullYear(year, month - 1, day);
+                
                 if (!isNaN(selectedDate.getTime()) && selectedDate.toDateString() !== currentDate.toDateString()) {
+                    const direction = selectedDate > currentDate ? 1 : -1;
                     currentDate = selectedDate;
-                    clearHeaderInfo();
-                    drawChart();
+                    drawChart(new Date(currentDate), direction);
                 }
             });
             
             // PERFORMANCE FIX: Debounce the resize event to prevent heavy CPU usage when manipulating the browser window
             window.addEventListener('resize', () => {
                 clearTimeout(resizeTimeout);
-                resizeTimeout = setTimeout(drawChart, 200);
+                resizeTimeout = setTimeout(() => {
+                    // Instantly snap to the current view during resize to avoid breaking transitions
+                    chartContainer.selectAll(".slide-group").interrupt();
+                    isRendering = false; 
+                    drawChart(currentDate, 0);
+                }, 200);
             });
 
             // Midnight checker: Auto-refresh chart to the new "today" if local day rolls over while browser is left open
             setInterval(() => {
                 const currentRealDateString = getPTNow().toDateString();
-                if (currentRealDateString !== lastRealDateString) {
+                if (currentRealDateString !== lastRealDateString && !isRendering) {
                     lastRealDateString = currentRealDateString;
                     currentDate = getPTNow();
-                    clearHeaderInfo();
-                    drawChart();
+                    drawChart(currentDate, 0);
                 }
             }, 60000);
 
-            drawChart();
+            drawChart(currentDate, 0);
         });
         /* #end raw */
     </script>
