@@ -886,9 +886,12 @@
                     
                     // Invisible overlay to catch all pointer events across the whole chart window
                     chartWindow.append("rect").attr("class", "hover-overlay").attr("fill", "none").attr("pointer-events", "all");
-                    chartWindow.append("g").attr("class", "slides-container");
                     
-                    const hoverGroup = chartWindow.append("g").attr("class", "hover-group").style("display", "none");
+                    // Set pointer-events to none so backgrounds don't block the hover overlay beneath them
+                    chartWindow.append("g").attr("class", "slides-container").style("pointer-events", "none");
+                    
+                    // Ensure the follow-cursor group also doesn't block events
+                    const hoverGroup = chartWindow.append("g").attr("class", "hover-group").style("display", "none").style("pointer-events", "none");
                     hoverGroup.append("line").attr("class", "hover-line").attr("stroke-width", 1).attr("y1", 0);
                     hoverGroup.append("circle").attr("class", "hover-circle").attr("r", 5).attr("stroke-width", 1.5);
                 }
@@ -1088,7 +1091,8 @@
                 }
                 
                 // --- Tide Event Markers (High / Low) ---
-                const eventsGroup = slideGroup.selectAll(".event").data(tideEvents).enter().append("g").attr("class", "event").attr("transform", d => `translate(${xScale(d.time)},${yScale(d.height)})`);
+                // Override the pointer-events so these markers remain individually hoverable
+                const eventsGroup = slideGroup.selectAll(".event").data(tideEvents).enter().append("g").attr("class", "event").attr("transform", d => `translate(${xScale(d.time)},${yScale(d.height)})`).style("pointer-events", "all").style("cursor", "pointer");
                 
                 eventsGroup.each(function(d) {
                     const g = d3.select(this);
