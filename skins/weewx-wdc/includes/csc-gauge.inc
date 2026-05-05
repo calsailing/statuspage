@@ -7,6 +7,7 @@
             --text-primary: #0f172a; 
             --text-secondary: #64748b; 
             --text-muted: #94a3b8;
+            --compass-text: #9ca3af;
             --hero-bg-1: #eff6ff; 
             --hero-bg-2: #f8fafc; 
             --hero-border: rgba(255, 255, 255, 0.6);
@@ -33,6 +34,7 @@
             --text-primary: #e5e7eb; 
             --text-secondary: #9ca3af; 
             --text-muted: #6b7280;
+            --compass-text: #e5e7eb;
             --hero-bg-1: #2a2a2a; 
             --hero-bg-2: #363636; 
             --hero-border: #4a4a4a;
@@ -66,7 +68,7 @@
         #isolated-weather-widget { display: flex; flex-direction: column; gap: 1.5rem; padding: 0.5rem; width: 100%; position: relative; color: var(--text-primary); }
         @media (min-width: 768px) { 
             #isolated-weather-widget { flex-direction: row; align-items: stretch; } 
-            .iw-dial-card { flex: 0 1 auto; width: auto; max-width: 50%; aspect-ratio: 330 / 286; }
+            .iw-dial-card { flex: 0 1 auto; width: auto; max-width: 50%; aspect-ratio: 330 / 294; }
             .iw-gauge-mount svg { width: 100% !important; height: 100% !important; }
         }
         
@@ -117,7 +119,7 @@
         #isolated-weather-widget .center-speed { font-weight: 800; font-variant-numeric: tabular-nums !important; }
         #isolated-weather-widget .center-gust { font-size: 11px !important; font-weight: 700; font-variant-numeric: tabular-nums !important; }
         #isolated-weather-widget .speed-tick { stroke: var(--dial-tick); stroke-width: 1.5; stroke-linecap: round; transition: stroke 0.3s ease; }
-        #isolated-weather-widget .gauge-label { font-size: 10px !important; font-weight: 500; fill: var(--text-muted); font-variant-numeric: tabular-nums !important; }
+        #isolated-weather-widget .gauge-label { font-size: 11px !important; font-weight: 300 !important; fill: var(--compass-text) !important; opacity: 0.6; font-variant-numeric: tabular-nums !important; }
     </style>
 
     <div id="isolated-weather-widget">
@@ -181,7 +183,7 @@
         let currentMaxSpeed = 30;
 
         const svg = d3.select("#gauge-mount").append("svg")
-            .attr("viewBox", `0 17 330 286`)
+            .attr("viewBox", `0 17 330 294`)
             .style("width", "100%")
             .style("height", "auto")
             .style("display", "block")
@@ -234,9 +236,23 @@
         drawSpeedTrack(currentMaxSpeed);
 
         const compassTicks = svg.append("g").attr("class", "compass-ticks");
+        const cardinalLabels = { 0: 'N', 90: 'E', 180: 'S', 270: 'W' };
         for (let i = 0; i < 360; i += 22.5) {
             const angle = (i * Math.PI) / 180, isMajor = i % 90 === 0;
             compassTicks.append("line").attr("x1", R.compass * Math.sin(angle)).attr("y1", -R.compass * Math.cos(angle)).attr("x2", (R.compass - (isMajor ? 10 : 7)) * Math.sin(angle)).attr("y2", -(R.compass - (isMajor ? 10 : 7)) * Math.cos(angle)).attr("stroke", "var(--grey-tick)").attr("stroke-width", 1); 
+            
+            if (isMajor) {
+                compassTicks.append("text")
+                    .attr("x", (R.compass - 20) * Math.sin(angle))
+                    .attr("y", -(R.compass - 20) * Math.cos(angle))
+                    .attr("text-anchor", "middle")
+                    .attr("dy", "0.35em")
+                    .style("font-size", "11px")
+                    .style("font-weight", "300")
+                    .style("fill", "var(--compass-text)")
+                    .style("opacity", "0.6")
+                    .text(cardinalLabels[i]);
+            }
         }
 
         const pointer = svg.append("g"), vane = pointer.append("path").attr("d", "M 0,115 L 65,-95 L 0,-71 L -65,-95 Z").attr("opacity", 0.7);
