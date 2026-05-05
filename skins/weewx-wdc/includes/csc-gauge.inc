@@ -28,14 +28,14 @@
         --bubble-opacity: 0.75;
     }
 
-    /* --- DARK MODE ALIGNMENT (status.cal-sailing.org) --- */
+    /* --- DARK MODE ALIGNMENT (Matches status.cal-sailing.org diagrams) --- */
     #isolated-weather-widget.is-dark {
-        --bg-panel: #1c1c1c; /* Matches site card background */
+        --bg-panel: #1c1c1c; /* Site's diagram background */
         --border-panel: #2c2c2c; 
         --text-primary: #e5e7eb; 
         --text-secondary: #9ca3af; 
         --text-muted: #6b7280;
-        --hero-bg-1: #121212; /* Matches site main background */
+        --hero-bg-1: #121212; /* Site's main background */
         --hero-bg-2: #1c1c1c; 
         --hero-border: #2c2c2c;
         --trend-bg: #121212;
@@ -54,7 +54,7 @@
         --bubble-opacity: 0.9;
     }
 
-    /* Remove rounded corners */
+    /* Remove rounded corners globally */
     #isolated-weather-widget, 
     #isolated-weather-widget .iw-dial-card, 
     #isolated-weather-widget .iw-card,
