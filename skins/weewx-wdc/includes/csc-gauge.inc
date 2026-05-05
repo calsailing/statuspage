@@ -119,7 +119,7 @@
         #isolated-weather-widget .center-speed { font-weight: 800; font-variant-numeric: tabular-nums !important; }
         #isolated-weather-widget .center-gust { font-size: 11px !important; font-weight: 700; font-variant-numeric: tabular-nums !important; }
         #isolated-weather-widget .speed-tick { stroke: var(--dial-tick); stroke-width: 1.5; stroke-linecap: round; transition: stroke 0.3s ease; }
-        #isolated-weather-widget .gauge-label { font-size: 11px !important; font-weight: 300 !important; fill: var(--compass-text) !important; opacity: 0.85; font-variant-numeric: tabular-nums !important; }
+        #isolated-weather-widget .gauge-label { font-size: 11px !important; font-weight: 300 !important; fill: var(--compass-text) !important; opacity: 1; font-variant-numeric: tabular-nums !important; }
     </style>
 
     <div id="isolated-weather-widget">
@@ -250,7 +250,7 @@
                     .style("font-size", "11px")
                     .style("font-weight", "300")
                     .style("fill", "var(--compass-text)")
-                    .style("opacity", "0.85")
+                    .style("opacity", "1")
                     .text(cardinalLabels[i]);
             }
         }
