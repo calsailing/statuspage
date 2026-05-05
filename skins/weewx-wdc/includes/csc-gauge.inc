@@ -1,6 +1,7 @@
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
+/* #raw */
     tailwind.config = {
             darkMode: 'media',
             theme: {
@@ -18,9 +19,10 @@
                 }
             }
         }
-    </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+/* #end raw */
+</script>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
         
         :root {
             --bg-color: #ffffff;
@@ -190,6 +192,7 @@
 
     <!-- API Logic -->
     <script>
+/* #raw */
         // API Endpoints
         const API_OBS = "https://swd.weatherflow.com/swd/rest/observations/station/127241?token=0acb5251-7e01-4de2-af32-7d3f46f1edec";
         const API_FCST = "https://swd.weatherflow.com/swd/rest/better_forecast?station_id=127241&units_wind=kts&token=0acb5251-7e01-4de2-af32-7d3f46f1edec";
@@ -464,5 +467,5 @@
         fetchWeatherData();
         
         setInterval(fetchWeatherData, 10000);
-
+/* #end raw */
     </script>
