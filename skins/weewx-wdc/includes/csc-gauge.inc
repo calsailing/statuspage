@@ -1,5 +1,4 @@
 
-  
     <style>
         #isolated-weather-widget {
             font-family: 'Inter', sans-serif !important;
@@ -29,27 +28,27 @@
         }
 
         #isolated-weather-widget.is-dark {
-            --bg-panel: #1c1c1c; 
-            --border-panel: #2c2c2c; 
+            --bg-panel: #363636; 
+            --border-panel: #4a4a4a; 
             --text-primary: #e5e7eb; 
             --text-secondary: #9ca3af; 
             --text-muted: #6b7280;
-            --hero-bg-1: #121212; 
-            --hero-bg-2: #1c1c1c; 
-            --hero-border: #2c2c2c;
-            --trend-bg: #121212;
+            --hero-bg-1: #2a2a2a; 
+            --hero-bg-2: #363636; 
+            --hero-border: #4a4a4a;
+            --trend-bg: #2a2a2a;
             --trend-red: #f87171;
             --trend-green: #4ade80;
             --icon-indigo-bg: rgba(99, 102, 241, 0.15);
             --icon-indigo: #818cf8;
             --icon-amber-bg: rgba(245, 158, 11, 0.15);
             --icon-amber: #fbbf24;
-            --scale-bg: #121212;
-            --dial-tick: #2c2c2c;
-            --dial-tick-major: #4b5563;
-            --track-bg: #121212;
-            --grey-tick: #2c2c2c;
-            --bubble-fill: #121212;
+            --scale-bg: #2a2a2a;
+            --dial-tick: #4a4a4a;
+            --dial-tick-major: #6b7280;
+            --track-bg: #2a2a2a;
+            --grey-tick: #4a4a4a;
+            --bubble-fill: #2a2a2a;
             --bubble-opacity: 0.9;
         }
 
@@ -65,21 +64,20 @@
         #isolated-weather-widget p, #isolated-weather-widget h1, #isolated-weather-widget h2 { margin: 0; padding: 0; }
         #isolated-weather-widget .hidden { display: none !important; }
         #isolated-weather-widget { display: flex; flex-direction: column; gap: 1.5rem; padding: 0.5rem; width: 100%; position: relative; color: var(--text-primary); }
-        @media (min-width: 768px) { #isolated-weather-widget { flex-direction: row; } }
+        @media (min-width: 768px) { #isolated-weather-widget { flex-direction: row; align-items: flex-start; } }
         
         .iw-panel { position: relative; flex: 1; width: 100%; display: flex; flex-direction: column; }
         .iw-dial-card { 
             background-color: var(--bg-panel); 
             border: 1px solid var(--border-panel); 
             box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); 
-            padding: 0.25rem; 
+            padding: 0; 
             overflow: hidden; 
             display: flex; 
             flex-direction: column; 
             align-items: center; 
             justify-content: center; 
             transition: background-color 0.3s ease, border-color 0.3s ease; 
-            min-height: 300px; /* FIX 3: prevents clipping on tight mobile layouts */
         }
         .iw-gauge-mount { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
         .iw-weather-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; flex-grow: 1; width: 100%; height: 100%; }
@@ -117,8 +115,7 @@
         #isolated-weather-widget .speed-tick { stroke: var(--dial-tick); stroke-width: 1.5; stroke-linecap: round; transition: stroke 0.3s ease; }
         #isolated-weather-widget .gauge-label { font-size: 10px !important; font-weight: 500; fill: var(--text-muted); font-variant-numeric: tabular-nums !important; }
     </style>
-</head>
-<body>
+
     <div id="isolated-weather-widget">
         <div class="iw-panel iw-dial-card"><div id="gauge-mount" class="iw-gauge-mount"></div></div>
         <div class="iw-panel">
@@ -180,7 +177,7 @@
         let currentMaxSpeed = 30;
 
         const svg = d3.select("#gauge-mount").append("svg")
-            .attr("viewBox", `0 0 ${width} ${height}`)
+            .attr("viewBox", `0 20 330 280`)
             .style("width", "100%")
             .style("height", "auto")
             .style("display", "block")
