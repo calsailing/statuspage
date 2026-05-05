@@ -24,7 +24,8 @@
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
         
-        :root {
+        #isolated-weather-widget {
+            font-family: 'Inter', sans-serif;
             --bg-color: #ffffff;
             --card-bg: #ffffff;
             --card-border: #e2e8f0;
@@ -40,7 +41,7 @@
         }
 
         @media (prefers-color-scheme: dark) {
-            :root {
+            #isolated-weather-widget {
                 --bg-color: #0f172a;
                 --card-bg: #1e293b;
                 --card-border: #334155;
@@ -55,54 +56,45 @@
             }
         }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f1f5f9;
-        }
-
-        @media (prefers-color-scheme: dark) {
-            body { background-color: #0f172a; }
-        }
-
-        /* D3 Gauge specific styles */
-        .center-speed {
+        /* D3 Gauge specific styles scoped to widget */
+        #isolated-weather-widget .center-speed {
             font-size: 32px;
             font-weight: 800;
             fill: #0f172a;
             letter-spacing: -1px;
         }
 
-        .center-gust {
+        #isolated-weather-widget .center-gust {
             font-size: 14px;
             font-weight: 700;
             fill: #0f172a;
             letter-spacing: 0;
         }
 
-        .speed-tick {
+        #isolated-weather-widget .speed-tick {
             stroke: rgba(128, 128, 128, 0.3);
             stroke-width: 1.5;
             stroke-linecap: round;
             pointer-events: none;
         }
 
-        .gauge-label {
+        #isolated-weather-widget .gauge-label {
             font-size: 10px;
             font-weight: 300; 
             fill: var(--text-muted); 
         }
     </style>
 
-    <!-- Instrument Panel Container (Background Removed) -->
-    <div class="flex flex-col md:flex-row gap-6 p-2">
+    <!-- Instrument Panel Container (Isolated & Responsive) -->
+    <div id="isolated-weather-widget" class="flex flex-col md:flex-row gap-6 p-2 w-full">
         
         <!-- Column 1: Live Wind Dial -->
-        <div class="relative w-[330px] h-[280px] shrink-0 bg-white dark:bg-slate-800 p-1 shadow-sm border border-slate-100 dark:border-slate-700/50 overflow-hidden flex flex-col items-center justify-center">
+        <div class="relative flex-1 w-full bg-white dark:bg-slate-800 p-1 shadow-sm border border-slate-100 dark:border-slate-700/50 overflow-hidden flex flex-col items-center justify-center">
             <div id="gauge-mount" class="relative w-full h-full flex justify-center items-center"></div>
         </div>
 
         <!-- Column 2: Weather Dashboard (New Design) -->
-        <div class="relative w-[330px] h-[280px] shrink-0 flex flex-col font-sans text-slate-800 dark:text-slate-100">
+        <div class="relative flex-1 w-full flex flex-col font-sans text-slate-800 dark:text-slate-100">
             <div class="grid grid-cols-2 gap-3 flex-grow w-full h-full">
                 
                 <!-- HERO CARD: Temperature & Condition (Spans 2 columns) -->
@@ -114,6 +106,13 @@
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-blue-500"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
                                 <span class="text-[10px] font-semibold uppercase tracking-wider">Current</span>
                             </div>
+                            <div class="flex items-baseline gap-1">
+                                <!-- ID: val-temp-f -->
+                                <h1 id="val-temp-f" class="text-4xl font-bold tracking-tighter text-slate-800 dark:text-white transition-opacity duration-300">--&deg;F</h1>
+                            </div>
+                            <!-- ID: val-temp-c -->
+                            <p id="val-temp-c" class="text-slate-500 dark:text-slate-400 font-medium mt-0.5 text-sm transition-opacity duration-300">--&deg;C</p>
+                        </div>
                             <div class="flex items-baseline gap-1">
                                 <!-- ID: val-temp-f -->
                                 <h1 id="val-temp-f" class="text-4xl font-bold tracking-tighter text-slate-800 dark:text-white transition-opacity duration-300">--°F</h1>
@@ -325,7 +324,7 @@
         
         const dirTextGroup = bottomBubble.append("g").attr("transform", "translate(0, -50)");
         const dirReadout = dirTextGroup.append("text").attr("y", -5).attr("class", "text-[10px] font-black").attr("fill", "#0f172a").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("---");
-        const dirAngle = dirTextGroup.append("text").attr("y", 7).attr("class", "text-[9px] font-medium").attr("fill", "#0f172a").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("---");
+        const dirAngle = dirTextGroup.append("text").attr("y", 7).attr("class", "text-[9px] font-medium").attr("fill", "#0f172a").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("---\xB0");
 
         const topBubble = svg.append("g");
         topBubble.append("circle").attr("cx", 0).attr("cy", 0).attr("r", 32).attr("fill", "white").attr("fill-opacity", 0.75);
@@ -364,7 +363,7 @@
             const currentColor = colorScale(s);
             vane.transition(t).attr("fill", currentColor);
             dirReadout.text(getCompassPoint(d));
-            dirAngle.text(Math.round(d) + "°");
+            dirAngle.text(Math.round(d) + "\xB0");
             
             speedVal.transition(t).tween("text", function() {
                 const startS = this._currentS || 0;
@@ -411,8 +410,8 @@
                     // Update Temperature
                     if (currentObs.air_temperature != null) {
                         const tempF = (currentObs.air_temperature * 9/5) + 32;
-                        document.getElementById('val-temp-f').innerText = `${tempF.toFixed(1)}°F`;
-                        document.getElementById('val-temp-c').innerText = `${currentObs.air_temperature.toFixed(1)}°C`;
+                        document.getElementById('val-temp-f').innerText = `${tempF.toFixed(1)}\xB0F`;
+                        document.getElementById('val-temp-c').innerText = `${currentObs.air_temperature.toFixed(1)}\xB0C`;
                     }
 
                     // Update Pressure
