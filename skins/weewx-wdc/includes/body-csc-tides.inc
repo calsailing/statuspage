@@ -8,110 +8,13 @@
     #set $gauges_display = $DisplayOptions.get('gauges_display', 'before')
     #set $show_gauges = 'Gauges' in $DisplayOptions and $context in $DisplayOptions['Gauges']
 
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<script>
-/* #raw */
-    /**
-         * Tempest Static Token Configuration
-         */
-        const STATIC_TOKEN = "8535e71d-2290-4965-ad3f-ab05b9294fdf";
-        
-        const API_OBS_BASE = "https://swd.weatherflow.com/swd/rest/observations/station/127241";
-        const API_FCST_BASE = "https://swd.weatherflow.com/swd/rest/better_forecast?station_id=127241&units_wind=kts";
-
-        const weatherIcons = {
-            'clear-day': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #f59e0b;"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>`,
-            'clear-night': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #818cf8;"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>`,
-            'cloudy': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: var(--text-muted);"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>`,
-            'partly-cloudy-day': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #0ea5e9;"><path d="M12 2v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="M20 12h2"></path><path d="m19.07 4.93-1.41 1.41"></path><path d="M15.94 14A5 5 0 0 0 6 12a3 3 0 0 0 0 6h9.5a3.5 3.5 0 1 0 0-7h-.5Z"></path></svg>`,
-            'partly-cloudy-night': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #a5b4fc;"><path d="M10 6.13A6 6 0 0 0 15 15h3.5a3.5 3.5 0 1 0 0-7h-.5A5 5 0 0 0 10 6.13Z"></path></svg>`,
-            'rain': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #3b82f6;"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path><path d="M16 23v-2"></path><path d="M8 23v-2"></path><path d="M12 23v-2"></path></svg>`,
-            'snow': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #7dd3fc;"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path><path d="M8 23h.01"></path><path d="M12 23h.01"></path><path d="M16 23h.01"></path></svg>`,
-            'wind': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: var(--text-secondary);"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"></path><path d="M9.6 4.6A2 2 0 1 1 11 8H2"></path><path d="M12.6 19.4A2 2 0 1 0 14 16H2"></path></svg>`,
-            'default': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #60a5fa;"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>`
-        };
-
-        const trendIcons = {
-            'falling': `<svg style="width: 12px; height: 12px; color: var(--trend-red);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg> <span style="color: var(--trend-red);">Falling</span>`,
-            'rising': `<svg style="width: 12px; height: 12px; color: var(--trend-green);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg> <span style="color: var(--trend-green);">Rising</span>`,
-            'steady': `<svg style="width: 12px; height: 12px; color: var(--text-secondary);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg> <span style="color: var(--text-secondary);">Steady</span>`,
-        };
-
-        /**
-         * THEME SYNC LOGIC
-         * Strictly aligns with the presence/absence of 'dark' class on the html tag.
-         */
-        function syncTheme() {
-            const widget = document.getElementById('isolated-weather-widget');
-            if (!widget) return;
-
-            let isDark = false;
-            
-            // 1. Check local document element (HTML tag)
-            isDark = document.documentElement.classList.contains('dark');
-
-            // 2. Try to check parent (iframes on status.cal-sailing.org)
-            if (!isDark) {
-                try {
-                    if (window.self !== window.top) {
-                        isDark = window.parent.document.documentElement.classList.contains('dark');
-                    }
-                } catch (e) {
-                    // If CORS prevents checking parent, fallback to system preference
-                    isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                }
-            }
-
-            if (isDark) {
-                widget.classList.add('is-dark');
-            } else {
-                widget.classList.remove('is-dark');
-            }
-        }
-
-        /**
-         * Robust Fetch Helper
-         */
-        const fetchWithRetry = async (url, retries = 50, delay = 100) => {
-            for (let i = 0; i < retries; i++) {
-                try {
-                    const authenticatedUrl = new URL(url);
-                    authenticatedUrl.searchParams.set('token', STATIC_TOKEN);
-                    const response = await fetch(authenticatedUrl.toString());
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    return await response.json();
-                } catch (err) {
-                    if (i === retries - 1) throw err;
-                    await new Promise(res => setTimeout(res, delay));
-                }
-            }
-        };
-
-        // PRE-FETCH
-        window.weatherPrefetch = (async () => {
-            return Promise.all([
-                fetchWithRetry(API_OBS_BASE),
-                fetchWithRetry(API_FCST_BASE)
-            ]);
-        })().catch(err => {
-            console.error("Initial prefetch failed:", err);
-            return null;
-        });
-
-        // Watch for theme class changes on the local tag
-        const observer = new MutationObserver(() => syncTheme());
-        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-        
-        // Listen for theme change messages
-        window.addEventListener('message', (event) => {
-            if (event.data === 'theme-dark' || event.data === 'theme-light') syncTheme();
-        });
-
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => syncTheme());
-    /* #end raw */
-    </script>
-
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Script dependencies -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 
     <link rel="stylesheet" href="https://cdn.aerisapi.com/wxblox/latest/aeris-wxblox.css">
