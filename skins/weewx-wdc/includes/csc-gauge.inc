@@ -1,4 +1,5 @@
 
+
     <style>
         #isolated-weather-widget {
             font-family: 'Inter', sans-serif !important;
@@ -8,6 +9,7 @@
             --text-secondary: #64748b; 
             --text-muted: #94a3b8;
             --compass-text: #9ca3af;
+            --map-sensor: #3b82f6;
             --hero-bg-1: #eff6ff; 
             --hero-bg-2: #f8fafc; 
             --hero-border: rgba(255, 255, 255, 0.6);
@@ -26,6 +28,13 @@
             --bubble-fill: #ffffff; 
             --bubble-opacity: 0.75;
             transition: color 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            padding: 0.5rem;
+            width: 100%;
+            position: relative;
+            color: var(--text-primary);
         }
 
         #isolated-weather-widget.is-dark {
@@ -35,6 +44,7 @@
             --text-secondary: #9ca3af; 
             --text-muted: #6b7280;
             --compass-text: #e5e7eb;
+            --map-sensor: #818cf8;
             --hero-bg-1: #2a2a2a; 
             --hero-bg-2: #363636; 
             --hero-border: #4a4a4a;
@@ -56,20 +66,17 @@
 
         #isolated-weather-widget, 
         #isolated-weather-widget .iw-dial-card, 
-        #isolated-weather-widget .iw-card,
-        #isolated-weather-widget .iw-trend-badge,
-        #isolated-weather-widget .iw-uv-bar-bg { 
+        #isolated-weather-widget .iw-card { 
             border-radius: 0 !important; 
         }
 
-        #isolated-weather-widget, #isolated-weather-widget * { box-sizing: border-box; }
+        #isolated-weather-widget * { box-sizing: border-box; }
         #isolated-weather-widget p, #isolated-weather-widget h1, #isolated-weather-widget h2 { margin: 0; padding: 0; }
         #isolated-weather-widget .hidden { display: none !important; }
-        #isolated-weather-widget { display: flex; flex-direction: column; gap: 1.5rem; padding: 0.5rem; width: 100%; position: relative; color: var(--text-primary); }
+
         @media (min-width: 768px) { 
             #isolated-weather-widget { flex-direction: row; align-items: stretch; } 
-            .iw-dial-card { flex: 0 0 auto; width: auto; max-width: none; aspect-ratio: 330 / 263; }
-            .iw-gauge-mount svg { width: 100% !important; height: 100% !important; }
+            .iw-dial-card { flex: 0 0 auto; width: auto; max-width: none; aspect-ratio: 330 / 263; min-width: 330px; }
         }
         
         .iw-panel { position: relative; flex: 1; width: 100%; display: flex; flex-direction: column; }
@@ -84,7 +91,85 @@
             justify-content: center; 
             transition: background-color 0.3s ease, border-color 0.3s ease; 
         }
-        .iw-gauge-mount { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
+
+        /* Map Background Styles */
+        .iw-map-bg {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 0;
+            overflow: hidden;
+            background: var(--bg-panel);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        #isolated-weather-widget.map-mode .iw-map-bg { opacity: 1; }
+
+        #iw-map-container {
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background: var(--bg-panel);
+        }
+
+        .iw-map-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.15);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        #isolated-weather-widget.is-dark .leaflet-tile-pane {
+            /* Removed color inversion so satellite imagery looks natural in dark mode */
+            filter: brightness(85%) contrast(110%);
+        }
+        #isolated-weather-widget.is-dark .iw-map-overlay {
+            background: rgba(54, 54, 54, 0.25);
+        }
+
+        /* Map Toggle Switch Styles */
+        .iw-map-toggle {
+            position: absolute; top: 10px; right: 10px; z-index: 10;
+            display: flex; align-items: center; gap: 6px;
+            background-color: var(--bg-panel);
+            padding: 6px 10px;
+            border-radius: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-panel);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        .iw-toggle-label {
+            font-size: 10px; font-weight: 700; text-transform: uppercase;
+            color: var(--text-secondary); letter-spacing: 0.05em; user-select: none;
+        }
+        .iw-switch { position: relative; display: inline-block; width: 32px; height: 18px; }
+        .iw-switch input { opacity: 0; width: 0; height: 0; }
+        .iw-slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--border-panel); border: 1px solid var(--dial-tick-major);
+            transition: .3s; border-radius: 18px;
+        }
+        .iw-slider:before {
+            position: absolute; content: ""; height: 12px; width: 12px; left: 2px; bottom: 2px;
+            background-color: var(--text-secondary); transition: .3s; border-radius: 50%;
+        }
+        .iw-switch input:checked + .iw-slider { background-color: var(--icon-indigo-bg); border-color: var(--map-sensor); }
+        .iw-switch input:checked + .iw-slider:before { transform: translateX(14px); background-color: var(--map-sensor); }
+
+        /* Fading out Gauge Elements in Map Mode */
+        .gauge-bg-track, .gauge-gust-track, .gauge-color-track, .gauge-tick-group, .compass-ticks, .gauge-marker {
+            transition: opacity 0.4s ease;
+        }
+        #isolated-weather-widget.map-mode .gauge-bg-track, 
+        #isolated-weather-widget.map-mode .gauge-gust-track, 
+        #isolated-weather-widget.map-mode .gauge-color-track, 
+        #isolated-weather-widget.map-mode .gauge-tick-group, 
+        #isolated-weather-widget.map-mode .compass-ticks,
+        #isolated-weather-widget.map-mode .gauge-marker {
+            opacity: 0 !important;
+        }
+
+        .iw-gauge-mount { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; z-index: 2; }
         .iw-weather-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; flex-grow: 1; width: 100%; height: 100%; }
         .iw-card { padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); transition: all 0.3s ease; display: flex; flex-direction: column; background-color: var(--bg-panel); border: 1px solid var(--border-panel); }
         .iw-card:hover { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
@@ -110,19 +195,36 @@
         .iw-uv-amber { height: 100%; background-color: #fbbf24; width: 30%; }
         .iw-uv-red { height: 100%; background-color: #f87171; width: 40%; }
         .iw-uv-marker { position: absolute; top: 50%; transform: translateY(-50%); width: 0.375rem; height: 0.375rem; background-color: #ffffff; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1); border: 1px solid #64748b; transition: all 0.5s; z-index: 10; }
+        
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
         .animate-float { width: 48px; height: 48px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.05)); animation: float 4s ease-in-out infinite; display: flex; align-items: center; justify-content: center; }
+        
         @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .iw-card-small:hover .animate-spin-slow { animation: spin-slow 4s linear infinite; }
+
         #isolated-weather-widget text { font-family: 'Inter', sans-serif !important; fill: var(--text-primary); transition: fill 0.3s ease; }
         #isolated-weather-widget .center-speed { font-weight: 800; font-variant-numeric: tabular-nums !important; }
-        #isolated-weather-widget .center-gust { font-size: 11px !important; font-weight: 700; font-variant-numeric: tabular-nums !important; }
         #isolated-weather-widget .speed-tick { stroke: var(--dial-tick); stroke-width: 1.5; stroke-linecap: round; transition: stroke 0.3s ease; }
         #isolated-weather-widget .gauge-label { font-size: 11px !important; font-weight: 300 !important; fill: var(--compass-text) !important; opacity: 1; font-variant-numeric: tabular-nums !important; }
     </style>
 
     <div id="isolated-weather-widget">
-        <div class="iw-panel iw-dial-card"><div id="gauge-mount" class="iw-gauge-mount"></div></div>
+        <div class="iw-panel iw-dial-card">
+            <div class="iw-map-toggle">
+                <span class="iw-toggle-label" title="Satellite Map" style="display: flex; align-items: center;">
+                    <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+                </span>
+                <label class="iw-switch">
+                    <input type="checkbox" id="map-mode-toggle">
+                    <span class="iw-slider"></span>
+                </label>
+            </div>
+            <div class="iw-map-bg">
+                <div id="iw-map-container"></div>
+                <div class="iw-map-overlay"></div>
+            </div>
+            <div id="gauge-mount" class="iw-gauge-mount"></div>
+        </div>
         <div class="iw-panel">
             <div class="iw-weather-grid">
                 <div class="iw-card iw-card-hero">
@@ -166,17 +268,110 @@
         </div>
     </div>
 
+
     <script>
-    /* #raw */
+        /* #raw */
+        // 1. API Configuration
+        const STATIC_TOKEN = "8535e71d-2290-4965-ad3f-ab05b9294fdf";
+        const API_OBS_BASE = "https://swd.weatherflow.com/swd/rest/observations/station/127241";
+        const API_FCST_BASE = "https://swd.weatherflow.com/swd/rest/better_forecast?station_id=127241&units_wind=kts";
+
+        // 2. Fetch Helper
+        const fetchWithRetry = async (url, maxRetries = 3) => {
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const authenticatedUrl = new URL(url);
+                    authenticatedUrl.searchParams.set('token', STATIC_TOKEN);
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000);
+                    const response = await fetch(authenticatedUrl.toString(), { signal: controller.signal });
+                    clearTimeout(timeoutId);
+                    if (response.ok) return await response.json();
+                    if (response.status === 429) {
+                        await new Promise(res => setTimeout(res, 1000));
+                        continue;
+                    }
+                    throw new Error(`HTTP ${response.status}`);
+                } catch (err) {
+                    if (i === maxRetries - 1) throw err;
+                    await new Promise(res => setTimeout(res, 500)); 
+                }
+            }
+        };
+
+        // 3. PREFETCH IMMEDIATELY (Before D3 and Leaflet initialization)
+        window.obsPrefetch = fetchWithRetry(API_OBS_BASE).catch(() => null);
+        window.fcstPrefetch = fetchWithRetry(API_FCST_BASE).catch(() => null);
+
+        // 4. Map Implementation
+        const SENSOR_COORD = [37.85568, -122.31445];
+        const MAP_CENTER = [37.85868, -122.31445]; 
+        
+        const map = L.map('iw-map-container', {
+            center: MAP_CENTER,
+            zoom: 14.3,
+            zoomSnap: 0.1,
+            zoomControl: false,
+            attributionControl: false,
+            dragging: false,
+            scrollWheelZoom: false,
+            doubleClickZoom: false,
+            boxZoom: false,
+            touchZoom: false
+        });
+
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 19,
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri'
+        }).addTo(map);
+
+        const weatherIcons = {
+            'clear-day': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #f59e0b;"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>`,
+            'clear-night': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #818cf8;"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>`,
+            'cloudy': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: var(--text-muted);"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>`,
+            'partly-cloudy-day': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #0ea5e9;"><path d="M12 2v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="M20 12h2"></path><path d="m19.07 4.93-1.41 1.41"></path><path d="M15.94 14A5 5 0 0 0 6 12a3 3 0 0 0 0 6h9.5a3.5 3.5 0 1 0 0-7h-.5Z"></path></svg>`,
+            'partly-cloudy-night': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #a5b4fc;"><path d="M10 6.13A6 6 0 0 0 15 15h3.5a3.5 3.5 0 1 0 0-7h-.5A5 5 0 0 0 10 6.13Z"></path></svg>`,
+            'rain': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #3b82f6;"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path><path d="M16 23v-2"></path><path d="M8 23v-2"></path><path d="M12 23v-2"></path></svg>`,
+            'snow': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #7dd3fc;"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path><path d="M8 23h.01"></path><path d="M12 23h.01"></path><path d="M16 23h.01"></path></svg>`,
+            'wind': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: var(--text-secondary);"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"></path><path d="M9.6 4.6A2 2 0 1 1 11 8H2"></path><path d="M12.6 19.4A2 2 0 1 0 14 16H2"></path></svg>`,
+            'default': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #60a5fa;"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>`
+        };
+
+        const trendIcons = {
+            'falling': `<svg style="width: 12px; height: 12px; color: var(--trend-red);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg> <span style="color: var(--trend-red);">Falling</span>`,
+            'rising': `<svg style="width: 12px; height: 12px; color: var(--trend-green);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg> <span style="color: var(--trend-green);">Rising</span>`,
+            'steady': `<svg style="width: 12px; height: 12px; color: var(--text-secondary);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg> <span style="color: var(--text-secondary);">Steady</span>`,
+        };
+
+        function syncTheme() {
+            const widget = document.getElementById('isolated-weather-widget');
+            if (!widget) return;
+            let isDark = document.documentElement.classList.contains('dark');
+            if (!isDark) {
+                try {
+                    if (window.self !== window.top) isDark = window.parent.document.documentElement.classList.contains('dark');
+                } catch (e) {
+                    isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                }
+            }
+            if (isDark) widget.classList.add('is-dark');
+            else widget.classList.remove('is-dark');
+        }
+
+        const observer = new MutationObserver(() => syncTheme());
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+        window.addEventListener('message', (event) => {
+            if (event.data === 'theme-dark' || event.data === 'theme-light') syncTheme();
+        });
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => syncTheme());
+
         function getCompassPoint(degrees) {
             const val = Math.floor((degrees / 22.5) + 0.5);
             const arr = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
             return arr[(val % 16)];
         }
 
-        // FIX 1: SVG Layout Configuration - Increased height and adjusted Y center 
-        // to prevent the top number from hitting the bounding box edge.
-        const width = 330, height = 340, center = { x: 165, y: 180 }; 
+        const center = { x: 165, y: 180 }; 
         const R = { speedTrack: 130, compass: 110 };
         const SWEEP_START = -0.75 * Math.PI, SWEEP_END = 0.75 * Math.PI;
         let currentMaxSpeed = 30;
@@ -193,8 +388,7 @@
         const colorScale = d3.scaleLinear().domain([0, 8, 10, 13, 15, 18, 20, 30, 40, 50]).range(["#1e3a8a", "#3b82f6", "#22c55e", "#84cc16", "#eab308", "#f97316", "#ef4444", "#991b1b", "#7f1d1d", "#450a0a"]).clamp(true);
         const speedScale = d3.scaleLinear().domain([0, currentMaxSpeed]).range([SWEEP_START, SWEEP_END]);
         
-        // Background track
-        svg.append("path").datum({startAngle: SWEEP_START, endAngle: SWEEP_END}).attr("d", d3.arc().innerRadius(R.speedTrack - 10).outerRadius(R.speedTrack).cornerRadius(0)).attr("fill", "var(--track-bg)");
+        svg.append("path").datum({startAngle: SWEEP_START, endAngle: SWEEP_END}).attr("d", d3.arc().innerRadius(R.speedTrack - 10).outerRadius(R.speedTrack)).attr("fill", "var(--track-bg)").attr("class", "gauge-bg-track");
         
         const d3defs = svg.append("defs");
         const speedMaskPath = d3defs.append("clipPath").attr("id", "speed-mask").append("path").datum({startAngle: SWEEP_START, endAngle: SWEEP_START});
@@ -203,13 +397,14 @@
         d3defs.append("mask").attr("id", "bottom-bubble-cutout").attr("maskUnits", "userSpaceOnUse").attr("x", -200).attr("y", -200).attr("width", 400).attr("height", 400).append("rect").attr("x", -200).attr("y", -200).attr("width", 400).attr("height", 400).attr("fill", "white");
         d3.select("#bottom-bubble-cutout").append("circle").attr("cx", 0).attr("cy", 0).attr("r", 33).attr("fill", "black");
         
-        const gustTrackGroup = svg.append("g").attr("clip-path", "url(#gust-mask)").attr("opacity", 0.3);
-        const colorTrackGroup = svg.append("g").attr("clip-path", "url(#speed-mask)");
-        const tickGroup = svg.append("g");
-        const arcSpeed = d3.arc().innerRadius(R.speedTrack - 10).outerRadius(R.speedTrack).cornerRadius(0);
-        const lullMarker = svg.append("line").attr("x1", 0).attr("y1", -R.speedTrack).attr("x2", 0).attr("y2", -(R.speedTrack - 10)).attr("stroke", "#1e3a8a").attr("stroke-width", 3);
-        const speedMarker = svg.append("line").attr("x1", 0).attr("y1", -R.speedTrack).attr("x2", 0).attr("y2", -(R.speedTrack - 10)).attr("stroke", "#22c55e").attr("stroke-width", 3);
-        const gustMarker = svg.append("line").attr("x1", 0).attr("y1", -R.speedTrack).attr("x2", 0).attr("y2", -(R.speedTrack - 10)).attr("stroke", "#ef4444").attr("stroke-width", 3);
+        const gustTrackGroup = svg.append("g").attr("clip-path", "url(#gust-mask)").attr("opacity", 0.3).attr("class", "gauge-gust-track");
+        const colorTrackGroup = svg.append("g").attr("clip-path", "url(#speed-mask)").attr("class", "gauge-color-track");
+        const tickGroup = svg.append("g").attr("class", "gauge-tick-group");
+        const arcSpeed = d3.arc().innerRadius(R.speedTrack - 10).outerRadius(R.speedTrack);
+        
+        const lullMarker = svg.append("line").attr("x1", 0).attr("y1", -R.speedTrack).attr("x2", 0).attr("y2", -(R.speedTrack - 10)).attr("stroke", "#1e3a8a").attr("stroke-width", 3).attr("class", "gauge-marker");
+        const speedMarker = svg.append("line").attr("x1", 0).attr("y1", -R.speedTrack).attr("x2", 0).attr("y2", -(R.speedTrack - 10)).attr("stroke", "#22c55e").attr("stroke-width", 3).attr("class", "gauge-marker");
+        const gustMarker = svg.append("line").attr("x1", 0).attr("y1", -R.speedTrack).attr("x2", 0).attr("y2", -(R.speedTrack - 10)).attr("stroke", "#ef4444").attr("stroke-width", 3).attr("class", "gauge-marker");
 
         function drawSpeedTrack(maxSpeed) {
             currentMaxSpeed = maxSpeed; speedScale.domain([0, maxSpeed]);
@@ -222,15 +417,7 @@
             for (let v = 0; v <= maxSpeed; v += 5) {
                 const angle = speedScale(v);
                 tickGroup.append("line").attr("x1", R.speedTrack * Math.sin(angle)).attr("y1", -R.speedTrack * Math.cos(angle)).attr("x2", (R.speedTrack - 10) * Math.sin(angle)).attr("y2", -(R.speedTrack - 10) * Math.cos(angle)).attr("class", "speed-tick");
-                
-                // FIX 2: Replaced 'dominant-baseline="central"' with 'dy="0.35em"' for safer cross-browser vertical centering on mobile.
-                tickGroup.append("text")
-                    .attr("x", (R.speedTrack + 12) * Math.sin(angle))
-                    .attr("y", -(R.speedTrack + 12) * Math.cos(angle))
-                    .attr("class", "gauge-label")
-                    .attr("text-anchor", "middle")
-                    .attr("dy", "0.35em") 
-                    .text(v);
+                tickGroup.append("text").attr("x", (R.speedTrack + 12) * Math.sin(angle)).attr("y", -(R.speedTrack + 12) * Math.cos(angle)).attr("class", "gauge-label").attr("text-anchor", "middle").attr("dy", "0.35em").text(v);
             }
         }
         drawSpeedTrack(currentMaxSpeed);
@@ -240,18 +427,8 @@
         for (let i = 0; i < 360; i += 22.5) {
             const angle = (i * Math.PI) / 180, isMajor = i % 90 === 0;
             compassTicks.append("line").attr("x1", R.compass * Math.sin(angle)).attr("y1", -R.compass * Math.cos(angle)).attr("x2", (R.compass - (isMajor ? 10 : 7)) * Math.sin(angle)).attr("y2", -(R.compass - (isMajor ? 10 : 7)) * Math.cos(angle)).attr("stroke", "var(--grey-tick)").attr("stroke-width", 1); 
-            
             if (isMajor) {
-                compassTicks.append("text")
-                    .attr("x", (R.compass - 20) * Math.sin(angle))
-                    .attr("y", -(R.compass - 20) * Math.cos(angle))
-                    .attr("text-anchor", "middle")
-                    .attr("dy", "0.35em")
-                    .style("font-size", "11px")
-                    .style("font-weight", "300")
-                    .style("fill", "var(--compass-text)")
-                    .style("opacity", "1")
-                    .text(cardinalLabels[i]);
+                compassTicks.append("text").attr("x", (R.compass - 20) * Math.sin(angle)).attr("y", -(R.compass - 20) * Math.cos(angle)).attr("text-anchor", "middle").attr("dy", "0.35em").style("font-size", "11px").style("font-weight", "300").style("fill", "var(--compass-text)").text(cardinalLabels[i]);
             }
         }
 
@@ -261,12 +438,33 @@
         const dirTextGroup = bottomBubble.append("g").attr("transform", "translate(0, -50)");
         const dirReadout = dirTextGroup.append("text").attr("y", -5).style("font-size", "10px").style("font-weight", "900").attr("fill", "var(--text-primary)").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("---");
         const dirAngle = dirTextGroup.append("text").attr("y", 7).style("font-size", "9px").style("font-weight", "500").attr("fill", "var(--text-primary)").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("---\xB0");
-        const topBubble = svg.append("g");
+        
+        function showHoverState(e) {
+            if (e && e.cancelable && e.type === 'touchstart') e.preventDefault();
+            defaultView.transition().duration(200).attr("opacity", 0);
+            hoverView.transition().duration(200).attr("opacity", 1);
+        }
+        function hideHoverState() {
+            defaultView.transition().duration(200).attr("opacity", 1);
+            hoverView.transition().duration(200).attr("opacity", 0);
+        }
+
+        const topBubble = svg.append("g")
+            .style("cursor", "pointer")
+            .on("mouseenter", showHoverState).on("mouseleave", hideHoverState)
+            .on("touchstart", showHoverState).on("touchend", hideHoverState);
+            
         topBubble.append("circle").attr("cx", 0).attr("cy", 0).attr("r", 32).attr("fill", "var(--bubble-fill)").attr("fill-opacity", "var(--bubble-opacity)");
-        topBubble.append("text").attr("y", -22).style("font-size", "8px").style("text-transform", "uppercase").attr("fill", "var(--text-primary)").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("KNOTS");
-        const speedVal = topBubble.append("text").attr("y", -6).attr("class", "center-speed").attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "26px").attr("fill", "var(--text-primary)").text("0");
-        topBubble.append("text").attr("y", 10).style("font-size", "7px").style("text-transform", "uppercase").attr("fill", "var(--text-primary)").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("GUSTING");
-        const gustVal = topBubble.append("text").attr("y", 20).attr("class", "center-gust").attr("text-anchor", "middle").attr("dominant-baseline", "central").attr("fill", "var(--text-primary)").text("0 to 0");
+        
+        const defaultView = topBubble.append("g").attr("opacity", 1);
+        const speedVal = defaultView.append("text").attr("y", -4).attr("class", "center-speed").attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "48px").attr("fill", "var(--text-primary)").text("0");
+        defaultView.append("text").attr("y", 22).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "8px").style("font-weight", "400").style("letter-spacing", "0.05em").attr("fill", "var(--text-primary)").text("KNOTS");
+
+        const hoverView = topBubble.append("g").attr("opacity", 0).style("pointer-events", "none");
+        hoverView.append("text").attr("y", -18).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "8px").style("font-weight", "600").attr("fill", "var(--text-secondary)").text("LULL");
+        const lullText = hoverView.append("text").attr("y", -6).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "18px").style("font-weight", "700").attr("fill", "#3b82f6").text("0");
+        hoverView.append("text").attr("y", 6).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "8px").style("font-weight", "600").attr("fill", "var(--text-secondary)").text("GUST");
+        const gustText = hoverView.append("text").attr("y", 18).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "18px").style("font-weight", "700").attr("fill", "var(--trend-red)").text("0");
 
         function update(data) {
             const l = data.lull || 0, s = data.speed || 0, g = data.gust || 0, d = data.direction || 0;
@@ -283,20 +481,19 @@
             vane.transition(t).attr("fill", colorScale(s));
             dirReadout.text(getCompassPoint(d));
             dirAngle.text(Math.round(d) + "\xB0");
-            speedVal.transition(t).style("font-size", Math.round(s) >= 10 ? "22px" : "26px").tween("text", function() { const i = d3.interpolateNumber(this._currentS || 0, s); return time => { this._currentS = i(time); this.textContent = Math.round(this._currentS); }; });
-            gustVal.transition(t).tween("text", function() { const iL = d3.interpolateNumber(this._currentL || 0, l), iG = d3.interpolateNumber(this._currentG || 0, g); return time => { this._currentL = iL(time); this._currentG = iG(time); this.textContent = `${Math.round(this._currentL)} to ${Math.round(this._currentG)}`; }; });
+            speedVal.transition(t).style("font-size", Math.round(s) >= 10 ? "42px" : "48px").tween("text", function() { const i = d3.interpolateNumber(this._currentS || 0, s); return time => { this._currentS = i(time); this.textContent = Math.round(this._currentS); }; });
+            lullText.transition(t).tween("text", function() { const i = d3.interpolateNumber(this._currentL || 0, l); return time => { this._currentL = i(time); this.textContent = Math.round(this._currentL); }; });
+            gustText.transition(t).tween("text", function() { const i = d3.interpolateNumber(this._currentG || 0, g); return time => { this._currentG = i(time); this.textContent = Math.round(this._currentG); }; });
         }
 
-        async function fetchWeatherData(usePrefetch = false) {
+        async function fetchWeatherData(isInitialLoad = false) {
             try {
-                let obsData, fcstData;
-                if (usePrefetch && window.weatherPrefetch) { 
-                    const prefetched = await window.weatherPrefetch;
-                    if (prefetched) { [obsData, fcstData] = prefetched; window.weatherPrefetch = null; }
-                } 
-                if (!obsData || !fcstData) { 
-                    [obsData, fcstData] = await Promise.all([fetchWithRetry(API_OBS_BASE), fetchWithRetry(API_FCST_BASE)]); 
-                }
+                let obsData;
+                if (isInitialLoad && window.obsPrefetch) { 
+                    obsData = await window.obsPrefetch;
+                    window.obsPrefetch = null; 
+                } else obsData = await fetchWithRetry(API_OBS_BASE).catch(() => null); 
+                
                 if (obsData && obsData.obs && obsData.obs.length > 0) {
                     const currentObs = obsData.obs[0];
                     update({ lull: (currentObs.wind_lull || 0) * 1.94384, speed: (currentObs.wind_avg || 0) * 1.94384, gust: (currentObs.wind_gust || 0) * 1.94384, direction: currentObs.wind_direction || 0 });
@@ -305,19 +502,37 @@
                     if (pressure != null) document.getElementById('val-pressure').innerText = pressure.toFixed(1);
                     if (currentObs.uv != null) { document.getElementById('val-uv').innerText = currentObs.uv.toFixed(1); const marker = document.getElementById('uv-marker'); if(marker) { marker.classList.remove('hidden'); let uvPercentage = Math.min((currentObs.uv / 11) * 100, 100); marker.style.left = `calc(${uvPercentage}% - 3px)`; } }
                 }
-                if (fcstData && fcstData.current_conditions) {
-                    const cc = fcstData.current_conditions; let displayCondition = cc.conditions || '--', displayIcon = cc.icon || 'default';
-                    document.getElementById('val-conditions').innerText = displayCondition;
-                    document.getElementById('icon-weather').innerHTML = weatherIcons[displayIcon] || weatherIcons['default'];
-                    document.getElementById('val-pressure-trend').innerHTML = trendIcons[cc.pressure_trend] || '';
-                }
-            } catch (e) { console.error("Update loop error:", e); }
+            } catch (e) { console.error("Obs error:", e); }
+
+            if (isInitialLoad) {
+                try {
+                    let fcstData;
+                    if (window.fcstPrefetch) {
+                        fcstData = await window.fcstPrefetch;
+                        window.fcstPrefetch = null;
+                    } else fcstData = await fetchWithRetry(API_FCST_BASE).catch(() => null);
+
+                    if (fcstData && fcstData.current_conditions) {
+                        const cc = fcstData.current_conditions;
+                        document.getElementById('val-conditions').innerText = cc.conditions || '--';
+                        document.getElementById('icon-weather').innerHTML = weatherIcons[cc.icon] || weatherIcons['default'];
+                        document.getElementById('val-pressure-trend').innerHTML = trendIcons[cc.pressure_trend] || '';
+                    }
+                } catch (e) { console.error("Fcst error:", e); }
+            }
         }
 
-        // Initial Launch
         update({ lull: 0, speed: 0, gust: 0, direction: 0 }); 
         syncTheme();
         fetchWeatherData(true); 
-        setInterval(() => fetchWeatherData(false), 10000);
-    /* #end raw */
+        setInterval(() => fetchWeatherData(false), 60000);
+
+        document.getElementById('map-mode-toggle').addEventListener('change', (e) => {
+            const widget = document.getElementById('isolated-weather-widget');
+            if (e.target.checked) {
+                widget.classList.add('map-mode');
+                setTimeout(() => map.invalidateSize(), 100);
+            } else widget.classList.remove('map-mode');
+        });
+        /* #end raw */
     </script>
