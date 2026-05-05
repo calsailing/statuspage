@@ -14,87 +14,131 @@
 <script>
 /* #raw */
     /**
-     * SECURITY WARNING:
-     * Storing Client Secrets in client-side code (HTML/JS) is insecure.
+     * Tempest OAuth 2.0 with PKCE Configuration
      */
     const OAUTH_CLIENT_ID = "cdd6d482-41d4-4b56-8a83-5ea00cfe6a35";
-    const OAUTH_CLIENT_SECRET = "9382ee0d-c1ca-479a-ba75-f7013677f000";
+    const OAUTH_REDIRECT_URI = window.location.origin + window.location.pathname;
+    const OAUTH_AUTHORIZE_URL = "https://smartweather.weatherflow.com/authorize.html";
     const OAUTH_TOKEN_URL = "https://swd.weatherflow.com/id/oauth2/token";
     
+    // User-provided PKCE strings
+    const CODE_VERIFIER = "tr41SwDAH58gMpAlNd8fTVolqW4SHa6niZuv3eNpgDdwZXrT";
+    const CODE_CHALLENGE = "TLBs7Pvam_eZBCgW70Tcg-T7eRHNmfvfUCtSkhKb5ig";
+
     const API_OBS_BASE = "https://swd.weatherflow.com/swd/rest/observations/station/127241";
     const API_FCST_BASE = "https://swd.weatherflow.com/swd/rest/better_forecast?station_id=127241&units_wind=kts";
 
     let currentAccessToken = localStorage.getItem('tempest_access_token');
 
     /**
-     * Obtains a new OAuth Access Token.
-     * Note: If this fails with 401, it means the Client Credentials flow 
-     * is not enabled for this specific Client ID.
+     * Triggers the OAuth 2.0 Authorization Redirect
      */
-    const getOAuthToken = async () => {
+    const redirectToAuthorize = () => {
+        const params = new URLSearchParams({
+            client_id: OAUTH_CLIENT_ID,
+            response_type: 'code',
+            redirect_uri: OAUTH_REDIRECT_URI,
+            code_challenge: CODE_CHALLENGE,
+            code_challenge_method: 'S256'
+        });
+        window.location.href = `${OAUTH_AUTHORIZE_URL}?${params.toString()}`;
+    };
+
+    /**
+     * Exchanges an Authorization Code for an Access Token using PKCE verifier
+     */
+    const exchangeCodeForToken = async (code) => {
         try {
             const response = await fetch(OAUTH_TOKEN_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({
-                    'grant_type': 'client_credentials',
-                    'client_id': OAUTH_CLIENT_ID,
-                    'client_secret': OAUTH_CLIENT_SECRET
+                    grant_type: 'authorization_code',
+                    code: code,
+                    client_id: OAUTH_CLIENT_ID,
+                    code_verifier: CODE_VERIFIER,
+                    redirect_uri: OAUTH_REDIRECT_URI
                 })
             });
 
             if (!response.ok) {
-                const errBody = await response.text();
-                throw new Error(`OAuth Token Request Failed: ${response.status} - ${errBody}`);
+                const errText = await response.text();
+                throw new Error(`Token exchange failed: ${response.status} - ${errText}`);
             }
-            
+
             const data = await response.json();
             if (data.access_token) {
                 currentAccessToken = data.access_token;
                 localStorage.setItem('tempest_access_token', currentAccessToken);
-                console.log("Successfully obtained new OAuth token.");
+                
+                // Clean the URL to remove the code parameter
+                const url = new URL(window.location);
+                url.searchParams.delete('code');
+                window.history.replaceState({}, document.title, url.toString());
+                
                 return currentAccessToken;
             }
         } catch (err) {
-            console.error("Critical OAuth Error:", err);
+            console.error("OAuth Exchange Error:", err);
             return null;
         }
     };
 
     /**
-     * Robust Fetch Helper with Exponential Backoff and OAuth support
+     * Handles the initial Auth check on page load
+     */
+    const handleAuth = async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+
+        if (code) {
+            console.log("Authorization code detected. Exchanging...");
+            await exchangeCodeForToken(code);
+        }
+
+        if (!currentAccessToken) {
+            // Show the login UI
+            document.getElementById('iw-auth-overlay').classList.remove('hidden');
+            return false;
+        }
+        return true;
+    };
+
+    /**
+     * Robust Fetch Helper with Exponential Backoff
      */
     const fetchWithRetry = async (url, retries = 5, backoff = 1000) => {
         for (let i = 0; i < retries; i++) {
             try {
-                if (!currentAccessToken) await getOAuthToken();
-                if (!currentAccessToken) throw new Error("No access token available.");
-                
+                if (!currentAccessToken) throw new Error("Unauthorized");
+
                 const authenticatedUrl = new URL(url);
-                // WeatherFlow API specifically expects 'token' as the key
                 authenticatedUrl.searchParams.set('token', currentAccessToken);
 
                 const response = await fetch(authenticatedUrl.toString());
                 
                 if (response.status === 401) {
-                    console.warn("Token expired or unauthorized. Attempting refresh...");
+                    console.warn("Unauthorized. Token may be expired.");
                     localStorage.removeItem('tempest_access_token');
                     currentAccessToken = null;
-                    await getOAuthToken();
-                    continue; 
+                    document.getElementById('iw-auth-overlay').classList.remove('hidden');
+                    throw new Error("401 Unauthorized");
                 }
 
-                if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 return await response.json();
             } catch (err) {
                 if (i === retries - 1) throw err;
-                await new Promise(resolve => setTimeout(resolve, backoff * Math.pow(2, i)));
+                await new Promise(res => setTimeout(res, backoff * Math.pow(2, i)));
             }
         }
     };
 
+    // PRE-FETCH: Runs immediately, but will be bypassed if auth is needed
     window.weatherPrefetch = (async () => {
-        if (!currentAccessToken) await getOAuthToken();
+        const isAuthenticated = await handleAuth();
+        if (!isAuthenticated) return null;
+
         return Promise.all([
             fetchWithRetry(API_OBS_BASE),
             fetchWithRetry(API_FCST_BASE)
