@@ -1,4 +1,5 @@
 
+
 <style>
         #isolated-weather-widget {
             font-family: 'Inter', sans-serif !important;
@@ -316,7 +317,7 @@
             try {
                 let obsData, fcstData;
                 if (usePrefetch && window.weatherPrefetch) { [obsData, fcstData] = await window.weatherPrefetch; window.weatherPrefetch = null; } 
-                else { [obsData, fcstData] = await Promise.all([fetchWithRetry(API_OBS_URL), fetchWithRetry(API_FCST_URL)]); }
+                else { [obsData, fcstData] = await Promise.all([fetchWithRetry(API_OBS_BASE), fetchWithRetry(API_FCST_BASE)]); }
                 let currentObs = null;
                 if (obsData && obsData.obs && obsData.obs.length > 0) {
                     currentObs = obsData.obs[0];
