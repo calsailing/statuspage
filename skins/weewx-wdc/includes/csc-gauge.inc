@@ -174,7 +174,7 @@
     .iw-flex-col { display: flex; flex-direction: column; }
     .iw-items-center { display: flex; align-items: center; }
     .iw-justify-between { display: flex; justify-content: space-between; }
-    .iw-temp-label { display: flex; align-items: center; gap: 0.375rem; margin-bottom: 0.25rem; color: var(--text-secondary); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .iw-temp-label { display: flex; align-items: center; gap: 0.375rem; margin-bottom: 0.25rem; color: var(--text-secondary); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem; }
     .iw-temp-val-f { font-size: 2.25rem; font-weight: 700; letter-spacing: -0.05em; line-height: 1; transition: opacity 0.3s; }
     .iw-temp-val-c { color: var(--text-secondary); font-size: 0.875rem; font-weight: 500; margin-top: 0.125rem; transition: opacity 0.3s; }
     .iw-cond-text { font-size: 0.875rem; font-weight: 600; margin-top: 0.5rem; text-align: center; line-height: 1.25; transition: opacity 0.3s; }
@@ -270,22 +270,33 @@
     import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // 1. API & Firebase Configuration
+    // 1. API Configuration
     const STATIC_TOKEN = "8535e71d-2290-4965-ad3f-ab05b9294fdf";
     const API_OBS_BASE = "https://swd.weatherflow.com/swd/rest/observations/station/127241";
     const API_FCST_BASE = "https://swd.weatherflow.com/swd/rest/better_forecast?station_id=127241&units_wind=kts";
 
-    const firebaseConfig = JSON.parse(__firebase_config);
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
+    // Detect Environment and handle Firebase Config securely
+    let firebaseConfig = null;
+    let appId = 'cal-sailing-wind';
+    let db = null;
+    let auth = null;
     let currentUser = null;
+
+    try {
+        if (typeof __firebase_config !== 'undefined') {
+            firebaseConfig = JSON.parse(__firebase_config);
+            appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+        }
+    } catch (e) {
+        console.warn("Firebase config not found. Persistence disabled.");
+    }
 
     // 2. Persistence Logic
     const saveToProfile = async (data) => {
-        if (!currentUser) return;
+        if (!currentUser || !db) return;
         try {
             const prefDoc = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'preferences', 'latest_state');
             await setDoc(prefDoc, data, { merge: true });
@@ -315,7 +326,6 @@
         }
     };
 
-    // Prefetch wind data immediately
     window.obsPrefetch = fetchWithRetry(API_OBS_BASE).catch(() => null);
     window.fcstPrefetch = fetchWithRetry(API_FCST_BASE).catch(() => null);
 
@@ -331,7 +341,7 @@
     });
 
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 19, attribution: 'Tiles &copy; Esri &mdash; Source: Esri'
+        maxZoom: 19, attribution: 'Tiles &copy; Esri'
     }).addTo(map);
 
     const weatherIcons = {
@@ -439,9 +449,11 @@
     const dirAngle = dirTextGroup.append("text").attr("y", 7).style("font-size", "9px").style("font-weight", "500").attr("fill", "var(--text-primary)").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("---\xB0");
     
     function showHoverState(e) {
-        if (e && e.cancelable && e.type === 'touchstart') e.preventDefault();
-        defaultView.transition().duration(200).attr("opacity", 0);
-        hoverView.transition().duration(200).attr("opacity", 1);
+        if (e && e.cancelable && (e.type === 'touchstart' || e.type === 'mouseenter')) {
+            if (e.type === 'touchstart') e.preventDefault();
+            defaultView.transition().duration(200).attr("opacity", 0);
+            hoverView.transition().duration(200).attr("opacity", 1);
+        }
     }
     function hideHoverState() {
         defaultView.transition().duration(200).attr("opacity", 1);
@@ -536,51 +548,53 @@
         }
     }
 
-    // 7. Initialize and Persistence Auth
+    // 7. Initialize and Logic
     const initPersistence = async () => {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+        // If we are in the artifact environment with a token, use cloud sync
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token && auth) {
             await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
+        } else if (auth) {
             await signInAnonymously(auth);
         }
 
-        onAuthStateChanged(auth, async (user) => {
-            currentUser = user;
-            if (user) {
-                // Restore previous state if it exists
-                try {
-                    const prefDoc = doc(db, 'artifacts', appId, 'users', user.uid, 'preferences', 'latest_state');
-                    const snap = await getDoc(prefDoc);
-                    if (snap.exists()) {
-                        const s = snap.data();
-                        if (s.obs) update(s.obs, true);
-                        if (s.tempF) document.getElementById('val-temp-f').innerText = s.tempF;
-                        if (s.tempC) document.getElementById('val-temp-c').innerText = s.tempC;
-                        if (s.pressure) document.getElementById('val-pressure').innerText = s.pressure;
-                        if (s.uv) {
-                            document.getElementById('val-uv').innerText = s.uv;
-                            const marker = document.getElementById('uv-marker');
-                            marker.classList.remove('hidden');
-                            marker.style.left = `calc(${Math.min((s.uv / 11) * 100, 100)}% - 3px)`;
+        if (auth) {
+            onAuthStateChanged(auth, async (user) => {
+                currentUser = user;
+                if (user) {
+                    try {
+                        const prefDoc = doc(db, 'artifacts', appId, 'users', user.uid, 'preferences', 'latest_state');
+                        const snap = await getDoc(prefDoc);
+                        if (snap.exists()) {
+                            const s = snap.data();
+                            if (s.obs) update(s.obs, true);
+                            if (s.tempF) document.getElementById('val-temp-f').innerText = s.tempF;
+                            if (s.tempC) document.getElementById('val-temp-c').innerText = s.tempC;
+                            if (s.pressure) document.getElementById('val-pressure').innerText = s.pressure;
+                            if (s.uv) {
+                                document.getElementById('val-uv').innerText = s.uv;
+                                const marker = document.getElementById('uv-marker');
+                                marker.classList.remove('hidden');
+                                marker.style.left = `calc(${Math.min((s.uv / 11) * 100, 100)}% - 3px)`;
+                            }
+                            if (s.fcst) {
+                                document.getElementById('val-conditions').innerText = s.fcst.conditions;
+                                document.getElementById('icon-weather').innerHTML = weatherIcons[s.fcst.icon] || '';
+                                document.getElementById('val-pressure-trend').innerHTML = trendIcons[s.fcst.trend] || '';
+                            }
+                            if (s.mapMode) {
+                                document.getElementById('map-mode-toggle').checked = true;
+                                document.getElementById('isolated-weather-widget').classList.add('map-mode');
+                                setTimeout(() => map.invalidateSize(), 100);
+                            }
                         }
-                        if (s.fcst) {
-                            document.getElementById('val-conditions').innerText = s.fcst.conditions;
-                            document.getElementById('icon-weather').innerHTML = weatherIcons[s.fcst.icon] || '';
-                            document.getElementById('val-pressure-trend').innerHTML = trendIcons[s.fcst.trend] || '';
-                        }
-                        if (s.mapMode) {
-                            document.getElementById('map-mode-toggle').checked = true;
-                            document.getElementById('isolated-weather-widget').classList.add('map-mode');
-                            setTimeout(() => map.invalidateSize(), 100);
-                        }
-                    }
-                } catch (e) { console.error("Load error:", e); }
-
-                // Now fetch fresh data
-                fetchWeatherData(true); 
-                setInterval(() => fetchWeatherData(false), 60000);
-            }
-        });
+                    } catch (e) { console.warn("Load error - persistence unavailable."); }
+                }
+            });
+        }
+        
+        // Always run data update regardless of auth status
+        fetchWeatherData(true); 
+        setInterval(() => fetchWeatherData(false), 60000);
     };
 
     update({ lull: 0, speed: 0, gust: 0, direction: 0 }, true); 
