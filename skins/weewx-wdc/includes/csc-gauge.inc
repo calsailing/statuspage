@@ -1,190 +1,333 @@
 <script src="https://d3js.org/d3.v7.min.js"></script>
-<script src="https://cdn.tailwindcss.com"></script>
 <script>
 /* #raw */
-    // PRE-FETCH OPTIMIZATION: Start fetching the data immediately so we don't 
-    // wait for Tailwind to finish scanning the rest of the website first.
+    // PRE-FETCH OPTIMIZATION: Start fetching the data immediately
     const API_OBS_URL = "https://swd.weatherflow.com/swd/rest/observations/station/127241?token=0acb5251-7e01-4de2-af32-7d3f46f1edec";
     const API_FCST_URL = "https://swd.weatherflow.com/swd/rest/better_forecast?station_id=127241&units_wind=kts&token=0acb5251-7e01-4de2-af32-7d3f46f1edec";
     window.weatherPrefetch = Promise.all([fetch(API_OBS_URL), fetch(API_FCST_URL)])
         .then(responses => Promise.all(responses.map(res => res.json())))
         .catch(err => console.error("Prefetch error:", err));
-
-    tailwind.config = {
-            darkMode: 'media',
-            theme: {
-                extend: {
-                    animation: {
-                        'float': 'float 4s ease-in-out infinite',
-                        'spin-slow': 'spin 4s linear infinite',
-                    },
-                    keyframes: {
-                        float: {
-                            '0%, 100%': { transform: 'translateY(0)' },
-                            '50%': { transform: 'translateY(-4px)' },
-                        }
-                    }
-                }
-            }
-        }
 /* #end raw */
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
         #isolated-weather-widget {
             font-family: 'Inter', sans-serif !important;
-            --bg-color: #ffffff;
-            --card-bg: #ffffff;
-            --card-border: #e2e8f0;
+            
+            /* --- LIGHT MODE VARIABLES --- */
+            --bg-panel: #ffffff;
+            --border-panel: #f1f5f9;
             --text-primary: #0f172a;
-            --text-secondary: #94a3b8;
-            --text-muted: #475569;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            
+            --hero-bg-1: #eff6ff; /* blue-50 */
+            --hero-bg-2: #f8fafc; /* slate-50 */
+            --hero-border: rgba(255, 255, 255, 0.6);
+            
+            --trend-bg: #f8fafc;
+            --trend-red: #ef4444;
+            --trend-green: #22c55e;
+            
+            --icon-indigo-bg: #eef2ff;
+            --icon-indigo: #6366f1;
+            --icon-amber-bg: #fffbeb;
+            --icon-amber: #f59e0b;
+            
+            --scale-bg: #f1f5f9;
             --dial-tick: #cbd5e1;
             --dial-tick-major: #94a3b8;
             --track-bg: #f1f5f9; 
-            --temp-color: #ef4444;
-            --bubble-bg: #f1f5f9;
-            --grey-tick: #cbd5e1; 
+            --grey-tick: #cbd5e1;
         }
 
+        /* --- DARK MODE VARIABLES --- */
         @media (prefers-color-scheme: dark) {
             #isolated-weather-widget {
-                --bg-color: #0f172a;
-                --card-bg: #1e293b;
-                --card-border: #334155;
+                --bg-panel: #1e293b;
+                --border-panel: rgba(51, 65, 85, 0.5); /* slate-700/50 */
                 --text-primary: #f8fafc;
-                --text-secondary: #cbd5e1;
-                --text-muted: #94a3b8;
+                --text-secondary: #94a3b8;
+                --text-muted: #64748b;
+                
+                --hero-bg-1: #1e293b;
+                --hero-bg-2: rgba(30, 41, 59, 0.5);
+                --hero-border: rgba(51, 65, 85, 0.5);
+                
+                --trend-bg: rgba(15, 23, 42, 0.5);
+                --trend-red: #f87171;
+                --trend-green: #4ade80;
+                
+                --icon-indigo-bg: rgba(99, 102, 241, 0.1);
+                --icon-indigo: #818cf8;
+                --icon-amber-bg: rgba(245, 158, 11, 0.1);
+                --icon-amber: #fbbf24;
+                
+                --scale-bg: #334155;
                 --dial-tick: #334155;
                 --dial-tick-major: #475569;
                 --track-bg: #1e293b;
-                --bubble-bg: #334155;
                 --grey-tick: #475569;
             }
         }
 
-        /* D3 Gauge specific styles scoped to widget */
-        #isolated-weather-widget text {
-            font-family: 'Inter', sans-serif !important;
+        /* --- LAYOUT RESET & BASE --- */
+        #isolated-weather-widget, #isolated-weather-widget * {
+            box-sizing: border-box;
+        }
+        #isolated-weather-widget p, #isolated-weather-widget h1, #isolated-weather-widget h2 {
+            margin: 0; padding: 0;
+        }
+        #isolated-weather-widget .hidden {
+            display: none !important;
         }
 
+        /* --- GRID & CONTAINERS --- */
+        #isolated-weather-widget {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            padding: 0.5rem;
+            width: 100%;
+        }
+        @media (min-width: 768px) {
+            #isolated-weather-widget { flex-direction: row; }
+        }
+
+        .iw-panel {
+            position: relative;
+            flex: 1;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .iw-dial-card {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-panel);
+            box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+            padding: 0.25rem;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .iw-gauge-mount {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .iw-weather-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.75rem;
+            flex-grow: 1;
+            width: 100%;
+            height: 100%;
+            color: var(--text-primary);
+        }
+
+        /* --- CARDS --- */
+        .iw-card {
+            padding: 1rem;
+            box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+        .iw-card:hover {
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+        }
+
+        .iw-card-hero {
+            grid-column: span 2 / span 2;
+            background: linear-gradient(to bottom right, var(--hero-bg-1), var(--hero-bg-2));
+            border: 1px solid var(--hero-border);
+            justify-content: center;
+        }
+        
+        .iw-card-small {
+            grid-column: span 1 / span 1;
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-panel);
+            justify-content: space-between;
+        }
+        .iw-card-small:hover {
+            transform: translateY(-4px);
+        }
+
+        /* --- TYPOGRAPHY & INTERIORS --- */
+        .iw-flex-row { display: flex; flex-direction: row; }
+        .iw-flex-col { display: flex; flex-direction: column; }
+        .iw-items-center { display: flex; align-items: center; }
+        .iw-justify-between { display: flex; justify-content: space-between; }
+        .iw-justify-center { display: flex; justify-content: center; }
+        
+        .iw-temp-label {
+            display: flex; align-items: center; gap: 0.375rem;
+            margin-bottom: 0.25rem;
+            color: var(--text-secondary);
+            font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        .iw-temp-val-f {
+            font-size: 2.25rem; font-weight: 700; letter-spacing: -0.05em; line-height: 1; transition: opacity 0.3s;
+        }
+        .iw-temp-val-c {
+            color: var(--text-secondary); font-size: 0.875rem; font-weight: 500; margin-top: 0.125rem; transition: opacity 0.3s;
+        }
+
+        .iw-hero-right { padding-top: 0.25rem; }
+        .iw-cond-text {
+            font-size: 0.875rem; font-weight: 600; margin-top: 0.5rem; text-align: center; line-height: 1.25; transition: opacity 0.3s;
+        }
+
+        .iw-card-top { margin-bottom: 0.5rem; }
+        .iw-icon-circle {
+            width: 28px; height: 28px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .iw-icon-circle.indigo { background-color: var(--icon-indigo-bg); color: var(--icon-indigo); }
+        .iw-icon-circle.amber { background-color: var(--icon-amber-bg); color: var(--icon-amber); }
+
+        .iw-data-val {
+            font-size: 1.5rem; font-weight: 700; letter-spacing: -0.025em; line-height: 1; transition: opacity 0.3s;
+        }
+        .iw-data-label {
+            font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.125rem;
+        }
+
+        .iw-trend-badge {
+            margin-top: 0.5rem; display: flex; align-items: center; gap: 0.375rem;
+            font-size: 0.75rem; font-weight: 500; color: var(--text-secondary);
+            background-color: var(--trend-bg); padding: 0.125rem 0.5rem;
+            width: max-content; min-height: 24px;
+        }
+
+        /* --- UV SCALE BAR --- */
+        .iw-uv-bar-wrap { margin-top: 0.625rem; width: 100%; position: relative; display: flex; align-items: center; height: 0.5rem; }
+        .iw-uv-bar-bg { width: 100%; height: 0.25rem; display: flex; }
+        .iw-uv-green { height: 100%; background-color: #4ade80; width: 30%; }
+        .iw-uv-amber { height: 100%; background-color: #fbbf24; width: 30%; }
+        .iw-uv-red { height: 100%; background-color: #f87171; width: 40%; }
+        .iw-uv-marker {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            width: 0.375rem; height: 0.375rem; background-color: #ffffff;
+            box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1); border: 1px solid #64748b;
+            transition: all 0.5s; z-index: 10;
+        }
+
+        /* --- ANIMATIONS --- */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+        .animate-float {
+            width: 48px; height: 48px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.05));
+            animation: float 4s ease-in-out infinite;
+            display: flex; align-items: center; justify-content: center;
+        }
+        @keyframes spin-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .iw-card-small:hover .animate-spin-slow {
+            animation: spin-slow 4s linear infinite;
+        }
+
+        /* --- D3 GAUGE STYLES --- */
+        #isolated-weather-widget text { font-family: 'Inter', sans-serif !important; }
         #isolated-weather-widget .center-speed {
-            font-weight: 800;
-            fill: #0f172a;
-            font-variant-numeric: tabular-nums !important; 
+            font-weight: 800; fill: #0f172a; font-variant-numeric: tabular-nums !important; 
         }
-
         #isolated-weather-widget .center-gust {
-            font-size: 11px !important;
-            font-weight: 700;
-            fill: #0f172a;
-            font-variant-numeric: tabular-nums !important;
+            font-size: 11px !important; font-weight: 700; fill: #0f172a; font-variant-numeric: tabular-nums !important;
         }
-
         #isolated-weather-widget .speed-tick {
-            stroke: rgba(128, 128, 128, 0.3);
-            stroke-width: 1.5;
-            stroke-linecap: round;
-            pointer-events: none;
+            stroke: rgba(128, 128, 128, 0.3); stroke-width: 1.5; stroke-linecap: round; pointer-events: none;
         }
-
         #isolated-weather-widget .gauge-label {
-            font-size: 10px !important;
-            font-weight: 500; 
-            fill: var(--text-muted); 
-            font-variant-numeric: tabular-nums !important;
+            font-size: 10px !important; font-weight: 500; fill: var(--text-muted); font-variant-numeric: tabular-nums !important;
         }
     </style>
 
-    <!-- Instrument Panel Container (Isolated & Responsive) -->
-    <div id="isolated-weather-widget" class="flex flex-col md:flex-row gap-6 p-2 w-full">
+    <!-- Instrument Panel Container -->
+    <div id="isolated-weather-widget">
         
         <!-- Column 1: Live Wind Dial -->
-        <div class="relative flex-1 w-full bg-white dark:bg-slate-800 p-1 shadow-sm border border-slate-100 dark:border-slate-700/50 overflow-hidden flex flex-col items-center justify-center">
-            <div id="gauge-mount" class="relative w-full h-full flex justify-center items-center"></div>
+        <div class="iw-panel iw-dial-card">
+            <div id="gauge-mount" class="iw-gauge-mount"></div>
         </div>
 
-        <!-- Column 2: Weather Dashboard (New Design) -->
-        <div class="relative flex-1 w-full flex flex-col font-sans text-slate-800 dark:text-slate-100">
-            <div class="grid grid-cols-2 gap-3 flex-grow w-full h-full">
+        <!-- Column 2: Weather Dashboard -->
+        <div class="iw-panel">
+            <div class="iw-weather-grid">
                 
-                <!-- HERO CARD: Temperature & Condition (Spans 2 columns) -->
-                <div class="col-span-2 bg-gradient-to-br from-blue-50 to-slate-50 dark:from-slate-800 dark:to-slate-800/50 p-4 shadow-sm border border-white/60 dark:border-slate-700/50 hover:shadow-md transition-all duration-300 group flex flex-col justify-center">
-                    <div class="flex justify-between items-center px-2">
+                <!-- HERO CARD: Temperature & Condition -->
+                <div class="iw-card iw-card-hero">
+                    <div class="iw-justify-between iw-items-center" style="padding: 0 0.5rem;">
                         <!-- Left: Temperature -->
-                        <div class="flex flex-col">
-                            <div class="flex items-center gap-1.5 mb-1 text-slate-500 dark:text-slate-400">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-blue-500"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
-                                <span class="text-[10px] font-semibold uppercase tracking-wider">Current</span>
+                        <div class="iw-flex-col">
+                            <div class="iw-temp-label">
+                                <svg style="width: 14px; height: 14px; color: #3b82f6;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
+                                <span>Current</span>
                             </div>
-                            <div class="flex items-baseline gap-1">
-                                <!-- ID: val-temp-f -->
-                                <h1 id="val-temp-f" class="text-4xl font-bold tracking-tighter text-slate-800 dark:text-white transition-opacity duration-300">--&deg;F</h1>
+                            <div class="iw-items-center" style="align-items: baseline; gap: 0.25rem;">
+                                <h1 id="val-temp-f" class="iw-temp-val-f">--&deg;F</h1>
                             </div>
-                            <!-- ID: val-temp-c -->
-                            <p id="val-temp-c" class="text-slate-500 dark:text-slate-400 font-medium mt-0.5 text-sm transition-opacity duration-300">--&deg;C</p>
+                            <p id="val-temp-c" class="iw-temp-val-c">--&deg;C</p>
                         </div>
 
                         <!-- Right: Condition -->
-                        <div class="flex flex-col items-center justify-center pt-1">
-                            <!-- ID: icon-weather -->
-                            <div id="icon-weather" class="w-12 h-12 text-slate-700 dark:text-slate-300 animate-float drop-shadow-sm flex items-center justify-center transition-all duration-300">
-                                <!-- Default loading icon -->
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full opacity-50"><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="M4.93 19.07l2.83-2.83"/><path d="M16.24 7.76l2.83-2.83"/></svg>
+                        <div class="iw-flex-col iw-items-center iw-hero-right">
+                            <div id="icon-weather" class="animate-float">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; opacity: 0.5;"><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="M4.93 19.07l2.83-2.83"/><path d="M16.24 7.76l2.83-2.83"/></svg>
                             </div>
-                            <!-- ID: val-conditions -->
-                            <p id="val-conditions" class="font-semibold text-slate-700 dark:text-slate-300 mt-2 text-sm text-center leading-tight transition-opacity duration-300">Loading...</p>
+                            <p id="val-conditions" class="iw-cond-text">Loading...</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- CARD 2: Pressure -->
-                <div class="col-span-1 bg-white dark:bg-slate-800 p-4 shadow-sm border border-slate-100 dark:border-slate-700/50 hover:shadow-md hover:-translate-y-1 transition-all duration-300">
-                    <div class="flex flex-col h-full justify-between">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="w-7 h-7 bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
+                <div class="iw-card iw-card-small">
+                    <div class="iw-flex-col" style="height: 100%; justify-content: space-between;">
+                        <div class="iw-justify-between iw-items-center iw-card-top">
+                            <div class="iw-icon-circle indigo">
+                                <svg style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
                             </div>
                         </div>
-                        
                         <div>
-                            <!-- ID: val-pressure -->
-                            <h2 id="val-pressure" class="text-2xl font-bold tracking-tight text-slate-800 dark:text-white transition-opacity duration-300">--</h2>
-                            <p class="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">Pressure (mb)</p>
+                            <h2 id="val-pressure" class="iw-data-val">--</h2>
+                            <p class="iw-data-label">Pressure (mb)</p>
                         </div>
-
-                        <!-- ID: val-pressure-trend -->
-                        <div id="val-pressure-trend" class="mt-2 flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 w-fit px-2 py-0.5 min-h-[24px]">
-                            <!-- Trend injected via JS -->
-                        </div>
+                        <div id="val-pressure-trend" class="iw-trend-badge"></div>
                     </div>
                 </div>
 
                 <!-- CARD 3: UV Index -->
-                <div class="col-span-1 bg-white dark:bg-slate-800 p-4 shadow-sm border border-slate-100 dark:border-slate-700/50 hover:shadow-md hover:-translate-y-1 transition-all duration-300">
-                    <div class="flex flex-col h-full justify-between">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="w-7 h-7 bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 group-hover:animate-spin-slow"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                <div class="iw-card iw-card-small">
+                    <div class="iw-flex-col" style="height: 100%; justify-content: space-between;">
+                        <div class="iw-justify-between iw-items-center iw-card-top">
+                            <div class="iw-icon-circle amber">
+                                <svg class="animate-spin-slow" style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
                             </div>
                         </div>
-                        
                         <div>
-                            <!-- ID: val-uv -->
-                            <h2 id="val-uv" class="text-2xl font-bold tracking-tight text-slate-800 dark:text-white transition-opacity duration-300">--</h2>
-                            <p class="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">UV Index</p>
+                            <h2 id="val-uv" class="iw-data-val">--</h2>
+                            <p class="iw-data-label">UV Index</p>
                         </div>
-
-                        <!-- Visual Context Scale (FIXED) -->
-                        <div class="mt-2.5 w-full relative flex items-center h-2">
-                            <!-- Background color segments -->
-                            <div class="w-full h-1 flex">
-                                <div class="h-full bg-green-400 w-[30%]"></div>
-                                <div class="h-full bg-amber-400 w-[30%]"></div>
-                                <div class="h-full bg-red-400 w-[40%]"></div>
+                        <div class="iw-uv-bar-wrap">
+                            <div class="iw-uv-bar-bg">
+                                <div class="iw-uv-green"></div>
+                                <div class="iw-uv-amber"></div>
+                                <div class="iw-uv-red"></div>
                             </div>
-                            <!-- Floating Marker Element -->
-                            <div id="uv-marker" class="absolute top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-white shadow border border-slate-500 hidden transition-all duration-500 z-10" style="left: 0%;"></div>
+                            <div id="uv-marker" class="iw-uv-marker hidden" style="left: 0%;"></div>
                         </div>
                     </div>
                 </div>
@@ -196,27 +339,23 @@
     <!-- API Logic -->
     <script>
 /* #raw */
-        // API Endpoints
-        const API_OBS = "https://swd.weatherflow.com/swd/rest/observations/station/127241?token=0acb5251-7e01-4de2-af32-7d3f46f1edec";
-        const API_FCST = "https://swd.weatherflow.com/swd/rest/better_forecast?station_id=127241&units_wind=kts&token=0acb5251-7e01-4de2-af32-7d3f46f1edec";
-
-        // Dictionaries for mapping API data to visual elements
+        // Dictionaries for mapping API data to visual elements (Converted from Tailwind classes to inline styles)
         const weatherIcons = {
-            'clear-day': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full text-amber-500"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>`,
-            'clear-night': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full text-indigo-400"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>`,
-            'cloudy': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full text-slate-400"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>`,
-            'partly-cloudy-day': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full text-sky-500"><path d="M12 2v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="M20 12h2"></path><path d="m19.07 4.93-1.41 1.41"></path><path d="M15.94 14A5 5 0 0 0 6 12a3 3 0 0 0 0 6h9.5a3.5 3.5 0 1 0 0-7h-.5Z"></path></svg>`,
-            'partly-cloudy-night': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full text-indigo-300"><path d="M10 6.13A6 6 0 0 0 15 15h3.5a3.5 3.5 0 1 0 0-7h-.5A5 5 0 0 0 10 6.13Z"></path></svg>`,
-            'rain': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full text-blue-500"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path><path d="M16 23v-2"></path><path d="M8 23v-2"></path><path d="M12 23v-2"></path></svg>`,
-            'snow': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full text-sky-300"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path><path d="M8 23h.01"></path><path d="M12 23h.01"></path><path d="M16 23h.01"></path></svg>`,
-            'wind': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full text-slate-500"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"></path><path d="M9.6 4.6A2 2 0 1 1 11 8H2"></path><path d="M12.6 19.4A2 2 0 1 0 14 16H2"></path></svg>`,
-            'default': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full text-blue-400"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>`
+            'clear-day': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #f59e0b;"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>`,
+            'clear-night': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #818cf8;"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>`,
+            'cloudy': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: var(--text-muted);"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>`,
+            'partly-cloudy-day': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #0ea5e9;"><path d="M12 2v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="M20 12h2"></path><path d="m19.07 4.93-1.41 1.41"></path><path d="M15.94 14A5 5 0 0 0 6 12a3 3 0 0 0 0 6h9.5a3.5 3.5 0 1 0 0-7h-.5Z"></path></svg>`,
+            'partly-cloudy-night': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #a5b4fc;"><path d="M10 6.13A6 6 0 0 0 15 15h3.5a3.5 3.5 0 1 0 0-7h-.5A5 5 0 0 0 10 6.13Z"></path></svg>`,
+            'rain': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #3b82f6;"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path><path d="M16 23v-2"></path><path d="M8 23v-2"></path><path d="M12 23v-2"></path></svg>`,
+            'snow': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #7dd3fc;"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path><path d="M8 23h.01"></path><path d="M12 23h.01"></path><path d="M16 23h.01"></path></svg>`,
+            'wind': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: var(--text-secondary);"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"></path><path d="M9.6 4.6A2 2 0 1 1 11 8H2"></path><path d="M12.6 19.4A2 2 0 1 0 14 16H2"></path></svg>`,
+            'default': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #60a5fa;"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>`
         };
 
         const trendIcons = {
-            'falling': '<svg class="w-3 h-3 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg> <span class="text-red-500 dark:text-red-400">Falling</span>',
-            'rising': '<svg class="w-3 h-3 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg> <span class="text-green-500 dark:text-green-400">Rising</span>',
-            'steady': '<svg class="w-3 h-3 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg> <span class="text-slate-500 dark:text-slate-400">Steady</span>',
+            'falling': `<svg style="width: 12px; height: 12px; color: var(--trend-red);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg> <span style="color: var(--trend-red);">Falling</span>`,
+            'rising': `<svg style="width: 12px; height: 12px; color: var(--trend-green);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg> <span style="color: var(--trend-green);">Rising</span>`,
+            'steady': `<svg style="width: 12px; height: 12px; color: var(--text-secondary);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg> <span style="color: var(--text-secondary);">Steady</span>`,
         };
 
         // --- D3 WIND DIAL SETUP ---
@@ -235,7 +374,9 @@
         const svg = d3.select("#gauge-mount")
             .append("svg")
             .attr("viewBox", `0 0 ${width} ${height}`)
-            .attr("class", "w-full h-auto block")
+            .style("width", "100%")
+            .style("height", "auto")
+            .style("display", "block")
             .append("g")
             .attr("transform", `translate(${center.x},${center.y}) scale(${scale})`);
 
@@ -327,14 +468,14 @@
         bottomBubble.append("circle").attr("cx", 0).attr("cy", -50).attr("r", 21).attr("fill", "white").attr("fill-opacity", 0.75);
         
         const dirTextGroup = bottomBubble.append("g").attr("transform", "translate(0, -50)");
-        const dirReadout = dirTextGroup.append("text").attr("y", -5).attr("class", "text-[10px] font-black").attr("fill", "#0f172a").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("---");
-        const dirAngle = dirTextGroup.append("text").attr("y", 7).attr("class", "text-[9px] font-medium").attr("fill", "#0f172a").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("---\xB0");
+        const dirReadout = dirTextGroup.append("text").attr("y", -5).attr("class", "text-[10px]").style("font-weight", "900").attr("fill", "#0f172a").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("---");
+        const dirAngle = dirTextGroup.append("text").attr("y", 7).attr("class", "text-[9px]").style("font-weight", "500").attr("fill", "#0f172a").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("---\xB0");
 
         const topBubble = svg.append("g");
         topBubble.append("circle").attr("cx", 0).attr("cy", 0).attr("r", 32).attr("fill", "white").attr("fill-opacity", 0.75);
-        topBubble.append("text").attr("y", -22).attr("class", "text-[8px] font-normal uppercase").attr("fill", "#0f172a").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("KNOTS");
+        topBubble.append("text").attr("y", -22).style("font-size", "8px").style("text-transform", "uppercase").attr("fill", "#0f172a").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("KNOTS");
         const speedVal = topBubble.append("text").attr("y", -6).attr("class", "center-speed").attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "26px").text("0");
-        topBubble.append("text").attr("y", 10).attr("class", "text-[7px] font-normal uppercase").attr("fill", "#0f172a").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("GUSTING");
+        topBubble.append("text").attr("y", 10).style("font-size", "7px").style("text-transform", "uppercase").attr("fill", "#0f172a").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("GUSTING");
         const gustVal = topBubble.append("text").attr("y", 20).attr("class", "center-gust").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("0 to 0");
 
         function update(data) {
@@ -346,14 +487,14 @@
 
             const t = d3.transition().duration(TRANSITION_DURATION).ease(d3.easeCubicInOut);
             
-            speedMaskPath.transition(t).attrTween("d", d => {
-                const i = d3.interpolate(d.endAngle, speedScale(s));
-                return t => { d.endAngle = i(t); return d3.arc().innerRadius(R.speedTrack - 15).outerRadius(R.speedTrack + 5)(d); };
+            speedMaskPath.transition(t).attrTween("d", dat => {
+                const i = d3.interpolate(dat.endAngle, speedScale(s));
+                return time => { dat.endAngle = i(time); return d3.arc().innerRadius(R.speedTrack - 15).outerRadius(R.speedTrack + 5)(dat); };
             });
 
-            gustMaskPath.transition(t).attrTween("d", d => {
-                const i = d3.interpolate(d.endAngle, speedScale(g));
-                return t => { d.endAngle = i(t); return d3.arc().innerRadius(R.speedTrack - 15).outerRadius(R.speedTrack + 5)(d); };
+            gustMaskPath.transition(t).attrTween("d", dat => {
+                const i = d3.interpolate(dat.endAngle, speedScale(g));
+                return time => { dat.endAngle = i(time); return d3.arc().innerRadius(R.speedTrack - 15).outerRadius(R.speedTrack + 5)(dat); };
             });
 
             lullMarker.transition(t).attr("transform", `rotate(${(speedScale(l) * 180) / Math.PI})`);
@@ -369,7 +510,6 @@
             dirReadout.text(getCompassPoint(d));
             dirAngle.text(Math.round(d) + "\xB0");
             
-            // Moved font-sizing out of the 60fps loop to prevent browser thrashing/glitches
             speedVal.transition(t)
                 .style("font-size", Math.round(s) >= 10 ? "22px" : "26px")
                 .tween("text", function() {
@@ -384,8 +524,8 @@
             gustVal.transition(t).tween("text", function() {
                 const startL = this._currentL || 0, startG = this._currentG || 0;
                 const iLull = d3.interpolateNumber(startL, l), iGust = d3.interpolateNumber(startG, g);
-                return t => {
-                    this._currentL = iLull(t); this._currentG = iGust(t);
+                return time => {
+                    this._currentL = iLull(time); this._currentG = iGust(time);
                     this.textContent = `${Math.round(this._currentL)} to ${Math.round(this._currentG)}`;
                 };
             });
@@ -402,10 +542,9 @@
             try {
                 let obsData, fcstData;
 
-                // Use the data we started downloading at the top of the file, or fetch fresh
                 if (usePrefetch && window.weatherPrefetch) {
                     [obsData, fcstData] = await window.weatherPrefetch;
-                    window.weatherPrefetch = null; // Clear it out
+                    window.weatherPrefetch = null; 
                 } else {
                     const [obsRes, fcstRes] = await Promise.all([ fetch(API_OBS_URL), fetch(API_FCST_URL) ]);
                     obsData = await obsRes.json();
@@ -424,31 +563,23 @@
                         direction: currentObs.wind_direction || 0
                     });
 
-                    // Update Temperature
                     if (currentObs.air_temperature != null) {
                         const tempF = (currentObs.air_temperature * 9/5) + 32;
                         document.getElementById('val-temp-f').innerText = `${tempF.toFixed(1)}\xB0F`;
                         document.getElementById('val-temp-c').innerText = `${currentObs.air_temperature.toFixed(1)}\xB0C`;
                     }
 
-                    // Update Pressure
                     const pressure = currentObs.sea_level_pressure || currentObs.barometric_pressure || currentObs.station_pressure;
                     if (pressure != null) {
                         document.getElementById('val-pressure').innerText = pressure.toFixed(1);
                     }
 
-                    // Update UV
                     if (currentObs.uv != null) {
                         document.getElementById('val-uv').innerText = currentObs.uv.toFixed(1);
                         const marker = document.getElementById('uv-marker');
                         if(marker) {
                             marker.classList.remove('hidden');
-                            
-                            // UV Index scale fix:
-                            // We cap the math at 11 since a standard UV scale usually goes from 0 to 11+
                             let uvPercentage = Math.min((currentObs.uv / 11) * 100, 100);
-                            
-                            // Position it via "left" and offset slightly to center the marker element perfectly
                             marker.style.left = `calc(${uvPercentage}% - 3px)`; 
                         }
                     }
@@ -460,7 +591,6 @@
                     let displayCondition = cc.conditions || '--';
                     let displayIcon = cc.icon || 'default';
 
-                    // Override logic: If forecast predicts rain but actual observation precip is 0
                     if (currentObs && Number(currentObs.precip) === 0) {
                         if (displayIcon.includes('rain') || displayCondition.toLowerCase().includes('rain')) {
                             displayCondition = 'Cloudy';
@@ -480,7 +610,7 @@
 
         // Boot up
         update({ lull: 0, speed: 0, gust: 0, direction: 0 });
-        fetchWeatherData(true); // Call with prefetch flag set to true
+        fetchWeatherData(true); 
         
         setInterval(() => fetchWeatherData(false), 10000);
 /* #end raw */
