@@ -24,15 +24,16 @@
         --grey-tick: #cbd5e1; 
         --bubble-fill: #ffffff; 
         --bubble-opacity: 0.75;
+        transition: color 0.3s ease;
     }
 
     #isolated-weather-widget.is-dark {
-        --bg-panel: #1c1c1c; 
+        --bg-panel: #1c1c1c; /* Cal Sailing Diagram background */
         --border-panel: #2c2c2c; 
         --text-primary: #e5e7eb; 
         --text-secondary: #9ca3af; 
         --text-muted: #6b7280;
-        --hero-bg-1: #121212; 
+        --hero-bg-1: #121212; /* Cal Sailing Main background */
         --hero-bg-2: #1c1c1c; 
         --hero-border: #2c2c2c;
         --trend-bg: #121212;
@@ -51,7 +52,7 @@
         --bubble-opacity: 0.9;
     }
 
-    /* Sharp corners */
+    /* Straight corners per request */
     #isolated-weather-widget, 
     #isolated-weather-widget .iw-dial-card, 
     #isolated-weather-widget .iw-card,
@@ -63,7 +64,7 @@
     #isolated-weather-widget, #isolated-weather-widget * { box-sizing: border-box; }
     #isolated-weather-widget p, #isolated-weather-widget h1, #isolated-weather-widget h2 { margin: 0; padding: 0; }
     #isolated-weather-widget .hidden { display: none !important; }
-    #isolated-weather-widget { display: flex; flex-direction: column; gap: 1.5rem; padding: 0.5rem; width: 100%; position: relative; color: var(--text-primary); transition: color 0.3s ease; }
+    #isolated-weather-widget { display: flex; flex-direction: column; gap: 1.5rem; padding: 0.5rem; width: 100%; position: relative; color: var(--text-primary); }
     @media (min-width: 768px) { #isolated-weather-widget { flex-direction: row; } }
     
     .iw-panel { position: relative; flex: 1; width: 100%; display: flex; flex-direction: column; }
@@ -71,6 +72,7 @@
     .iw-gauge-mount { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
     .iw-weather-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; flex-grow: 1; width: 100%; height: 100%; }
     .iw-card { padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); transition: all 0.3s ease; display: flex; flex-direction: column; background-color: var(--bg-panel); border: 1px solid var(--border-panel); }
+    .iw-card:hover { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
     .iw-card-hero { grid-column: span 2 / span 2; background: linear-gradient(to bottom right, var(--hero-bg-1), var(--hero-bg-2)); border: 1px solid var(--hero-border); justify-content: center; }
     .iw-card-small { grid-column: span 1 / span 1; justify-content: space-between; }
     .iw-card-small:hover { transform: translateY(-4px); }
