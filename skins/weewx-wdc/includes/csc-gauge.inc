@@ -28,12 +28,12 @@
     }
 
     #isolated-weather-widget.is-dark {
-        --bg-panel: #1c1c1c; /* Cal Sailing Diagram background */
+        --bg-panel: #1c1c1c; 
         --border-panel: #2c2c2c; 
         --text-primary: #e5e7eb; 
         --text-secondary: #9ca3af; 
         --text-muted: #6b7280;
-        --hero-bg-1: #121212; /* Cal Sailing Main background */
+        --hero-bg-1: #121212; 
         --hero-bg-2: #1c1c1c; 
         --hero-border: #2c2c2c;
         --trend-bg: #121212;
@@ -52,7 +52,6 @@
         --bubble-opacity: 0.9;
     }
 
-    /* Straight corners per request */
     #isolated-weather-widget, 
     #isolated-weather-widget .iw-dial-card, 
     #isolated-weather-widget .iw-card,
@@ -159,19 +158,33 @@
         return arr[(val % 16)];
     }
 
-    const width = 330, height = 280, center = { x: width / 2, y: 154.5 }, scale = 1.055, R = { speedTrack: 130, compass: 110 };
-    const SWEEP_START = -0.75 * Math.PI, SWEEP_END = 0.75 * Math.PI, TRANSITION_DURATION = 2400;
+    // SVG Layout Configuration - Adjusted for better mobile fit
+    const width = 330, height = 310, center = { x: 165, y: 165 }; 
+    const R = { speedTrack: 130, compass: 110 };
+    const SWEEP_START = -0.75 * Math.PI, SWEEP_END = 0.75 * Math.PI;
     let currentMaxSpeed = 30;
 
-    const svg = d3.select("#gauge-mount").append("svg").attr("viewBox", `0 0 ${width} ${height}`).style("width", "100%").style("height", "auto").style("display", "block").append("g").attr("transform", `translate(${center.x},${center.y}) scale(${scale})`);
+    const svg = d3.select("#gauge-mount").append("svg")
+        .attr("viewBox", `0 0 ${width} ${height}`)
+        .style("width", "100%")
+        .style("height", "auto")
+        .style("display", "block")
+        .append("g")
+        .attr("transform", `translate(${center.x},${center.y})`);
+
     const colorScale = d3.scaleLinear().domain([0, 8, 10, 13, 15, 18, 20, 30, 40, 50]).range(["#1e3a8a", "#3b82f6", "#22c55e", "#84cc16", "#eab308", "#f97316", "#ef4444", "#991b1b", "#7f1d1d", "#450a0a"]).clamp(true);
     const speedScale = d3.scaleLinear().domain([0, currentMaxSpeed]).range([SWEEP_START, SWEEP_END]);
+    
+    // Background track
     svg.append("path").datum({startAngle: SWEEP_START, endAngle: SWEEP_END}).attr("d", d3.arc().innerRadius(R.speedTrack - 10).outerRadius(R.speedTrack).cornerRadius(0)).attr("fill", "var(--track-bg)");
+    
     const d3defs = svg.append("defs");
     const speedMaskPath = d3defs.append("clipPath").attr("id", "speed-mask").append("path").datum({startAngle: SWEEP_START, endAngle: SWEEP_START});
     const gustMaskPath = d3defs.append("clipPath").attr("id", "gust-mask").append("path").datum({startAngle: SWEEP_START, endAngle: SWEEP_START});
+    
     d3defs.append("mask").attr("id", "bottom-bubble-cutout").attr("maskUnits", "userSpaceOnUse").attr("x", -200).attr("y", -200).attr("width", 400).attr("height", 400).append("rect").attr("x", -200).attr("y", -200).attr("width", 400).attr("height", 400).attr("fill", "white");
     d3.select("#bottom-bubble-cutout").append("circle").attr("cx", 0).attr("cy", 0).attr("r", 33).attr("fill", "black");
+    
     const gustTrackGroup = svg.append("g").attr("clip-path", "url(#gust-mask)").attr("opacity", 0.3);
     const colorTrackGroup = svg.append("g").attr("clip-path", "url(#speed-mask)");
     const tickGroup = svg.append("g");
@@ -191,7 +204,7 @@
         for (let v = 0; v <= maxSpeed; v += 5) {
             const angle = speedScale(v);
             tickGroup.append("line").attr("x1", R.speedTrack * Math.sin(angle)).attr("y1", -R.speedTrack * Math.cos(angle)).attr("x2", (R.speedTrack - 10) * Math.sin(angle)).attr("y2", -(R.speedTrack - 10) * Math.cos(angle)).attr("class", "speed-tick");
-            tickGroup.append("text").attr("x", (R.speedTrack + 10) * Math.sin(angle)).attr("y", -(R.speedTrack + 10) * Math.cos(angle)).attr("class", "gauge-label").attr("text-anchor", "middle").attr("dominant-baseline", "central").text(v);
+            tickGroup.append("text").attr("x", (R.speedTrack + 12) * Math.sin(angle)).attr("y", -(R.speedTrack + 12) * Math.cos(angle)).attr("class", "gauge-label").attr("text-anchor", "middle").attr("dominant-baseline", "central").text(v);
         }
     }
     drawSpeedTrack(currentMaxSpeed);
