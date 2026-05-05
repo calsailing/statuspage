@@ -242,16 +242,20 @@
 
         /* --- D3 GAUGE STYLES --- */
         #isolated-weather-widget text { font-family: 'Inter', sans-serif !important; }
+        
         #isolated-weather-widget .center-speed {
+            font-family: 'Inter', sans-serif !important;
             font-weight: 800; fill: #0f172a; font-variant-numeric: tabular-nums !important; 
         }
         #isolated-weather-widget .center-gust {
+            font-family: 'Inter', sans-serif !important;
             font-size: 11px !important; font-weight: 700; fill: #0f172a; font-variant-numeric: tabular-nums !important;
         }
         #isolated-weather-widget .speed-tick {
             stroke: rgba(128, 128, 128, 0.3); stroke-width: 1.5; stroke-linecap: round; pointer-events: none;
         }
         #isolated-weather-widget .gauge-label {
+            font-family: 'Inter', sans-serif !important;
             font-size: 10px !important; font-weight: 500; fill: var(--text-muted); font-variant-numeric: tabular-nums !important;
         }
     </style>
@@ -468,8 +472,10 @@
         bottomBubble.append("circle").attr("cx", 0).attr("cy", -50).attr("r", 21).attr("fill", "white").attr("fill-opacity", 0.75);
         
         const dirTextGroup = bottomBubble.append("g").attr("transform", "translate(0, -50)");
-        const dirReadout = dirTextGroup.append("text").attr("y", -5).attr("class", "text-[10px]").style("font-weight", "900").attr("fill", "#0f172a").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("---");
-        const dirAngle = dirTextGroup.append("text").attr("y", 7).attr("class", "text-[9px]").style("font-weight", "500").attr("fill", "#0f172a").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("---\xB0");
+        
+        // Fix: Replaced leftover Tailwind classes with explicit font-size styles
+        const dirReadout = dirTextGroup.append("text").attr("y", -5).style("font-size", "10px").style("font-weight", "900").attr("fill", "#0f172a").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("---");
+        const dirAngle = dirTextGroup.append("text").attr("y", 7).style("font-size", "9px").style("font-weight", "500").attr("fill", "#0f172a").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("---\xB0");
 
         const topBubble = svg.append("g");
         topBubble.append("circle").attr("cx", 0).attr("cy", 0).attr("r", 32).attr("fill", "white").attr("fill-opacity", 0.75);
