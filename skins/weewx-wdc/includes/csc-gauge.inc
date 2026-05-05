@@ -21,9 +21,7 @@
     #isolated-weather-widget .hidden { display: none !important; }
     #isolated-weather-widget { display: flex; flex-direction: column; gap: 1.5rem; padding: 0.5rem; width: 100%; position: relative; }
     @media (min-width: 768px) { #isolated-weather-widget { flex-direction: row; } }
-    #iw-auth-overlay { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(4px); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; padding: 1rem; border-radius: 4px; }
-    .iw-auth-btn { background: #3b82f6; color: white; border: none; padding: 0.75rem 1.5rem; font-weight: 600; cursor: pointer; margin-top: 1rem; border-radius: 4px; }
-    .iw-auth-btn:hover { background: #2563eb; }
+    
     .iw-panel { position: relative; flex: 1; width: 100%; display: flex; flex-direction: column; }
     .iw-dial-card { background-color: var(--bg-panel); border: 1px solid var(--border-panel); box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); padding: 0.25rem; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     .iw-gauge-mount { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
@@ -64,11 +62,6 @@
 </style>
 
 <div id="isolated-weather-widget">
-    <div id="iw-auth-overlay" class="hidden">
-        <h3 style="font-weight: 800;">Tempest Connection Required</h3>
-        <p style="font-size: 12px; opacity: 0.8; max-width: 200px;">Please connect your Tempest account to view station data.</p>
-        <button class="iw-auth-btn" onclick="redirectToAuthorize()">Connect to Tempest</button>
-    </div>
     <div class="iw-panel iw-dial-card"><div id="gauge-mount" class="iw-gauge-mount"></div></div>
     <div class="iw-panel">
         <div class="iw-weather-grid">
@@ -115,7 +108,30 @@
 
 <script>
 /* #raw */
-    // (Existing Gauge Setup Constants...)
+    const weatherIcons = {
+        'clear-day': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #f59e0b;"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>`,
+        'clear-night': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #818cf8;"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>`,
+        'cloudy': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: var(--text-muted);"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>`,
+        'partly-cloudy-day': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #0ea5e9;"><path d="M12 2v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="M20 12h2"></path><path d="m19.07 4.93-1.41 1.41"></path><path d="M15.94 14A5 5 0 0 0 6 12a3 3 0 0 0 0 6h9.5a3.5 3.5 0 1 0 0-7h-.5Z"></path></svg>`,
+        'partly-cloudy-night': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #a5b4fc;"><path d="M10 6.13A6 6 0 0 0 15 15h3.5a3.5 3.5 0 1 0 0-7h-.5A5 5 0 0 0 10 6.13Z"></path></svg>`,
+        'rain': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #3b82f6;"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path><path d="M16 23v-2"></path><path d="M8 23v-2"></path><path d="M12 23v-2"></path></svg>`,
+        'snow': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #7dd3fc;"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path><path d="M8 23h.01"></path><path d="M12 23h.01"></path><path d="M16 23h.01"></path></svg>`,
+        'wind': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: var(--text-secondary);"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"></path><path d="M9.6 4.6A2 2 0 1 1 11 8H2"></path><path d="M12.6 19.4A2 2 0 1 0 14 16H2"></path></svg>`,
+        'default': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #60a5fa;"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>`
+    };
+
+    const trendIcons = {
+        'falling': `<svg style="width: 12px; height: 12px; color: var(--trend-red);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg> <span style="color: var(--trend-red);">Falling</span>`,
+        'rising': `<svg style="width: 12px; height: 12px; color: var(--trend-green);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg> <span style="color: var(--trend-green);">Rising</span>`,
+        'steady': `<svg style="width: 12px; height: 12px; color: var(--text-secondary);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg> <span style="color: var(--text-secondary);">Steady</span>`,
+    };
+
+    function getCompassPoint(degrees) {
+        const val = Math.floor((degrees / 22.5) + 0.5);
+        const arr = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
+        return arr[(val % 16)];
+    }
+
     const width = 330, height = 280, center = { x: width / 2, y: 154.5 }, scale = 1.055, R = { speedTrack: 130, compass: 110 };
     const SWEEP_START = -0.75 * Math.PI, SWEEP_END = 0.75 * Math.PI, TRANSITION_DURATION = 2400;
     let currentMaxSpeed = 30;
@@ -185,16 +201,46 @@
         bottomBubble.transition(t).attr("transform", `rotate(${d})`);
         dirTextGroup.transition(t).attr("transform", `translate(0, -50) rotate(${-d})`);
         vane.transition(t).attr("fill", colorScale(s));
-        dirReadout.text((Math.floor((d / 22.5) + 0.5) % 16, ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"][(Math.floor((d / 22.5) + 0.5) % 16)]));
+        dirReadout.text(getCompassPoint(d));
         dirAngle.text(Math.round(d) + "\xB0");
         speedVal.transition(t).style("font-size", Math.round(s) >= 10 ? "22px" : "26px").tween("text", function() { const i = d3.interpolateNumber(this._currentS || 0, s); return time => { this._currentS = i(time); this.textContent = Math.round(this._currentS); }; });
         gustVal.transition(t).tween("text", function() { const iL = d3.interpolateNumber(this._currentL || 0, l), iG = d3.interpolateNumber(this._currentG || 0, g); return time => { this._currentL = iL(time); this._currentG = iG(time); this.textContent = `${Math.round(this._currentL)} to ${Math.round(this._currentG)}`; }; });
     }
 
-    update({ lull: 0, speed: 0, gust: 0, direction: 0 });
-    // Safe manual check to show overlay once DOM is ready
-    handleAuth();
-    fetchWeatherData(true);
+    async function fetchWeatherData(usePrefetch = false) {
+        try {
+            let obsData, fcstData;
+            if (usePrefetch && window.weatherPrefetch) { 
+                const prefetched = await window.weatherPrefetch;
+                if (prefetched) {
+                    [obsData, fcstData] = prefetched;
+                    window.weatherPrefetch = null; 
+                }
+            } 
+            
+            if (!obsData || !fcstData) { 
+                [obsData, fcstData] = await Promise.all([fetchWithRetry(API_OBS_BASE), fetchWithRetry(API_FCST_BASE)]); 
+            }
+            
+            if (obsData && obsData.obs && obsData.obs.length > 0) {
+                const currentObs = obsData.obs[0];
+                update({ lull: (currentObs.wind_lull || 0) * 1.94384, speed: (currentObs.wind_avg || 0) * 1.94384, gust: (currentObs.wind_gust || 0) * 1.94384, direction: currentObs.wind_direction || 0 });
+                if (currentObs.air_temperature != null) { const tempF = (currentObs.air_temperature * 9/5) + 32; document.getElementById('val-temp-f').innerText = `${tempF.toFixed(1)}\xB0F`; document.getElementById('val-temp-c').innerText = `${currentObs.air_temperature.toFixed(1)}\xB0C`; }
+                const pressure = currentObs.sea_level_pressure || currentObs.barometric_pressure || currentObs.station_pressure;
+                if (pressure != null) document.getElementById('val-pressure').innerText = pressure.toFixed(1);
+                if (currentObs.uv != null) { document.getElementById('val-uv').innerText = currentObs.uv.toFixed(1); const marker = document.getElementById('uv-marker'); if(marker) { marker.classList.remove('hidden'); let uvPercentage = Math.min((currentObs.uv / 11) * 100, 100); marker.style.left = `calc(${uvPercentage}% - 3px)`; } }
+            }
+            if (fcstData && fcstData.current_conditions) {
+                const cc = fcstData.current_conditions; let displayCondition = cc.conditions || '--', displayIcon = cc.icon || 'default';
+                document.getElementById('val-conditions').innerText = displayCondition;
+                document.getElementById('icon-weather').innerHTML = weatherIcons[displayIcon] || weatherIcons['default'];
+                document.getElementById('val-pressure-trend').innerHTML = trendIcons[cc.pressure_trend] || '';
+            }
+        } catch (e) { console.error("Update loop error:", e); }
+    }
+
+    update({ lull: 0, speed: 0, gust: 0, direction: 0 }); 
+    fetchWeatherData(true); 
     setInterval(() => fetchWeatherData(false), 10000);
 /* #end raw */
 </script>
