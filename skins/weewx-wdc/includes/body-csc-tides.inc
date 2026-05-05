@@ -9,7 +9,7 @@
     #set $show_gauges = 'Gauges' in $DisplayOptions and $context in $DisplayOptions['Gauges']
 
  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <link rel="stylesheet" href="https://cdn.aerisapi.com/wxblox/latest/aeris-wxblox.css">
     <script src="https://cdn.aerisapi.com/wxblox/latest/aeris-wxblox.js"></script>
 
