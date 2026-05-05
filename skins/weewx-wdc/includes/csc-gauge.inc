@@ -1,5 +1,4 @@
 
-
     <style>
         #isolated-weather-widget {
             font-family: 'Inter', sans-serif !important;
@@ -299,7 +298,7 @@
             }
         };
 
-        // 3. PREFETCH IMMEDIATELY (Before D3 and Leaflet initialization)
+        // 3. PREFETCH IMMEDIATELY
         window.obsPrefetch = fetchWithRetry(API_OBS_BASE).catch(() => null);
         window.fcstPrefetch = fetchWithRetry(API_FCST_BASE).catch(() => null);
 
@@ -307,9 +306,13 @@
         const SENSOR_COORD = [37.85568, -122.31445];
         const MAP_CENTER = [37.85868, -122.31445]; 
         
+        // Detect mobile for adjusted zoom
+        const isMobile = window.innerWidth < 768;
+        const initialZoom = isMobile ? 13.8 : 14.3;
+
         const map = L.map('iw-map-container', {
             center: MAP_CENTER,
-            zoom: 14.3,
+            zoom: initialZoom,
             zoomSnap: 0.1,
             zoomControl: false,
             attributionControl: false,
