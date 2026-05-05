@@ -2,6 +2,14 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /* #raw */
+    // PRE-FETCH OPTIMIZATION: Start fetching the data immediately so we don't 
+    // wait for Tailwind to finish scanning the rest of the website first.
+    const API_OBS_URL = "https://swd.weatherflow.com/swd/rest/observations/station/127241?token=0acb5251-7e01-4de2-af32-7d3f46f1edec";
+    const API_FCST_URL = "https://swd.weatherflow.com/swd/rest/better_forecast?station_id=127241&units_wind=kts&token=0acb5251-7e01-4de2-af32-7d3f46f1edec";
+    window.weatherPrefetch = Promise.all([fetch(API_OBS_URL), fetch(API_FCST_URL)])
+        .then(responses => Promise.all(responses.map(res => res.json())))
+        .catch(err => console.error("Prefetch error:", err));
+
     tailwind.config = {
             darkMode: 'media',
             theme: {
@@ -381,12 +389,19 @@
         }
 
         // --- API DATA FETCHING ---
-        async function fetchWeatherData() {
+        async function fetchWeatherData(usePrefetch = false) {
             try {
-                // Fetch real data simultaneously
-                const [obsRes, fcstRes] = await Promise.all([ fetch(API_OBS), fetch(API_FCST) ]);
-                const obsData = await obsRes.json();
-                const fcstData = await fcstRes.json();
+                let obsData, fcstData;
+
+                // Use the data we started downloading at the top of the file, or fetch fresh
+                if (usePrefetch && window.weatherPrefetch) {
+                    [obsData, fcstData] = await window.weatherPrefetch;
+                    window.weatherPrefetch = null; // Clear it out
+                } else {
+                    const [obsRes, fcstRes] = await Promise.all([ fetch(API_OBS_URL), fetch(API_FCST_URL) ]);
+                    obsData = await obsRes.json();
+                    fcstData = await fcstRes.json();
+                }
                 
                 let currentObs = null;
 
@@ -456,8 +471,8 @@
 
         // Boot up
         update({ lull: 0, speed: 0, gust: 0, direction: 0 });
-        fetchWeatherData();
+        fetchWeatherData(true); // Call with prefetch flag set to true
         
-        setInterval(fetchWeatherData, 10000);
+        setInterval(() => fetchWeatherData(false), 10000);
 /* #end raw */
     </script>
