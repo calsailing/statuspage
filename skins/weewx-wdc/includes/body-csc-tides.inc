@@ -10,6 +10,36 @@
 
  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://d3js.org/d3.v7.min.js"></script>
+
+<script>
+/* #raw */
+    // Robust Fetch Helper with Exponential Backoff
+    const fetchWithRetry = async (url, retries = 5, backoff = 1000) => {
+        for (let i = 0; i < retries; i++) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                return await response.json();
+            } catch (err) {
+                if (i === retries - 1) throw err;
+                await new Promise(resolve => setTimeout(resolve, backoff * Math.pow(2, i)));
+            }
+        }
+    };
+
+    const API_OBS_URL = "https://swd.weatherflow.com/swd/rest/observations/station/127241?token=0acb5251-7e01-4de2-af32-7d3f46f1edec";
+    const API_FCST_URL = "https://swd.weatherflow.com/swd/rest/better_forecast?station_id=127241&units_wind=kts&token=0acb5251-7e01-4de2-af32-7d3f46f1edec";
+
+    window.weatherPrefetch = Promise.all([
+        fetchWithRetry(API_OBS_URL),
+        fetchWithRetry(API_FCST_URL)
+    ]).catch(err => {
+        console.error("Critical: Initial prefetch failed.", err);
+        return null;
+    });
+/* #end raw */
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.aerisapi.com/wxblox/latest/aeris-wxblox.css">
     <script src="https://cdn.aerisapi.com/wxblox/latest/aeris-wxblox.js"></script>
 
