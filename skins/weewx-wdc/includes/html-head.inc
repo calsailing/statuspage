@@ -73,7 +73,7 @@ font-size:1.2em!important;
 <meta name="theme-color" content="#161616" />
 <link rel="apple-touch-icon" href="https://status.cal-sailing.org/apple-touch-icon.png" />
 <meta name="apple-mobile-web-app-title" content="CSC Conditions">
-<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
 <script>
