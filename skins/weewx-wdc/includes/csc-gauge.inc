@@ -373,7 +373,18 @@
             speedVal.transition(t).tween("text", function() {
                 const startS = this._currentS || 0;
                 const i = d3.interpolateNumber(startS, s);
-                return t => { this._currentS = i(t); this.textContent = Math.round(this._currentS); };
+                return t => { 
+                    this._currentS = i(t); 
+                    const currentRounded = Math.round(this._currentS);
+                    this.textContent = currentRounded; 
+                    
+                    // Scale down the font if the number is 10 or greater to prevent crowding
+                    if (currentRounded >= 10) {
+                        d3.select(this).style("font-size", "22px");
+                    } else {
+                        d3.select(this).style("font-size", "26px");
+                    }
+                };
             });
             
             gustVal.transition(t).tween("text", function() {
