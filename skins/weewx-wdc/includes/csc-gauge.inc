@@ -29,11 +29,10 @@
         }
 /* #end raw */
 </script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-        
         #isolated-weather-widget {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', sans-serif !important;
             --bg-color: #ffffff;
             --card-bg: #ffffff;
             --card-border: #e2e8f0;
@@ -65,20 +64,21 @@
         }
 
         /* D3 Gauge specific styles scoped to widget */
+        #isolated-weather-widget text {
+            font-family: 'Inter', sans-serif !important;
+        }
+
         #isolated-weather-widget .center-speed {
-            font-family: 'Inter', sans-serif;
-            font-size: 26px; /* Reduced slightly to fit larger numbers safely */
             font-weight: 800;
             fill: #0f172a;
-            font-variant-numeric: tabular-nums; /* Prevents jumping/weird spacing */
+            font-variant-numeric: tabular-nums !important; 
         }
 
         #isolated-weather-widget .center-gust {
-            font-family: 'Inter', sans-serif;
-            font-size: 12px;
+            font-size: 11px !important;
             font-weight: 700;
             fill: #0f172a;
-            font-variant-numeric: tabular-nums;
+            font-variant-numeric: tabular-nums !important;
         }
 
         #isolated-weather-widget .speed-tick {
@@ -89,11 +89,10 @@
         }
 
         #isolated-weather-widget .gauge-label {
-            font-family: 'Inter', sans-serif;
-            font-size: 10px;
+            font-size: 10px !important;
             font-weight: 500; 
             fill: var(--text-muted); 
-            font-variant-numeric: tabular-nums;
+            font-variant-numeric: tabular-nums !important;
         }
     </style>
 
@@ -334,7 +333,7 @@
         const topBubble = svg.append("g");
         topBubble.append("circle").attr("cx", 0).attr("cy", 0).attr("r", 32).attr("fill", "white").attr("fill-opacity", 0.75);
         topBubble.append("text").attr("y", -22).attr("class", "text-[8px] font-normal uppercase").attr("fill", "#0f172a").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("KNOTS");
-        const speedVal = topBubble.append("text").attr("y", -6).attr("class", "center-speed").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("0");
+        const speedVal = topBubble.append("text").attr("y", -6).attr("class", "center-speed").attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "26px").text("0");
         topBubble.append("text").attr("y", 10).attr("class", "text-[7px] font-normal uppercase").attr("fill", "#0f172a").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("GUSTING");
         const gustVal = topBubble.append("text").attr("y", 20).attr("class", "center-gust").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("0 to 0");
 
@@ -370,20 +369,15 @@
             dirReadout.text(getCompassPoint(d));
             dirAngle.text(Math.round(d) + "\xB0");
             
-            speedVal.transition(t).tween("text", function() {
+            // Moved font-sizing out of the 60fps loop to prevent browser thrashing/glitches
+            speedVal.transition(t)
+                .style("font-size", Math.round(s) >= 10 ? "22px" : "26px")
+                .tween("text", function() {
                 const startS = this._currentS || 0;
                 const i = d3.interpolateNumber(startS, s);
-                return t => { 
-                    this._currentS = i(t); 
-                    const currentRounded = Math.round(this._currentS);
-                    this.textContent = currentRounded; 
-                    
-                    // Scale down the font if the number is 10 or greater to prevent crowding
-                    if (currentRounded >= 10) {
-                        d3.select(this).style("font-size", "22px");
-                    } else {
-                        d3.select(this).style("font-size", "26px");
-                    }
+                return time => { 
+                    this._currentS = i(time); 
+                    this.textContent = Math.round(this._currentS); 
                 };
             });
             
