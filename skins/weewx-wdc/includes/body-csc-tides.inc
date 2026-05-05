@@ -8,7 +8,7 @@
     #set $gauges_display = $DisplayOptions.get('gauges_display', 'before')
     #set $show_gauges = 'Gauges' in $DisplayOptions and $context in $DisplayOptions['Gauges']
 
- <script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
 <script>
 /* #raw */
     /**
@@ -39,41 +39,31 @@
 
     /**
      * THEME SYNC LOGIC
-     * Prioritizes explicit website classes over system dark mode settings.
+     * Strictly aligns with the presence/absence of 'dark' class on the html tag.
      */
     function syncTheme() {
         const widget = document.getElementById('isolated-weather-widget');
         if (!widget) return;
 
-        const darkClasses = ['dark', 'night', 'dark-mode'];
-        const lightClasses = ['light', 'day', 'light-mode'];
+        let isDark = false;
         
-        const checkDark = (el) => el && (darkClasses.some(c => el.classList.contains(c)) || el.getAttribute('data-theme') === 'dark' || el.getAttribute('data-bs-theme') === 'dark');
-        const checkLight = (el) => el && (lightClasses.some(c => el.classList.contains(c)) || el.getAttribute('data-theme') === 'light' || el.getAttribute('data-bs-theme') === 'light');
+        // 1. Check local document element
+        isDark = document.documentElement.classList.contains('dark') || 
+                 document.body.classList.contains('dark') ||
+                 document.documentElement.getAttribute('data-theme') === 'dark';
 
-        let isExplicitDark = checkDark(document.documentElement) || checkDark(document.body);
-        let isExplicitLight = checkLight(document.documentElement) || checkLight(document.body);
-
-        // Try parent window if inside an iframe
+        // 2. Try to check parent (for iframes on status.cal-sailing.org)
         try {
             if (window.self !== window.top) {
-                const pd = window.parent.document;
-                isExplicitDark = isExplicitDark || checkDark(pd.documentElement) || checkDark(pd.body);
-                isExplicitLight = isExplicitLight || checkLight(pd.documentElement) || checkLight(pd.body);
+                const pd = window.parent.document.documentElement;
+                isDark = isDark || pd.classList.contains('dark') || pd.getAttribute('data-theme') === 'dark';
             }
-        } catch (e) { /* CORS security might block parent access */ }
-
-        let finalIsDark = false;
-        if (isExplicitDark) {
-            finalIsDark = true;
-        } else if (isExplicitLight) {
-            finalIsDark = false;
-        } else {
-            // Default to system preference if no explicit class is set
-            finalIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        } catch (e) {
+            // CORS fallback: if we can't see the parent, we respect the user's system preference
+            if (!isDark) isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         }
 
-        if (finalIsDark) {
+        if (isDark) {
             widget.classList.add('is-dark');
         } else {
             widget.classList.remove('is-dark');
@@ -109,8 +99,16 @@
         return null;
     });
 
+    // Watch for theme class changes on the local tag
     const observer = new MutationObserver(() => syncTheme());
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme', 'data-bs-theme'] });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme'] });
+    
+    // Also listen for a standard postMessage in case the parent sends one
+    window.addEventListener('message', (event) => {
+        if (event.data === 'theme-dark') syncTheme();
+        if (event.data === 'theme-light') syncTheme();
+    });
+
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => syncTheme());
 /* #end raw */
 </script>
