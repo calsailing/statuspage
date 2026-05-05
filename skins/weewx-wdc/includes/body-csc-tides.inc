@@ -8,7 +8,7 @@
     #set $gauges_display = $DisplayOptions.get('gauges_display', 'before')
     #set $show_gauges = 'Gauges' in $DisplayOptions and $context in $DisplayOptions['Gauges']
 
-  <script src="https://d3js.org/d3.v7.min.js"></script>
+ <script src="https://d3js.org/d3.v7.min.js"></script>
 <script>
 /* #raw */
     /**
