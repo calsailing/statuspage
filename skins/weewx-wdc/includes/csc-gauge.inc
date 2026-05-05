@@ -1,12 +1,33 @@
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script>
 /* #raw */
-    // PRE-FETCH OPTIMIZATION: Start fetching the data immediately
+    // Robust Fetch Helper with Exponential Backoff
+    const fetchWithRetry = async (url, retries = 5, backoff = 1000) => {
+        for (let i = 0; i < retries; i++) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                return await response.json();
+            } catch (err) {
+                if (i === retries - 1) throw err;
+                // Wait for (backoff * 2^retryCount) milliseconds
+                await new Promise(resolve => setTimeout(resolve, backoff * Math.pow(2, i)));
+            }
+        }
+    };
+
+    // API Configuration
     const API_OBS_URL = "https://swd.weatherflow.com/swd/rest/observations/station/127241?token=0acb5251-7e01-4de2-af32-7d3f46f1edec";
     const API_FCST_URL = "https://swd.weatherflow.com/swd/rest/better_forecast?station_id=127241&units_wind=kts&token=0acb5251-7e01-4de2-af32-7d3f46f1edec";
-    window.weatherPrefetch = Promise.all([fetch(API_OBS_URL), fetch(API_FCST_URL)])
-        .then(responses => Promise.all(responses.map(res => res.json())))
-        .catch(err => console.error("Prefetch error:", err));
+
+    // PRE-FETCH OPTIMIZATION: Start fetching immediately with retry logic
+    window.weatherPrefetch = Promise.all([
+        fetchWithRetry(API_OBS_URL),
+        fetchWithRetry(API_FCST_URL)
+    ]).catch(err => {
+        console.error("Critical: Initial prefetch failed after all retries.", err);
+        return null;
+    });
 /* #end raw */
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -343,7 +364,6 @@
     <!-- API Logic -->
     <script>
 /* #raw */
-        // Dictionaries for mapping API data to visual elements (Converted from Tailwind classes to inline styles)
         const weatherIcons = {
             'clear-day': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #f59e0b;"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>`,
             'clear-night': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #818cf8;"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>`,
@@ -396,11 +416,11 @@
         const arcSpeedBackground = d3.arc().innerRadius(R.speedTrack - 10).outerRadius(R.speedTrack).cornerRadius(0);
         svg.append("path").datum({startAngle: SWEEP_START, endAngle: SWEEP_END}).attr("d", arcSpeedBackground).attr("fill", "var(--track-bg)");
 
-        const defs = svg.append("defs");
-        const speedMaskPath = defs.append("clipPath").attr("id", "speed-mask").append("path").datum({startAngle: SWEEP_START, endAngle: SWEEP_START});
-        const gustMaskPath = defs.append("clipPath").attr("id", "gust-mask").append("path").datum({startAngle: SWEEP_START, endAngle: SWEEP_START});
+        const d3defs = svg.append("defs");
+        const speedMaskPath = d3defs.append("clipPath").attr("id", "speed-mask").append("path").datum({startAngle: SWEEP_START, endAngle: SWEEP_START});
+        const gustMaskPath = d3defs.append("clipPath").attr("id", "gust-mask").append("path").datum({startAngle: SWEEP_START, endAngle: SWEEP_START});
         
-        const bubbleMask = defs.append("mask")
+        const bubbleMask = d3defs.append("mask")
             .attr("id", "bottom-bubble-cutout")
             .attr("maskUnits", "userSpaceOnUse")
             .attr("x", -200).attr("y", -200).attr("width", 400).attr("height", 400);
@@ -472,8 +492,6 @@
         bottomBubble.append("circle").attr("cx", 0).attr("cy", -50).attr("r", 21).attr("fill", "white").attr("fill-opacity", 0.75);
         
         const dirTextGroup = bottomBubble.append("g").attr("transform", "translate(0, -50)");
-        
-        // Fix: Replaced leftover Tailwind classes with explicit font-size styles
         const dirReadout = dirTextGroup.append("text").attr("y", -5).style("font-size", "10px").style("font-weight", "900").attr("fill", "#0f172a").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("---");
         const dirAngle = dirTextGroup.append("text").attr("y", 7).style("font-size", "9px").style("font-weight", "500").attr("fill", "#0f172a").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("---\xB0");
 
@@ -552,14 +570,14 @@
                     [obsData, fcstData] = await window.weatherPrefetch;
                     window.weatherPrefetch = null; 
                 } else {
-                    const [obsRes, fcstRes] = await Promise.all([ fetch(API_OBS_URL), fetch(API_FCST_URL) ]);
-                    obsData = await obsRes.json();
-                    fcstData = await fcstRes.json();
+                    [obsData, fcstData] = await Promise.all([
+                        fetchWithRetry(API_OBS_URL),
+                        fetchWithRetry(API_FCST_URL)
+                    ]);
                 }
                 
                 let currentObs = null;
 
-                // Update D3 Chart & Obs Dashboard
                 if (obsData && obsData.obs && obsData.obs.length > 0) {
                     currentObs = obsData.obs[0];
                     update({
@@ -591,7 +609,6 @@
                     }
                 }
 
-                // Update Forecast conditions
                 if (fcstData && fcstData.current_conditions) {
                     const cc = fcstData.current_conditions;
                     let displayCondition = cc.conditions || '--';
@@ -610,11 +627,11 @@
                 }
 
             } catch (e) {
-                console.error("API error:", e);
+                console.error("API error after retries:", e);
             }
         }
 
-        // Boot up
+        // Initial launch
         update({ lull: 0, speed: 0, gust: 0, direction: 0 });
         fetchWeatherData(true); 
         
