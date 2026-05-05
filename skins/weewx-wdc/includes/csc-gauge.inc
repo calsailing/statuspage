@@ -2,8 +2,6 @@
 <style>
     #isolated-weather-widget {
         font-family: 'Inter', sans-serif !important;
-        
-        /* --- LIGHT MODE VARIABLES --- */
         --bg-panel: #ffffff; 
         --border-panel: #f1f5f9; 
         --text-primary: #0f172a; 
@@ -28,14 +26,13 @@
         --bubble-opacity: 0.75;
     }
 
-    /* --- DARK MODE ALIGNMENT (Matches status.cal-sailing.org diagrams) --- */
     #isolated-weather-widget.is-dark {
-        --bg-panel: #1c1c1c; /* Site's diagram background */
+        --bg-panel: #1c1c1c; 
         --border-panel: #2c2c2c; 
         --text-primary: #e5e7eb; 
         --text-secondary: #9ca3af; 
         --text-muted: #6b7280;
-        --hero-bg-1: #121212; /* Site's main background */
+        --hero-bg-1: #121212; 
         --hero-bg-2: #1c1c1c; 
         --hero-border: #2c2c2c;
         --trend-bg: #121212;
@@ -54,7 +51,7 @@
         --bubble-opacity: 0.9;
     }
 
-    /* Remove rounded corners globally */
+    /* Sharp corners */
     #isolated-weather-widget, 
     #isolated-weather-widget .iw-dial-card, 
     #isolated-weather-widget .iw-card,
@@ -74,7 +71,6 @@
     .iw-gauge-mount { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
     .iw-weather-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; flex-grow: 1; width: 100%; height: 100%; }
     .iw-card { padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); transition: all 0.3s ease; display: flex; flex-direction: column; background-color: var(--bg-panel); border: 1px solid var(--border-panel); }
-    .iw-card:hover { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
     .iw-card-hero { grid-column: span 2 / span 2; background: linear-gradient(to bottom right, var(--hero-bg-1), var(--hero-bg-2)); border: 1px solid var(--hero-border); justify-content: center; }
     .iw-card-small { grid-column: span 1 / span 1; justify-content: space-between; }
     .iw-card-small:hover { transform: translateY(-4px); }
