@@ -264,43 +264,52 @@
 </div>
 
 
-<script type="module">
+<script>
     /* #raw */
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
     // 1. API Configuration
     const STATIC_TOKEN = "8535e71d-2290-4965-ad3f-ab05b9294fdf";
     const API_OBS_BASE = "https://swd.weatherflow.com/swd/rest/observations/station/127241";
     const API_FCST_BASE = "https://swd.weatherflow.com/swd/rest/better_forecast?station_id=127241&units_wind=kts";
 
-    // Detect Environment and handle Firebase Config securely
-    let firebaseConfig = null;
-    let appId = 'cal-sailing-wind';
-    let db = null;
-    let auth = null;
-    let currentUser = null;
+    // 2. Persistence Logic (Using localStorage)
+    const STORAGE_KEY = 'cal_sailing_wind_state';
 
-    try {
-        if (typeof __firebase_config !== 'undefined') {
-            firebaseConfig = JSON.parse(__firebase_config);
-            appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-        }
-    } catch (e) {
-        console.warn("Firebase config not found. Persistence disabled.");
-    }
-
-    // 2. Persistence Logic
-    const saveToProfile = async (data) => {
-        if (!currentUser || !db) return;
+    const saveToLocalStorage = (data) => {
         try {
-            const prefDoc = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'preferences', 'latest_state');
-            await setDoc(prefDoc, data, { merge: true });
-        } catch (e) { console.error("Save error:", e); }
+            const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+            const updated = { ...existing, ...data };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        } catch (e) { console.warn("Local storage save failed:", e); }
+    };
+
+    const loadFromLocalStorage = () => {
+        try {
+            const state = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+            if (!state) return;
+            
+            if (state.obs) update(state.obs, true);
+            if (state.tempF) document.getElementById('val-temp-f').innerText = state.tempF;
+            if (state.tempC) document.getElementById('val-temp-c').innerText = state.tempC;
+            if (state.pressure) document.getElementById('val-pressure').innerText = state.pressure;
+            if (state.uv) {
+                document.getElementById('val-uv').innerText = state.uv;
+                const marker = document.getElementById('uv-marker');
+                if (marker) {
+                    marker.classList.remove('hidden');
+                    marker.style.left = `calc(${Math.min((state.uv / 11) * 100, 100)}% - 3px)`;
+                }
+            }
+            if (state.fcst) {
+                document.getElementById('val-conditions').innerText = state.fcst.conditions || '--';
+                document.getElementById('icon-weather').innerHTML = weatherIcons[state.fcst.icon] || '';
+                document.getElementById('val-pressure-trend').innerHTML = trendIcons[state.fcst.trend] || '';
+            }
+            if (state.mapMode) {
+                document.getElementById('map-mode-toggle').checked = true;
+                document.getElementById('isolated-weather-widget').classList.add('map-mode');
+                setTimeout(() => map.invalidateSize(), 100);
+            }
+        } catch (e) { console.warn("Local storage load failed:", e); }
     };
 
     // 3. Fetch Helper
@@ -495,7 +504,7 @@
         lullText.transition(t).tween("text", function() { const i = d3.interpolateNumber(this._currentL || 0, l); return time => { this._currentL = i(time); this.textContent = Math.round(this._currentL); }; });
         gustText.transition(t).tween("text", function() { const i = d3.interpolateNumber(this._currentG || 0, g); return time => { this._currentG = i(time); this.textContent = Math.round(this._currentG); }; });
         
-        if (!skipSave) saveToProfile({ obs: { lull: l, speed: s, gust: g, direction: d } });
+        if (!skipSave) saveToLocalStorage({ obs: { lull: l, speed: s, gust: g, direction: d } });
     }
 
     // 6. Data Fetching
@@ -515,18 +524,18 @@
                     const tempF = (o.air_temperature * 9/5) + 32;
                     document.getElementById('val-temp-f').innerText = `${tempF.toFixed(1)}\xB0F`;
                     document.getElementById('val-temp-c').innerText = `${o.air_temperature.toFixed(1)}\xB0C`;
-                    saveToProfile({ tempF: `${tempF.toFixed(1)}\xB0F`, tempC: `${o.air_temperature.toFixed(1)}\xB0C` });
+                    saveToLocalStorage({ tempF: `${tempF.toFixed(1)}\xB0F`, tempC: `${o.air_temperature.toFixed(1)}\xB0C` });
                 }
                 const pressure = o.sea_level_pressure || o.barometric_pressure || o.station_pressure;
                 if (pressure != null) {
                     document.getElementById('val-pressure').innerText = pressure.toFixed(1);
-                    saveToProfile({ pressure: pressure.toFixed(1) });
+                    saveToLocalStorage({ pressure: pressure.toFixed(1) });
                 }
                 if (o.uv != null) {
                     document.getElementById('val-uv').innerText = o.uv.toFixed(1);
                     const marker = document.getElementById('uv-marker');
                     if(marker) { marker.classList.remove('hidden'); let uvPercentage = Math.min((o.uv / 11) * 100, 100); marker.style.left = `calc(${uvPercentage}% - 3px)`; }
-                    saveToProfile({ uv: o.uv.toFixed(1) });
+                    saveToLocalStorage({ uv: o.uv.toFixed(1) });
                 }
             }
         } catch (e) { console.error("Obs error:", e); }
@@ -542,64 +551,20 @@
                     document.getElementById('val-conditions').innerText = cc.conditions || '--';
                     document.getElementById('icon-weather').innerHTML = weatherIcons[cc.icon] || weatherIcons['default'];
                     document.getElementById('val-pressure-trend').innerHTML = trendIcons[cc.pressure_trend] || '';
-                    saveToProfile({ fcst: { conditions: cc.conditions, icon: cc.icon, trend: cc.pressure_trend } });
+                    saveToLocalStorage({ fcst: { conditions: cc.conditions, icon: cc.icon, trend: cc.pressure_trend } });
                 }
             } catch (e) { console.error("Fcst error:", e); }
         }
     }
 
-    // 7. Initialize and Logic
-    const initPersistence = async () => {
-        // If we are in the artifact environment with a token, use cloud sync
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token && auth) {
-            await signInWithCustomToken(auth, __initial_auth_token);
-        } else if (auth) {
-            await signInAnonymously(auth);
-        }
-
-        if (auth) {
-            onAuthStateChanged(auth, async (user) => {
-                currentUser = user;
-                if (user) {
-                    try {
-                        const prefDoc = doc(db, 'artifacts', appId, 'users', user.uid, 'preferences', 'latest_state');
-                        const snap = await getDoc(prefDoc);
-                        if (snap.exists()) {
-                            const s = snap.data();
-                            if (s.obs) update(s.obs, true);
-                            if (s.tempF) document.getElementById('val-temp-f').innerText = s.tempF;
-                            if (s.tempC) document.getElementById('val-temp-c').innerText = s.tempC;
-                            if (s.pressure) document.getElementById('val-pressure').innerText = s.pressure;
-                            if (s.uv) {
-                                document.getElementById('val-uv').innerText = s.uv;
-                                const marker = document.getElementById('uv-marker');
-                                marker.classList.remove('hidden');
-                                marker.style.left = `calc(${Math.min((s.uv / 11) * 100, 100)}% - 3px)`;
-                            }
-                            if (s.fcst) {
-                                document.getElementById('val-conditions').innerText = s.fcst.conditions;
-                                document.getElementById('icon-weather').innerHTML = weatherIcons[s.fcst.icon] || '';
-                                document.getElementById('val-pressure-trend').innerHTML = trendIcons[s.fcst.trend] || '';
-                            }
-                            if (s.mapMode) {
-                                document.getElementById('map-mode-toggle').checked = true;
-                                document.getElementById('isolated-weather-widget').classList.add('map-mode');
-                                setTimeout(() => map.invalidateSize(), 100);
-                            }
-                        }
-                    } catch (e) { console.warn("Load error - persistence unavailable."); }
-                }
-            });
-        }
-        
-        // Always run data update regardless of auth status
-        fetchWeatherData(true); 
-        setInterval(() => fetchWeatherData(false), 60000);
-    };
-
+    // 7. Initialize
     update({ lull: 0, speed: 0, gust: 0, direction: 0 }, true); 
     syncTheme();
-    initPersistence();
+    loadFromLocalStorage(); // Initial restore
+
+    // Always run fresh data update
+    fetchWeatherData(true); 
+    setInterval(() => fetchWeatherData(false), 60000);
 
     document.getElementById('map-mode-toggle').addEventListener('change', (e) => {
         const widget = document.getElementById('isolated-weather-widget');
@@ -610,7 +575,7 @@
         } else {
             widget.classList.remove('map-mode');
         }
-        saveToProfile({ mapMode: isChecked });
+        saveToLocalStorage({ mapMode: isChecked });
     });
     /* #end raw */
 </script>
