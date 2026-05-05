@@ -38,32 +38,38 @@
     };
 
     /**
-     * THEME SYNC LOGIC
+     * THEME SYNC LOGIC (Based on CSC-Tides implementation)
      */
     function syncTheme() {
         const widget = document.getElementById('isolated-weather-widget');
         if (!widget) return;
 
-        // Alignment with status.cal-sailing.org logic
-        // Checks local document and parent (if in iframe)
-        const checkClasses = (el) => {
-            if (!el) return false;
-            return el.classList.contains('dark') || 
-                   el.classList.contains('night') ||
-                   el.classList.contains('dark-mode') ||
-                   el.getAttribute('data-theme') === 'dark';
-        };
-
-        let isDark = checkClasses(document.documentElement) || checkClasses(document.body);
+        const html = document.documentElement;
+        const body = document.body;
+        const classes = ['dark', 'night', 'dark-mode'];
         
-        // Try parent window if in iframe
+        // 1. Check local document
+        let isDark = classes.some(c => html.classList.contains(c) || body.classList.contains(c)) ||
+                     html.getAttribute('data-theme') === 'dark' || 
+                     body.getAttribute('data-theme') === 'dark' ||
+                     html.getAttribute('data-bs-theme') === 'dark';
+
+        // 2. Check if inside an iframe and parent has dark mode (CORS safe check)
         try {
             if (window.self !== window.top) {
-                isDark = isDark || checkClasses(window.parent.document.documentElement) || checkClasses(window.parent.document.body);
+                const pHtml = window.parent.document.documentElement;
+                const pBody = window.parent.document.body;
+                const parentIsDark = classes.some(c => pHtml.classList.contains(c) || pBody.classList.contains(c)) ||
+                                     pHtml.getAttribute('data-theme') === 'dark' ||
+                                     pBody.getAttribute('data-theme') === 'dark' ||
+                                     pHtml.getAttribute('data-bs-theme') === 'dark';
+                isDark = isDark || parentIsDark;
             }
-        } catch (e) { /* CORS block */ }
+        } catch (e) {
+            // CORS restriction usually prevents looking at window.parent.document
+        }
 
-        // Final fallback to system preference
+        // 3. Fallback to system preference
         if (!isDark) {
             isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         }
@@ -105,8 +111,8 @@
     });
 
     const observer = new MutationObserver(() => syncTheme());
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme'] });
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', syncTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme', 'data-bs-theme'] });
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => syncTheme());
 /* #end raw */
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
