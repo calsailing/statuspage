@@ -113,13 +113,6 @@
                             <!-- ID: val-temp-c -->
                             <p id="val-temp-c" class="text-slate-500 dark:text-slate-400 font-medium mt-0.5 text-sm transition-opacity duration-300">--&deg;C</p>
                         </div>
-                            <div class="flex items-baseline gap-1">
-                                <!-- ID: val-temp-f -->
-                                <h1 id="val-temp-f" class="text-4xl font-bold tracking-tighter text-slate-800 dark:text-white transition-opacity duration-300">--°F</h1>
-                            </div>
-                            <!-- ID: val-temp-c -->
-                            <p id="val-temp-c" class="text-slate-500 dark:text-slate-400 font-medium mt-0.5 text-sm transition-opacity duration-300">--°C</p>
-                        </div>
 
                         <!-- Right: Condition -->
                         <div class="flex flex-col items-center justify-center pt-1">
