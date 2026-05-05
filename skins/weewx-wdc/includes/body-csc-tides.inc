@@ -13,11 +13,72 @@
 
 <script>
 /* #raw */
-    // Robust Fetch Helper with Exponential Backoff
+    /**
+     * SECURITY WARNING:
+     * Storing Client Secrets in client-side code (HTML/JS) is insecure.
+     * Anyone inspecting your website source can see these credentials.
+     * For production, handle token exchange on a secure backend server.
+     */
+    const OAUTH_CLIENT_ID = "cdd6d482-41d4-4b56-8a83-5ea00cfe6a35";
+    const OAUTH_CLIENT_SECRET = "9382ee0d-c1ca-479a-ba75-f7013677f000";
+    const OAUTH_TOKEN_URL = "https://swd.weatherflow.com/id/oauth2/token";
+    
+    const API_OBS_BASE = "https://swd.weatherflow.com/swd/rest/observations/station/127241";
+    const API_FCST_BASE = "https://swd.weatherflow.com/swd/rest/better_forecast?station_id=127241&units_wind=kts";
+
+    // Global variable to store the token in memory
+    let currentAccessToken = localStorage.getItem('tempest_access_token');
+
+    /**
+     * Obtains a new OAuth Access Token using the Client Credentials flow.
+     */
+    const getOAuthToken = async () => {
+        try {
+            const response = await fetch(OAUTH_TOKEN_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({
+                    'grant_type': 'client_credentials',
+                    'client_id': OAUTH_CLIENT_ID,
+                    'client_secret': OAUTH_CLIENT_SECRET
+                })
+            });
+
+            if (!response.ok) throw new Error(`OAuth Error: ${response.status}`);
+            
+            const data = await response.json();
+            if (data.access_token) {
+                currentAccessToken = data.access_token;
+                localStorage.setItem('tempest_access_token', currentAccessToken);
+                return currentAccessToken;
+            }
+        } catch (err) {
+            console.error("Failed to obtain OAuth token:", err);
+            return null;
+        }
+    };
+
+    /**
+     * Robust Fetch Helper with Exponential Backoff and OAuth support
+     */
     const fetchWithRetry = async (url, retries = 5, backoff = 1000) => {
         for (let i = 0; i < retries; i++) {
             try {
-                const response = await fetch(url);
+                // Ensure we have a token before making the call
+                if (!currentAccessToken) await getOAuthToken();
+                
+                // Construct URL with access_token
+                const authenticatedUrl = new URL(url);
+                authenticatedUrl.searchParams.set('access_token', currentAccessToken);
+
+                const response = await fetch(authenticatedUrl.toString());
+                
+                // If token is expired (401), try to get a new one and retry immediately
+                if (response.status === 401) {
+                    await getOAuthToken();
+                    continue; 
+                }
+
                 if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 return await response.json();
             } catch (err) {
@@ -27,13 +88,16 @@
         }
     };
 
-    const API_OBS_URL = "https://swd.weatherflow.com/swd/rest/observations/station/127241?token=0acb5251-7e01-4de2-af32-7d3f46f1edec";
-    const API_FCST_URL = "https://swd.weatherflow.com/swd/rest/better_forecast?station_id=127241&units_wind=kts&token=0acb5251-7e01-4de2-af32-7d3f46f1edec";
-
-    window.weatherPrefetch = Promise.all([
-        fetchWithRetry(API_OBS_URL),
-        fetchWithRetry(API_FCST_URL)
-    ]).catch(err => {
+    // PRE-FETCH OPTIMIZATION: Start fetching immediately
+    window.weatherPrefetch = (async () => {
+        // Initial token check
+        if (!currentAccessToken) await getOAuthToken();
+        
+        return Promise.all([
+            fetchWithRetry(API_OBS_BASE),
+            fetchWithRetry(API_FCST_BASE)
+        ]);
+    })().catch(err => {
         console.error("Critical: Initial prefetch failed.", err);
         return null;
     });
