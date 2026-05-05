@@ -21,7 +21,6 @@
     const OAUTH_AUTHORIZE_URL = "https://smartweather.weatherflow.com/authorize.html";
     const OAUTH_TOKEN_URL = "https://swd.weatherflow.com/id/oauth2/token";
     
-    // User-provided PKCE strings
     const CODE_VERIFIER = "tr41SwDAH58gMpAlNd8fTVolqW4SHa6niZuv3eNpgDdwZXrT";
     const CODE_CHALLENGE = "TLBs7Pvam_eZBCgW70Tcg-T7eRHNmfvfUCtSkhKb5ig";
 
@@ -30,9 +29,6 @@
 
     let currentAccessToken = localStorage.getItem('tempest_access_token');
 
-    /**
-     * Triggers the OAuth 2.0 Authorization Redirect
-     */
     const redirectToAuthorize = () => {
         const params = new URLSearchParams({
             client_id: OAUTH_CLIENT_ID,
@@ -44,9 +40,6 @@
         window.location.href = `${OAUTH_AUTHORIZE_URL}?${params.toString()}`;
     };
 
-    /**
-     * Exchanges an Authorization Code for an Access Token using PKCE verifier
-     */
     const exchangeCodeForToken = async (code) => {
         try {
             const response = await fetch(OAUTH_TOKEN_URL, {
@@ -61,21 +54,15 @@
                 })
             });
 
-            if (!response.ok) {
-                const errText = await response.text();
-                throw new Error(`Token exchange failed: ${response.status} - ${errText}`);
-            }
+            if (!response.ok) throw new Error(`Token exchange failed: ${response.status}`);
 
             const data = await response.json();
             if (data.access_token) {
                 currentAccessToken = data.access_token;
                 localStorage.setItem('tempest_access_token', currentAccessToken);
-                
-                // Clean the URL to remove the code parameter
                 const url = new URL(window.location);
                 url.searchParams.delete('code');
                 window.history.replaceState({}, document.title, url.toString());
-                
                 return currentAccessToken;
             }
         } catch (err) {
@@ -84,47 +71,38 @@
         }
     };
 
-    /**
-     * Handles the initial Auth check on page load
-     */
     const handleAuth = async () => {
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
 
         if (code) {
-            console.log("Authorization code detected. Exchanging...");
             await exchangeCodeForToken(code);
         }
 
         if (!currentAccessToken) {
-            // Show the login UI
-            document.getElementById('iw-auth-overlay').classList.remove('hidden');
+            // Guard: Only touch the DOM if the element exists (prevents the 'null' error during prefetch)
+            const overlay = document.getElementById('iw-auth-overlay');
+            if (overlay) overlay.classList.remove('hidden');
             return false;
         }
         return true;
     };
 
-    /**
-     * Robust Fetch Helper with Exponential Backoff
-     */
     const fetchWithRetry = async (url, retries = 5, backoff = 1000) => {
         for (let i = 0; i < retries; i++) {
             try {
                 if (!currentAccessToken) throw new Error("Unauthorized");
-
                 const authenticatedUrl = new URL(url);
                 authenticatedUrl.searchParams.set('token', currentAccessToken);
-
                 const response = await fetch(authenticatedUrl.toString());
                 
                 if (response.status === 401) {
-                    console.warn("Unauthorized. Token may be expired.");
                     localStorage.removeItem('tempest_access_token');
                     currentAccessToken = null;
-                    document.getElementById('iw-auth-overlay').classList.remove('hidden');
-                    throw new Error("401 Unauthorized");
+                    const overlay = document.getElementById('iw-auth-overlay');
+                    if (overlay) overlay.classList.remove('hidden');
+                    throw new Error("401");
                 }
-
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 return await response.json();
             } catch (err) {
@@ -134,15 +112,10 @@
         }
     };
 
-    // PRE-FETCH: Runs immediately, but will be bypassed if auth is needed
     window.weatherPrefetch = (async () => {
         const isAuthenticated = await handleAuth();
         if (!isAuthenticated) return null;
-
-        return Promise.all([
-            fetchWithRetry(API_OBS_BASE),
-            fetchWithRetry(API_FCST_BASE)
-        ]);
+        return Promise.all([fetchWithRetry(API_OBS_BASE), fetchWithRetry(API_FCST_BASE)]);
     })().catch(err => {
         console.error("Initial prefetch failed:", err);
         return null;
