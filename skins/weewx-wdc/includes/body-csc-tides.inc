@@ -35,7 +35,6 @@
                 return await response.json();
             } catch (err) {
                 if (i === retries - 1) throw err;
-                // Minimal wait for aggressive retrying
                 await new Promise(res => setTimeout(res, delay));
             }
         }
@@ -51,9 +50,38 @@
         console.error("Initial prefetch failed after 50 attempts:", err);
         return null;
     });
+
+    /**
+     * THEME SYNC LOGIC
+     * Automatically detects if the parent page is in dark mode
+     */
+    function syncTheme() {
+        const widget = document.getElementById('isolated-weather-widget');
+        if (!widget) return;
+
+        // Alignment with status.cal-sailing.org logic
+        const isDarkPage = 
+            document.documentElement.classList.contains('dark') || 
+            document.documentElement.classList.contains('night') ||
+            document.body.classList.contains('dark-mode') ||
+            document.documentElement.getAttribute('data-theme') === 'dark' ||
+            window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        if (isDarkPage) {
+            widget.classList.add('is-dark');
+        } else {
+            widget.classList.remove('is-dark');
+        }
+    }
+
+    // Set up observer to watch for theme changes on the page
+    const observer = new MutationObserver(() => syncTheme());
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme'] });
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', syncTheme);
 /* #end raw */
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
 
     <link rel="stylesheet" href="https://cdn.aerisapi.com/wxblox/latest/aeris-wxblox.css">
     <script src="https://cdn.aerisapi.com/wxblox/latest/aeris-wxblox.js"></script>
