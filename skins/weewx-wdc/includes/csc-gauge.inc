@@ -66,17 +66,19 @@
 
         /* D3 Gauge specific styles scoped to widget */
         #isolated-weather-widget .center-speed {
-            font-size: 32px;
+            font-family: 'Inter', sans-serif;
+            font-size: 26px; /* Reduced slightly to fit larger numbers safely */
             font-weight: 800;
             fill: #0f172a;
-            letter-spacing: -1px;
+            font-variant-numeric: tabular-nums; /* Prevents jumping/weird spacing */
         }
 
         #isolated-weather-widget .center-gust {
-            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
             font-weight: 700;
             fill: #0f172a;
-            letter-spacing: 0;
+            font-variant-numeric: tabular-nums;
         }
 
         #isolated-weather-widget .speed-tick {
@@ -87,9 +89,11 @@
         }
 
         #isolated-weather-widget .gauge-label {
+            font-family: 'Inter', sans-serif;
             font-size: 10px;
-            font-weight: 300; 
+            font-weight: 500; 
             fill: var(--text-muted); 
+            font-variant-numeric: tabular-nums;
         }
     </style>
 
@@ -330,9 +334,9 @@
         const topBubble = svg.append("g");
         topBubble.append("circle").attr("cx", 0).attr("cy", 0).attr("r", 32).attr("fill", "white").attr("fill-opacity", 0.75);
         topBubble.append("text").attr("y", -22).attr("class", "text-[8px] font-normal uppercase").attr("fill", "#0f172a").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("KNOTS");
-        const speedVal = topBubble.append("text").attr("y", -6).attr("class", "center-speed text-[28px]").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("0");
+        const speedVal = topBubble.append("text").attr("y", -6).attr("class", "center-speed").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("0");
         topBubble.append("text").attr("y", 10).attr("class", "text-[7px] font-normal uppercase").attr("fill", "#0f172a").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("GUSTING");
-        const gustVal = topBubble.append("text").attr("y", 20).attr("class", "center-gust").style("font-size", "11px").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("0 to 0");
+        const gustVal = topBubble.append("text").attr("y", 20).attr("class", "center-gust").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("0 to 0");
 
         function update(data) {
             const l = data.lull || 0, s = data.speed || 0, g = data.gust || 0, d = data.direction || 0;
