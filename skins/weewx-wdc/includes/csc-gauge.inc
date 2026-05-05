@@ -1,8 +1,9 @@
+
 <style>
     #isolated-weather-widget {
         font-family: 'Inter', sans-serif !important;
         
-        /* --- LIGHT MODE VARIABLES (Default) --- */
+        /* --- LIGHT MODE VARIABLES --- */
         --bg-panel: #ffffff; 
         --border-panel: #f1f5f9; 
         --text-primary: #0f172a; 
@@ -27,58 +28,39 @@
         --bubble-opacity: 0.75;
     }
 
-    /* --- DARK MODE ALIGNMENT --- */
-    /* Matches Weather Data Center / status.cal-sailing.org palette */
-    @media (prefers-color-scheme: dark) {
-        #isolated-weather-widget {
-            --bg-panel: #1f2937; /* Tailwind Gray 800 */
-            --border-panel: #374151; /* Tailwind Gray 700 */
-            --text-primary: #f3f4f6; /* Gray 100 */
-            --text-secondary: #9ca3af; /* Gray 400 */
-            --text-muted: #6b7280; /* Gray 500 */
-            --hero-bg-1: #111827; /* Gray 900 */
-            --hero-bg-2: #1f2937; 
-            --hero-border: #374151;
-            --trend-bg: #111827;
-            --trend-red: #f87171;
-            --trend-green: #4ade80;
-            --icon-indigo-bg: rgba(99, 102, 241, 0.15);
-            --icon-indigo: #818cf8;
-            --icon-amber-bg: rgba(245, 158, 11, 0.15);
-            --icon-amber: #fbbf24;
-            --scale-bg: #111827;
-            --dial-tick: #374151;
-            --dial-tick-major: #4b5563;
-            --track-bg: #111827;
-            --grey-tick: #374151;
-            --bubble-fill: #111827;
-            --bubble-opacity: 0.9;
-        }
-    }
-
+    /* --- DARK MODE ALIGNMENT (status.cal-sailing.org) --- */
     #isolated-weather-widget.is-dark {
-        --bg-panel: #1f2937;
-        --border-panel: #374151;
-        --text-primary: #f3f4f6;
-        --text-secondary: #9ca3af;
+        --bg-panel: #1c1c1c; /* Matches site card background */
+        --border-panel: #2c2c2c; 
+        --text-primary: #e5e7eb; 
+        --text-secondary: #9ca3af; 
         --text-muted: #6b7280;
-        --hero-bg-1: #111827;
-        --hero-bg-2: #1f2937;
-        --hero-border: #374151;
-        --trend-bg: #111827;
+        --hero-bg-1: #121212; /* Matches site main background */
+        --hero-bg-2: #1c1c1c; 
+        --hero-border: #2c2c2c;
+        --trend-bg: #121212;
         --trend-red: #f87171;
         --trend-green: #4ade80;
         --icon-indigo-bg: rgba(99, 102, 241, 0.15);
         --icon-indigo: #818cf8;
         --icon-amber-bg: rgba(245, 158, 11, 0.15);
         --icon-amber: #fbbf24;
-        --scale-bg: #111827;
-        --dial-tick: #374151;
+        --scale-bg: #121212;
+        --dial-tick: #2c2c2c;
         --dial-tick-major: #4b5563;
-        --track-bg: #111827;
-        --grey-tick: #374151;
-        --bubble-fill: #111827;
+        --track-bg: #121212;
+        --grey-tick: #2c2c2c;
+        --bubble-fill: #121212;
         --bubble-opacity: 0.9;
+    }
+
+    /* Remove rounded corners */
+    #isolated-weather-widget, 
+    #isolated-weather-widget .iw-dial-card, 
+    #isolated-weather-widget .iw-card,
+    #isolated-weather-widget .iw-trend-badge,
+    #isolated-weather-widget .iw-uv-bar-bg { 
+        border-radius: 0 !important; 
     }
 
     #isolated-weather-widget, #isolated-weather-widget * { box-sizing: border-box; }
@@ -88,10 +70,10 @@
     @media (min-width: 768px) { #isolated-weather-widget { flex-direction: row; } }
     
     .iw-panel { position: relative; flex: 1; width: 100%; display: flex; flex-direction: column; }
-    .iw-dial-card { background-color: var(--bg-panel); border: 1px solid var(--border-panel); box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); padding: 0.25rem; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 8px; transition: background-color 0.3s ease, border-color 0.3s ease; }
+    .iw-dial-card { background-color: var(--bg-panel); border: 1px solid var(--border-panel); box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); padding: 0.25rem; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: background-color 0.3s ease, border-color 0.3s ease; }
     .iw-gauge-mount { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
     .iw-weather-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; flex-grow: 1; width: 100%; height: 100%; }
-    .iw-card { padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); transition: all 0.3s ease; display: flex; flex-direction: column; border-radius: 8px; background-color: var(--bg-panel); border: 1px solid var(--border-panel); }
+    .iw-card { padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); transition: all 0.3s ease; display: flex; flex-direction: column; background-color: var(--bg-panel); border: 1px solid var(--border-panel); }
     .iw-card:hover { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
     .iw-card-hero { grid-column: span 2 / span 2; background: linear-gradient(to bottom right, var(--hero-bg-1), var(--hero-bg-2)); border: 1px solid var(--hero-border); justify-content: center; }
     .iw-card-small { grid-column: span 1 / span 1; justify-content: space-between; }
@@ -108,13 +90,13 @@
     .iw-icon-circle.amber { background-color: var(--icon-amber-bg); color: var(--icon-amber); }
     .iw-data-val { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.025em; line-height: 1; transition: opacity 0.3s; }
     .iw-data-label { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.125rem; }
-    .iw-trend-badge { margin-top: 0.5rem; display: flex; align-items: center; gap: 0.375rem; font-size: 0.75rem; font-weight: 500; color: var(--text-secondary); background-color: var(--trend-bg); padding: 0.125rem 0.5rem; width: max-content; min-height: 24px; border-radius: 4px; }
+    .iw-trend-badge { margin-top: 0.5rem; display: flex; align-items: center; gap: 0.375rem; font-size: 0.75rem; font-weight: 500; color: var(--text-secondary); background-color: var(--trend-bg); padding: 0.125rem 0.5rem; width: max-content; min-height: 24px; }
     .iw-uv-bar-wrap { margin-top: 0.625rem; width: 100%; position: relative; display: flex; align-items: center; height: 0.5rem; }
-    .iw-uv-bar-bg { width: 100%; height: 0.25rem; display: flex; border-radius: 2px; overflow: hidden; }
+    .iw-uv-bar-bg { width: 100%; height: 0.25rem; display: flex; overflow: hidden; }
     .iw-uv-green { height: 100%; background-color: #4ade80; width: 30%; }
     .iw-uv-amber { height: 100%; background-color: #fbbf24; width: 30%; }
     .iw-uv-red { height: 100%; background-color: #f87171; width: 40%; }
-    .iw-uv-marker { position: absolute; top: 50%; transform: translateY(-50%); width: 0.375rem; height: 0.375rem; background-color: #ffffff; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1); border: 1px solid #64748b; transition: all 0.5s; z-index: 10; border-radius: 50%; }
+    .iw-uv-marker { position: absolute; top: 50%; transform: translateY(-50%); width: 0.375rem; height: 0.375rem; background-color: #ffffff; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1); border: 1px solid #64748b; transition: all 0.5s; z-index: 10; }
     @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
     .animate-float { width: 48px; height: 48px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.05)); animation: float 4s ease-in-out infinite; display: flex; align-items: center; justify-content: center; }
     @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -173,24 +155,6 @@
 
 <script>
 /* #raw */
-    const weatherIcons = {
-        'clear-day': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #f59e0b;"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>`,
-        'clear-night': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #818cf8;"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>`,
-        'cloudy': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: var(--text-muted);"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>`,
-        'partly-cloudy-day': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #0ea5e9;"><path d="M12 2v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="M20 12h2"></path><path d="m19.07 4.93-1.41 1.41"></path><path d="M15.94 14A5 5 0 0 0 6 12a3 3 0 0 0 0 6h9.5a3.5 3.5 0 1 0 0-7h-.5Z"></path></svg>`,
-        'partly-cloudy-night': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #a5b4fc;"><path d="M10 6.13A6 6 0 0 0 15 15h3.5a3.5 3.5 0 1 0 0-7h-.5A5 5 0 0 0 10 6.13Z"></path></svg>`,
-        'rain': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #3b82f6;"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path><path d="M16 23v-2"></path><path d="M8 23v-2"></path><path d="M12 23v-2"></path></svg>`,
-        'snow': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #7dd3fc;"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path><path d="M8 23h.01"></path><path d="M12 23h.01"></path><path d="M16 23h.01"></path></svg>`,
-        'wind': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: var(--text-secondary);"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"></path><path d="M9.6 4.6A2 2 0 1 1 11 8H2"></path><path d="M12.6 19.4A2 2 0 1 0 14 16H2"></path></svg>`,
-        'default': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #60a5fa;"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>`
-    };
-
-    const trendIcons = {
-        'falling': `<svg style="width: 12px; height: 12px; color: var(--trend-red);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg> <span style="color: var(--trend-red);">Falling</span>`,
-        'rising': `<svg style="width: 12px; height: 12px; color: var(--trend-green);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg> <span style="color: var(--trend-green);">Rising</span>`,
-        'steady': `<svg style="width: 12px; height: 12px; color: var(--text-secondary);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg> <span style="color: var(--text-secondary);">Steady</span>`,
-    };
-
     function getCompassPoint(degrees) {
         const val = Math.floor((degrees / 22.5) + 0.5);
         const arr = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
@@ -277,16 +241,11 @@
             let obsData, fcstData;
             if (usePrefetch && window.weatherPrefetch) { 
                 const prefetched = await window.weatherPrefetch;
-                if (prefetched) {
-                    [obsData, fcstData] = prefetched;
-                    window.weatherPrefetch = null; 
-                }
+                if (prefetched) { [obsData, fcstData] = prefetched; window.weatherPrefetch = null; }
             } 
-            
             if (!obsData || !fcstData) { 
                 [obsData, fcstData] = await Promise.all([fetchWithRetry(API_OBS_BASE), fetchWithRetry(API_FCST_BASE)]); 
             }
-            
             if (obsData && obsData.obs && obsData.obs.length > 0) {
                 const currentObs = obsData.obs[0];
                 update({ lull: (currentObs.wind_lull || 0) * 1.94384, speed: (currentObs.wind_avg || 0) * 1.94384, gust: (currentObs.wind_gust || 0) * 1.94384, direction: currentObs.wind_direction || 0 });
@@ -306,7 +265,7 @@
 
     // Initial Launch
     update({ lull: 0, speed: 0, gust: 0, direction: 0 }); 
-    syncTheme(); // Synchronize theme immediately on load
+    syncTheme();
     fetchWeatherData(true); 
     setInterval(() => fetchWeatherData(false), 10000);
 /* #end raw */
