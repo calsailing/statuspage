@@ -65,8 +65,9 @@
         #isolated-weather-widget .hidden { display: none !important; }
         #isolated-weather-widget { display: flex; flex-direction: column; gap: 1.5rem; padding: 0.5rem; width: 100%; position: relative; color: var(--text-primary); }
         @media (min-width: 768px) { 
-            #isolated-weather-widget { flex-direction: row; align-items: flex-start; } 
-            .iw-gauge-mount svg { max-height: 230px; }
+            #isolated-weather-widget { flex-direction: row; align-items: stretch; } 
+            .iw-dial-card { flex: 0 1 auto; width: auto; max-width: 50%; aspect-ratio: 330 / 286; }
+            .iw-gauge-mount svg { width: 100% !important; height: 100% !important; }
         }
         
         .iw-panel { position: relative; flex: 1; width: 100%; display: flex; flex-direction: column; }
@@ -180,7 +181,7 @@
         let currentMaxSpeed = 30;
 
         const svg = d3.select("#gauge-mount").append("svg")
-            .attr("viewBox", `0 17 330 283`)
+            .attr("viewBox", `0 17 330 286`)
             .style("width", "100%")
             .style("height", "auto")
             .style("display", "block")
