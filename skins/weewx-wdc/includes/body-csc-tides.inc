@@ -47,20 +47,19 @@
 
         let isDark = false;
         
-        // 1. Check local document element
-        isDark = document.documentElement.classList.contains('dark') || 
-                 document.body.classList.contains('dark') ||
-                 document.documentElement.getAttribute('data-theme') === 'dark';
+        // 1. Check local document element (HTML tag)
+        isDark = document.documentElement.classList.contains('dark');
 
-        // 2. Try to check parent (for iframes on status.cal-sailing.org)
-        try {
-            if (window.self !== window.top) {
-                const pd = window.parent.document.documentElement;
-                isDark = isDark || pd.classList.contains('dark') || pd.getAttribute('data-theme') === 'dark';
+        // 2. Try to check parent (iframes on status.cal-sailing.org)
+        if (!isDark) {
+            try {
+                if (window.self !== window.top) {
+                    isDark = window.parent.document.documentElement.classList.contains('dark');
+                }
+            } catch (e) {
+                // If CORS prevents checking parent, fallback to system preference
+                isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             }
-        } catch (e) {
-            // CORS fallback: if we can't see the parent, we respect the user's system preference
-            if (!isDark) isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         }
 
         if (isDark) {
@@ -101,12 +100,11 @@
 
     // Watch for theme class changes on the local tag
     const observer = new MutationObserver(() => syncTheme());
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme'] });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     
-    // Also listen for a standard postMessage in case the parent sends one
+    // Listen for theme change messages
     window.addEventListener('message', (event) => {
-        if (event.data === 'theme-dark') syncTheme();
-        if (event.data === 'theme-light') syncTheme();
+        if (event.data === 'theme-dark' || event.data === 'theme-light') syncTheme();
     });
 
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => syncTheme());
