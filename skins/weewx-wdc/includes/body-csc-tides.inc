@@ -10,119 +10,51 @@
 
  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://d3js.org/d3.v7.min.js"></script>
-
 <script>
 /* #raw */
     /**
-     * Tempest OAuth 2.0 with PKCE Configuration
+     * Tempest Static Token Configuration
      */
-    const OAUTH_CLIENT_ID = "cdd6d482-41d4-4b56-8a83-5ea00cfe6a35";
-    const OAUTH_REDIRECT_URI = window.location.origin + window.location.pathname;
-    const OAUTH_AUTHORIZE_URL = "https://smartweather.weatherflow.com/authorize.html";
-    const OAUTH_TOKEN_URL = "https://swd.weatherflow.com/id/oauth2/token";
+    const STATIC_TOKEN = "8535e71d-2290-4965-ad3f-ab05b9294fdf";
     
-    const CODE_VERIFIER = "tr41SwDAH58gMpAlNd8fTVolqW4SHa6niZuv3eNpgDdwZXrT";
-    const CODE_CHALLENGE = "TLBs7Pvam_eZBCgW70Tcg-T7eRHNmfvfUCtSkhKb5ig";
-
     const API_OBS_BASE = "https://swd.weatherflow.com/swd/rest/observations/station/127241";
     const API_FCST_BASE = "https://swd.weatherflow.com/swd/rest/better_forecast?station_id=127241&units_wind=kts";
 
-    let currentAccessToken = localStorage.getItem('tempest_access_token');
-
-    const redirectToAuthorize = () => {
-        const params = new URLSearchParams({
-            client_id: OAUTH_CLIENT_ID,
-            response_type: 'code',
-            redirect_uri: OAUTH_REDIRECT_URI,
-            code_challenge: CODE_CHALLENGE,
-            code_challenge_method: 'S256'
-        });
-        window.location.href = `${OAUTH_AUTHORIZE_URL}?${params.toString()}`;
-    };
-
-    const exchangeCodeForToken = async (code) => {
-        try {
-            const response = await fetch(OAUTH_TOKEN_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({
-                    grant_type: 'authorization_code',
-                    code: code,
-                    client_id: OAUTH_CLIENT_ID,
-                    code_verifier: CODE_VERIFIER,
-                    redirect_uri: OAUTH_REDIRECT_URI
-                })
-            });
-
-            if (!response.ok) throw new Error(`Token exchange failed: ${response.status}`);
-
-            const data = await response.json();
-            if (data.access_token) {
-                currentAccessToken = data.access_token;
-                localStorage.setItem('tempest_access_token', currentAccessToken);
-                const url = new URL(window.location);
-                url.searchParams.delete('code');
-                window.history.replaceState({}, document.title, url.toString());
-                return currentAccessToken;
-            }
-        } catch (err) {
-            console.error("OAuth Exchange Error:", err);
-            return null;
-        }
-    };
-
-    const handleAuth = async () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
-
-        if (code) {
-            await exchangeCodeForToken(code);
-        }
-
-        if (!currentAccessToken) {
-            // Guard: Only touch the DOM if the element exists (prevents the 'null' error during prefetch)
-            const overlay = document.getElementById('iw-auth-overlay');
-            if (overlay) overlay.classList.remove('hidden');
-            return false;
-        }
-        return true;
-    };
-
-    const fetchWithRetry = async (url, retries = 5, backoff = 1000) => {
+    /**
+     * Robust Fetch Helper with high retry count and minimal delay
+     */
+    const fetchWithRetry = async (url, retries = 50, delay = 100) => {
         for (let i = 0; i < retries; i++) {
             try {
-                if (!currentAccessToken) throw new Error("Unauthorized");
                 const authenticatedUrl = new URL(url);
-                authenticatedUrl.searchParams.set('token', currentAccessToken);
+                authenticatedUrl.searchParams.set('token', STATIC_TOKEN);
+
                 const response = await fetch(authenticatedUrl.toString());
                 
-                if (response.status === 401) {
-                    localStorage.removeItem('tempest_access_token');
-                    currentAccessToken = null;
-                    const overlay = document.getElementById('iw-auth-overlay');
-                    if (overlay) overlay.classList.remove('hidden');
-                    throw new Error("401");
-                }
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 return await response.json();
             } catch (err) {
                 if (i === retries - 1) throw err;
-                await new Promise(res => setTimeout(res, backoff * Math.pow(2, i)));
+                // Minimal wait for aggressive retrying
+                await new Promise(res => setTimeout(res, delay));
             }
         }
     };
 
+    // PRE-FETCH: Runs immediately on load
     window.weatherPrefetch = (async () => {
-        const isAuthenticated = await handleAuth();
-        if (!isAuthenticated) return null;
-        return Promise.all([fetchWithRetry(API_OBS_BASE), fetchWithRetry(API_FCST_BASE)]);
+        return Promise.all([
+            fetchWithRetry(API_OBS_BASE),
+            fetchWithRetry(API_FCST_BASE)
+        ]);
     })().catch(err => {
-        console.error("Initial prefetch failed:", err);
+        console.error("Initial prefetch failed after 50 attempts:", err);
         return null;
     });
 /* #end raw */
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="https://cdn.aerisapi.com/wxblox/latest/aeris-wxblox.css">
     <script src="https://cdn.aerisapi.com/wxblox/latest/aeris-wxblox.js"></script>
 
