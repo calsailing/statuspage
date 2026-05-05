@@ -1,4 +1,5 @@
 
+
 <style>
     #isolated-weather-widget {
         font-family: 'Inter', sans-serif !important;
@@ -234,7 +235,7 @@
                     </div>
                     <div class="iw-flex-col iw-items-center" style="padding-top: 0.25rem;">
                         <div id="icon-weather" class="animate-float"></div>
-                        <p id="val-conditions" class="iw-cond-text">Loading...</p>
+                        <p id="val-conditions" class="iw-cond-text">--</p>
                     </div>
                 </div>
             </div>
@@ -263,7 +264,6 @@
     </div>
 </div>
 
-
 <script>
     /* #raw */
     // 1. API Configuration
@@ -285,9 +285,15 @@
     const loadFromLocalStorage = () => {
         try {
             const state = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
-            if (!state) return;
+            if (!state) return false;
             
-            if (state.obs) update(state.obs, true);
+            let isRestored = false;
+            if (state.obs) {
+                // Pass true so update knows to make the transition 0ms
+                update(state.obs, true);
+                isRestored = true;
+            }
+            
             if (state.tempF) document.getElementById('val-temp-f').innerText = state.tempF;
             if (state.tempC) document.getElementById('val-temp-c').innerText = state.tempC;
             if (state.pressure) document.getElementById('val-pressure').innerText = state.pressure;
@@ -309,7 +315,12 @@
                 document.getElementById('isolated-weather-widget').classList.add('map-mode');
                 setTimeout(() => map.invalidateSize(), 100);
             }
-        } catch (e) { console.warn("Local storage load failed:", e); }
+            
+            return isRestored;
+        } catch (e) { 
+            console.warn("Local storage load failed:", e); 
+            return false; 
+        }
     };
 
     // 3. Fetch Helper
@@ -458,11 +469,11 @@
     const dirAngle = dirTextGroup.append("text").attr("y", 7).style("font-size", "9px").style("font-weight", "500").attr("fill", "var(--text-primary)").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("---\xB0");
     
     function showHoverState(e) {
-        if (e && e.cancelable && (e.type === 'touchstart' || e.type === 'mouseenter')) {
-            if (e.type === 'touchstart') e.preventDefault();
-            defaultView.transition().duration(200).attr("opacity", 0);
-            hoverView.transition().duration(200).attr("opacity", 1);
+        if (e && e.type === 'touchstart' && e.cancelable) {
+            e.preventDefault();
         }
+        defaultView.transition().duration(200).attr("opacity", 0);
+        hoverView.transition().duration(200).attr("opacity", 1);
     }
     function hideHoverState() {
         defaultView.transition().duration(200).attr("opacity", 1);
@@ -485,12 +496,25 @@
     hoverView.append("text").attr("y", 6).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "8px").style("font-weight", "600").attr("fill", "var(--text-secondary)").text("GUST");
     const gustText = hoverView.append("text").attr("y", 18).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "18px").style("font-weight", "700").attr("fill", "var(--trend-red)").text("0");
 
-    function update(data, skipSave = false) {
+    // CORE FIX: Passing isInstantRestore prevents the 2.4s "0-to-Data" animation on page load.
+    function update(data, isInstantRestore = false) {
         const l = data.lull || 0, s = data.speed || 0, g = data.gust || 0, d = data.direction || 0;
         let targetMax = 30; if (g > 40 || s > 40) targetMax = 50; else if (g > 30 || s > 30) targetMax = 40; if (targetMax !== currentMaxSpeed) drawSpeedTrack(targetMax);
-        const t = d3.transition().duration(2400).ease(d3.easeCubicInOut);
-        speedMaskPath.transition(t).attrTween("d", dat => { const i = d3.interpolate(dat.endAngle, speedScale(s)); return time => { dat.endAngle = i(time); return d3.arc().innerRadius(115).outerRadius(135)(dat); }; });
-        gustMaskPath.transition(t).attrTween("d", dat => { const i = d3.interpolate(dat.endAngle, speedScale(g)); return time => { dat.endAngle = i(time); return d3.arc().innerRadius(115).outerRadius(135)(dat); }; });
+        
+        const duration = isInstantRestore ? 0 : 2400; // 0 duration when restoring cache!
+        const t = d3.transition().duration(duration).ease(d3.easeCubicInOut);
+        
+        speedMaskPath.transition(t).attrTween("d", dat => { 
+            const startAngle = dat.endAngle !== undefined ? dat.endAngle : (isInstantRestore ? speedScale(s) : SWEEP_START);
+            const i = d3.interpolate(startAngle, speedScale(s)); 
+            return time => { dat.endAngle = i(time); return d3.arc().innerRadius(115).outerRadius(135)(dat); }; 
+        });
+        gustMaskPath.transition(t).attrTween("d", dat => { 
+            const startAngle = dat.endAngle !== undefined ? dat.endAngle : (isInstantRestore ? speedScale(g) : SWEEP_START);
+            const i = d3.interpolate(startAngle, speedScale(g)); 
+            return time => { dat.endAngle = i(time); return d3.arc().innerRadius(115).outerRadius(135)(dat); }; 
+        });
+        
         lullMarker.transition(t).attr("transform", `rotate(${(speedScale(l) * 180) / Math.PI})`);
         speedMarker.transition(t).attr("transform", `rotate(${(speedScale(s) * 180) / Math.PI})`);
         gustMarker.transition(t).attr("transform", `rotate(${(speedScale(g) * 180) / Math.PI})`);
@@ -500,11 +524,25 @@
         vane.transition(t).attr("fill", colorScale(s));
         dirReadout.text(getCompassPoint(d));
         dirAngle.text(Math.round(d) + "\xB0");
-        speedVal.transition(t).style("font-size", Math.round(s) >= 10 ? "46px" : "52px").tween("text", function() { const i = d3.interpolateNumber(this._currentS || 0, s); return time => { this._currentS = i(time); this.textContent = Math.round(this._currentS); }; });
-        lullText.transition(t).tween("text", function() { const i = d3.interpolateNumber(this._currentL || 0, l); return time => { this._currentL = i(time); this.textContent = Math.round(this._currentL); }; });
-        gustText.transition(t).tween("text", function() { const i = d3.interpolateNumber(this._currentG || 0, g); return time => { this._currentG = i(time); this.textContent = Math.round(this._currentG); }; });
         
-        if (!skipSave) saveToLocalStorage({ obs: { lull: l, speed: s, gust: g, direction: d } });
+        speedVal.transition(t).style("font-size", Math.round(s) >= 10 ? "46px" : "52px").tween("text", function() { 
+            const startVal = this._currentS !== undefined ? this._currentS : (isInstantRestore ? s : 0);
+            const i = d3.interpolateNumber(startVal, s); 
+            return time => { this._currentS = i(time); this.textContent = Math.round(this._currentS); }; 
+        });
+        lullText.transition(t).tween("text", function() { 
+            const startVal = this._currentL !== undefined ? this._currentL : (isInstantRestore ? l : 0);
+            const i = d3.interpolateNumber(startVal, l); 
+            return time => { this._currentL = i(time); this.textContent = Math.round(this._currentL); }; 
+        });
+        gustText.transition(t).tween("text", function() { 
+            const startVal = this._currentG !== undefined ? this._currentG : (isInstantRestore ? g : 0);
+            const i = d3.interpolateNumber(startVal, g); 
+            return time => { this._currentG = i(time); this.textContent = Math.round(this._currentG); }; 
+        });
+        
+        // Do not re-save to local storage if we are just instantly restoring FROM it.
+        if (!isInstantRestore) saveToLocalStorage({ obs: { lull: l, speed: s, gust: g, direction: d } });
     }
 
     // 6. Data Fetching
@@ -519,7 +557,7 @@
                 const weatherState = {
                     lull: (o.wind_lull || 0) * 1.94384, speed: (o.wind_avg || 0) * 1.94384, gust: (o.wind_gust || 0) * 1.94384, direction: o.wind_direction || 0
                 };
-                update(weatherState);
+                update(weatherState); // Will use standard 2.4s smooth animation 
                 if (o.air_temperature != null) {
                     const tempF = (o.air_temperature * 9/5) + 32;
                     document.getElementById('val-temp-f').innerText = `${tempF.toFixed(1)}\xB0F`;
@@ -558,11 +596,17 @@
     }
 
     // 7. Initialize
-    update({ lull: 0, speed: 0, gust: 0, direction: 0 }, true); 
     syncTheme();
-    loadFromLocalStorage(); // Initial restore
+    
+    // Attempt to load from cache
+    const hasCachedData = loadFromLocalStorage();
+    
+    // ONLY init with zeros if there's no cache. Otherwise, loading from cache already painted the UI.
+    if (!hasCachedData) {
+        update({ lull: 0, speed: 0, gust: 0, direction: 0 }, true); 
+    }
 
-    // Always run fresh data update
+    // Always run fresh data update (which will smoothly animate from cache to real-time value)
     fetchWeatherData(true); 
     setInterval(() => fetchWeatherData(false), 60000);
 
