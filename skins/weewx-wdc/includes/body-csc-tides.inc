@@ -8,7 +8,7 @@
     #set $gauges_display = $DisplayOptions.get('gauges_display', 'before')
     #set $show_gauges = 'Gauges' in $DisplayOptions and $context in $DisplayOptions['Gauges']
 
-  <script src="https://d3js.org/d3.v7.min.js"></script>
+ <script src="https://d3js.org/d3.v7.min.js"></script>
 <script>
 /* #raw */
     /**
@@ -38,43 +38,42 @@
     };
 
     /**
-     * THEME SYNC LOGIC (Based on CSC-Tides implementation)
+     * THEME SYNC LOGIC
+     * Prioritizes explicit website classes over system dark mode settings.
      */
     function syncTheme() {
         const widget = document.getElementById('isolated-weather-widget');
         if (!widget) return;
 
-        const html = document.documentElement;
-        const body = document.body;
-        const classes = ['dark', 'night', 'dark-mode'];
+        const darkClasses = ['dark', 'night', 'dark-mode'];
+        const lightClasses = ['light', 'day', 'light-mode'];
         
-        // 1. Check local document
-        let isDark = classes.some(c => html.classList.contains(c) || body.classList.contains(c)) ||
-                     html.getAttribute('data-theme') === 'dark' || 
-                     body.getAttribute('data-theme') === 'dark' ||
-                     html.getAttribute('data-bs-theme') === 'dark';
+        const checkDark = (el) => el && (darkClasses.some(c => el.classList.contains(c)) || el.getAttribute('data-theme') === 'dark' || el.getAttribute('data-bs-theme') === 'dark');
+        const checkLight = (el) => el && (lightClasses.some(c => el.classList.contains(c)) || el.getAttribute('data-theme') === 'light' || el.getAttribute('data-bs-theme') === 'light');
 
-        // 2. Check if inside an iframe and parent has dark mode (CORS safe check)
+        let isExplicitDark = checkDark(document.documentElement) || checkDark(document.body);
+        let isExplicitLight = checkLight(document.documentElement) || checkLight(document.body);
+
+        // Try parent window if inside an iframe
         try {
             if (window.self !== window.top) {
-                const pHtml = window.parent.document.documentElement;
-                const pBody = window.parent.document.body;
-                const parentIsDark = classes.some(c => pHtml.classList.contains(c) || pBody.classList.contains(c)) ||
-                                     pHtml.getAttribute('data-theme') === 'dark' ||
-                                     pBody.getAttribute('data-theme') === 'dark' ||
-                                     pHtml.getAttribute('data-bs-theme') === 'dark';
-                isDark = isDark || parentIsDark;
+                const pd = window.parent.document;
+                isExplicitDark = isExplicitDark || checkDark(pd.documentElement) || checkDark(pd.body);
+                isExplicitLight = isExplicitLight || checkLight(pd.documentElement) || checkLight(pd.body);
             }
-        } catch (e) {
-            // CORS restriction usually prevents looking at window.parent.document
+        } catch (e) { /* CORS security might block parent access */ }
+
+        let finalIsDark = false;
+        if (isExplicitDark) {
+            finalIsDark = true;
+        } else if (isExplicitLight) {
+            finalIsDark = false;
+        } else {
+            // Default to system preference if no explicit class is set
+            finalIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         }
 
-        // 3. Fallback to system preference
-        if (!isDark) {
-            isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        }
-
-        if (isDark) {
+        if (finalIsDark) {
             widget.classList.add('is-dark');
         } else {
             widget.classList.remove('is-dark');
@@ -99,7 +98,7 @@
         }
     };
 
-    // PRE-FETCH: Runs immediately on load
+    // PRE-FETCH
     window.weatherPrefetch = (async () => {
         return Promise.all([
             fetchWithRetry(API_OBS_BASE),
@@ -115,6 +114,7 @@
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => syncTheme());
 /* #end raw */
 </script>
+
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
 
