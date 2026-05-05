@@ -1,41 +1,30 @@
-
-
 <style>
         #isolated-weather-widget {
             font-family: 'Inter', sans-serif !important;
-            
-            /* --- LIGHT MODE VARIABLES --- */
             --bg-panel: #ffffff;
             --border-panel: #f1f5f9;
             --text-primary: #0f172a;
             --text-secondary: #64748b;
             --text-muted: #94a3b8;
-            
             --hero-bg-1: #eff6ff; 
             --hero-bg-2: #f8fafc; 
             --hero-border: rgba(255, 255, 255, 0.6);
-            
             --trend-bg: #f8fafc;
             --trend-red: #ef4444;
             --trend-green: #22c55e;
-            
             --icon-indigo-bg: #eef2ff;
             --icon-indigo: #6366f1;
             --icon-amber-bg: #fffbeb;
             --icon-amber: #f59e0b;
-            
             --scale-bg: #f1f5f9;
             --dial-tick: #cbd5e1;
             --dial-tick-major: #94a3b8;
             --track-bg: #f1f5f9; 
             --grey-tick: #cbd5e1;
-
-            /* Gauge Specific */
             --bubble-fill: #ffffff;
             --bubble-opacity: 0.75;
         }
 
-        /* --- DARK MODE (System & Manual class) --- */
         @media (prefers-color-scheme: dark) {
             #isolated-weather-widget:not(.light-mode) {
                 --bg-panel: #0f172a;
@@ -63,32 +52,6 @@
             }
         }
 
-        /* Support for forcing dark mode with a class */
-        #isolated-weather-widget.dark-mode {
-            --bg-panel: #0f172a;
-            --border-panel: #1e293b;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --text-muted: #64748b;
-            --hero-bg-1: #1e293b;
-            --hero-bg-2: #0f172a;
-            --hero-border: #334155;
-            --trend-bg: #1e293b;
-            --trend-red: #f87171;
-            --trend-green: #4ade80;
-            --icon-indigo-bg: rgba(99, 102, 241, 0.1);
-            --icon-indigo: #818cf8;
-            --icon-amber-bg: rgba(245, 158, 11, 0.1);
-            --icon-amber: #fbbf24;
-            --scale-bg: #1e293b;
-            --dial-tick: #334155;
-            --dial-tick-major: #475569;
-            --track-bg: #1e293b;
-            --grey-tick: #334155;
-            --bubble-fill: #1e293b;
-            --bubble-opacity: 0.85;
-        }
-
         #isolated-weather-widget, #isolated-weather-widget * { box-sizing: border-box; }
         #isolated-weather-widget p, #isolated-weather-widget h1, #isolated-weather-widget h2 { margin: 0; padding: 0; }
         #isolated-weather-widget .hidden { display: none !important; }
@@ -99,40 +62,48 @@
             gap: 1.5rem;
             padding: 0.5rem;
             width: 100%;
+            position: relative;
         }
         @media (min-width: 768px) { #isolated-weather-widget { flex-direction: row; } }
+
+        /* Auth Overlay Styling */
+        #iw-auth-overlay {
+            position: absolute; inset: 0;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: white; text-align: center; padding: 1rem;
+        }
+        .iw-auth-btn {
+            background: #3b82f6; color: white; border: none;
+            padding: 0.75rem 1.5rem; font-weight: 600; cursor: pointer;
+            margin-top: 1rem; transition: background 0.2s;
+        }
+        .iw-auth-btn:hover { background: #2563eb; }
 
         .iw-panel { position: relative; flex: 1; width: 100%; display: flex; flex-direction: column; }
         .iw-dial-card { background-color: var(--bg-panel); border: 1px solid var(--border-panel); box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); padding: 0.25rem; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .iw-gauge-mount { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
         .iw-weather-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; flex-grow: 1; width: 100%; height: 100%; color: var(--text-primary); }
-
         .iw-card { padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); transition: all 0.3s; display: flex; flex-direction: column; }
         .iw-card:hover { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         .iw-card-hero { grid-column: span 2 / span 2; background: linear-gradient(to bottom right, var(--hero-bg-1), var(--hero-bg-2)); border: 1px solid var(--hero-border); justify-content: center; }
         .iw-card-small { grid-column: span 1 / span 1; background-color: var(--bg-panel); border: 1px solid var(--border-panel); justify-content: space-between; }
         .iw-card-small:hover { transform: translateY(-4px); }
-
         .iw-flex-col { display: flex; flex-direction: column; }
         .iw-items-center { display: flex; align-items: center; }
         .iw-justify-between { display: flex; justify-content: space-between; }
-        
         .iw-temp-label { display: flex; align-items: center; gap: 0.375rem; margin-bottom: 0.25rem; color: var(--text-secondary); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
         .iw-temp-val-f { font-size: 2.25rem; font-weight: 700; letter-spacing: -0.05em; line-height: 1; transition: opacity 0.3s; }
         .iw-temp-val-c { color: var(--text-secondary); font-size: 0.875rem; font-weight: 500; margin-top: 0.125rem; transition: opacity 0.3s; }
-
-        .iw-hero-right { padding-top: 0.25rem; }
         .iw-cond-text { font-size: 0.875rem; font-weight: 600; margin-top: 0.5rem; text-align: center; line-height: 1.25; transition: opacity 0.3s; }
-
         .iw-icon-circle { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
         .iw-icon-circle.indigo { background-color: var(--icon-indigo-bg); color: var(--icon-indigo); }
         .iw-icon-circle.amber { background-color: var(--icon-amber-bg); color: var(--icon-amber); }
-
         .iw-data-val { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.025em; line-height: 1; transition: opacity 0.3s; }
         .iw-data-label { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.125rem; }
-
         .iw-trend-badge { margin-top: 0.5rem; display: flex; align-items: center; gap: 0.375rem; font-size: 0.75rem; font-weight: 500; color: var(--text-secondary); background-color: var(--trend-bg); padding: 0.125rem 0.5rem; width: max-content; min-height: 24px; }
-
         .iw-uv-bar-wrap { margin-top: 0.625rem; width: 100%; position: relative; display: flex; align-items: center; height: 0.5rem; }
         .iw-uv-bar-bg { width: 100%; height: 0.25rem; display: flex; }
         .iw-uv-green { height: 100%; background-color: #4ade80; width: 30%; }
@@ -145,7 +116,6 @@
         @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .iw-card-small:hover .animate-spin-slow { animation: spin-slow 4s linear infinite; }
 
-        /* --- D3 GAUGE STYLES (THEME AWARE) --- */
         #isolated-weather-widget text { font-family: 'Inter', sans-serif !important; fill: var(--text-primary); }
         #isolated-weather-widget .center-speed { font-weight: 800; font-variant-numeric: tabular-nums !important; }
         #isolated-weather-widget .center-gust { font-size: 11px !important; font-weight: 700; font-variant-numeric: tabular-nums !important; }
@@ -154,6 +124,13 @@
     </style>
 
     <div id="isolated-weather-widget">
+        <!-- Connect UI Overlay -->
+        <div id="iw-auth-overlay" class="hidden">
+            <h3 style="font-weight: 800;">Tempest Connection Required</h3>
+            <p style="font-size: 12px; opacity: 0.8; max-width: 200px;">Please connect your Tempest account to view station data.</p>
+            <button class="iw-auth-btn" onclick="redirectToAuthorize()">Connect to Tempest</button>
+        </div>
+
         <div class="iw-panel iw-dial-card">
             <div id="gauge-mount" class="iw-gauge-mount"></div>
         </div>
@@ -316,11 +293,18 @@
         async function fetchWeatherData(usePrefetch = false) {
             try {
                 let obsData, fcstData;
-                if (usePrefetch && window.weatherPrefetch) { [obsData, fcstData] = await window.weatherPrefetch; window.weatherPrefetch = null; } 
-                else { [obsData, fcstData] = await Promise.all([fetchWithRetry(API_OBS_BASE), fetchWithRetry(API_FCST_BASE)]); }
-                let currentObs = null;
+                if (usePrefetch && window.weatherPrefetch) { 
+                    const prefetched = await window.weatherPrefetch;
+                    if (!prefetched) return; // Wait for auth if prefetch was null
+                    [obsData, fcstData] = prefetched;
+                    window.weatherPrefetch = null; 
+                } 
+                else { 
+                    [obsData, fcstData] = await Promise.all([fetchWithRetry(API_OBS_BASE), fetchWithRetry(API_FCST_BASE)]); 
+                }
+                
                 if (obsData && obsData.obs && obsData.obs.length > 0) {
-                    currentObs = obsData.obs[0];
+                    const currentObs = obsData.obs[0];
                     update({ lull: (currentObs.wind_lull || 0) * 1.94384, speed: (currentObs.wind_avg || 0) * 1.94384, gust: (currentObs.wind_gust || 0) * 1.94384, direction: currentObs.wind_direction || 0 });
                     if (currentObs.air_temperature != null) { const tempF = (currentObs.air_temperature * 9/5) + 32; document.getElementById('val-temp-f').innerText = `${tempF.toFixed(1)}\xB0F`; document.getElementById('val-temp-c').innerText = `${currentObs.air_temperature.toFixed(1)}\xB0C`; }
                     const pressure = currentObs.sea_level_pressure || currentObs.barometric_pressure || currentObs.station_pressure;
@@ -329,14 +313,15 @@
                 }
                 if (fcstData && fcstData.current_conditions) {
                     const cc = fcstData.current_conditions; let displayCondition = cc.conditions || '--', displayIcon = cc.icon || 'default';
-                    if (currentObs && Number(currentObs.precip) === 0 && (displayIcon.includes('rain') || displayCondition.toLowerCase().includes('rain'))) { displayCondition = 'Cloudy'; displayIcon = 'cloudy'; }
                     document.getElementById('val-conditions').innerText = displayCondition;
                     document.getElementById('icon-weather').innerHTML = weatherIcons[displayIcon] || weatherIcons['default'];
                     document.getElementById('val-pressure-trend').innerHTML = trendIcons[cc.pressure_trend] || '';
                 }
-            } catch (e) { console.error("API error after retries:", e); }
+            } catch (e) { console.error("Update loop error:", e); }
         }
 
-        update({ lull: 0, speed: 0, gust: 0, direction: 0 }); fetchWeatherData(true); setInterval(() => fetchWeatherData(false), 10000);
+        update({ lull: 0, speed: 0, gust: 0, direction: 0 }); 
+        fetchWeatherData(true); 
+        setInterval(() => fetchWeatherData(false), 10000);
 /* #end raw */
     </script>
