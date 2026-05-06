@@ -1,4 +1,5 @@
 
+
 <style>
     #isolated-weather-widget {
         font-family: 'Inter', sans-serif !important;
@@ -41,7 +42,7 @@
         --text-primary: #e5e7eb; 
         --text-secondary: #9ca3af; 
         --text-muted: #6b7280;
-        --compass-text: #e5e7eb;
+        --compass-text: rgba(255, 255, 255, 0.6);
         --map-sensor: #818cf8;
         --hero-bg-1: #2a2a2a; 
         --hero-bg-2: #363636; 
@@ -73,8 +74,8 @@
         --bubble-opacity: 0.9 !important;
         
         /* Force Light Mode for Compass Elements */
-        --compass-text: #9ca3af !important;
-        --grey-tick: #cbd5e1 !important;
+        --compass-text: rgba(255, 255, 255, 0.6) !important;
+        --grey-tick: #9ca3af !important;
     }
 
     #isolated-weather-widget, 
@@ -89,7 +90,7 @@
 
     @media (min-width: 768px) { 
         #isolated-weather-widget { flex-direction: row; align-items: stretch; } 
-        .iw-dial-card { flex: 0 0 auto; width: auto; max-width: none; aspect-ratio: 330 / 263; min-width: 330px; }
+        .iw-dial-card { flex: 1.25; min-width: 350px; max-width: 550px; aspect-ratio: 330 / 263; }
     }
     
     .iw-panel { position: relative; flex: 1; width: 100%; display: flex; flex-direction: column; }
@@ -149,61 +150,75 @@
         font-size: 10px; font-weight: 700; text-transform: uppercase;
         color: var(--text-secondary); letter-spacing: 0.05em; user-select: none;
     }
-    .iw-switch { position: relative; display: inline-block; width: 32px; height: 18px; }
-    .iw-switch input { opacity: 0; width: 0; height: 0; }
-    .iw-slider {
-        position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-        background-color: var(--border-panel); border: 1px solid var(--dial-tick-major);
-        transition: .3s; border-radius: 18px;
-    }
-    .iw-slider:before {
-        position: absolute; content: ""; height: 12px; width: 12px; left: 2px; bottom: 2px;
-        background-color: var(--text-secondary); transition: .3s; border-radius: 50%;
-    }
-    .iw-switch input:checked + .iw-slider { background-color: var(--icon-indigo-bg); border-color: var(--map-sensor); }
-    .iw-switch input:checked + .iw-slider:before { transform: translateX(14px); background-color: var(--map-sensor); }
 
-    .gauge-bg-track, .gauge-gust-track, .gauge-color-track, .gauge-tick-group, .compass-ticks, .gauge-marker {
-        transition: opacity 0.4s ease;
+    .iw-gauge-mount {
+        position: relative;
+        z-index: 5;
+        width: 100%;
     }
 
-    .iw-gauge-mount { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; z-index: 2; }
-    .iw-weather-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; flex-grow: 1; width: 100%; height: 100%; }
-    .iw-card { padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); transition: transform 0.3s ease, box-shadow 0.3s ease; display: flex; flex-direction: column; background-color: var(--bg-panel); border: 1px solid var(--border-panel); }
-    .iw-card:hover { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-    .iw-card-hero { grid-column: span 2 / span 2; background: linear-gradient(to bottom right, var(--hero-bg-1), var(--hero-bg-2)); border: 1px solid var(--hero-border); justify-content: center; }
-    .iw-card-small { grid-column: span 1 / span 1; justify-content: space-between; }
-    .iw-card-small:hover { transform: translateY(-4px); }
+    .iw-weather-grid { display: grid; grid-template-columns: 1fr; gap: 0.5rem; flex: 1; }
+    @media (min-width: 640px) { .iw-weather-grid { grid-template-columns: repeat(2, 1fr); } }
+    
+    .iw-card { background-color: var(--bg-panel); border: 1px solid var(--border-panel); border-radius: 0.75rem; padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); }
+    .iw-card-hero { grid-column: 1 / -1; background: linear-gradient(135deg, var(--hero-bg-1) 0%, var(--hero-bg-2) 100%); border: 1px solid var(--hero-border); box-shadow: none; }
+    .iw-card-small { display: flex; flex-direction: column; justify-content: center; min-height: 110px; }
+    
     .iw-flex-col { display: flex; flex-direction: column; }
-    .iw-items-center { display: flex; align-items: center; }
     .iw-justify-between { display: flex; justify-content: space-between; }
-    .iw-temp-label { display: flex; align-items: center; gap: 0.375rem; margin-bottom: 0.25rem; color: var(--text-secondary); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem; }
-    .iw-temp-val-f { font-size: 2.25rem; font-weight: 700; letter-spacing: -0.05em; line-height: 1; transition: opacity 0.3s; }
-    .iw-temp-val-c { color: var(--text-secondary); font-size: 0.875rem; font-weight: 500; margin-top: 0.125rem; transition: opacity 0.3s; }
-    .iw-cond-text { font-size: 0.875rem; font-weight: 600; margin-top: 0.5rem; text-align: center; line-height: 1.25; transition: opacity 0.3s; }
-    .iw-icon-circle { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .iw-items-center { display: flex; align-items: center; }
+    
+    .iw-temp-label { display: flex; align-items: center; gap: 0.25rem; font-size: 0.875rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem; }
+    .iw-temp-val-f { font-size: 3rem; font-weight: 800; line-height: 1; letter-spacing: -0.025em; color: var(--text-primary); }
+    .iw-temp-val-c { font-size: 1.125rem; font-weight: 500; color: var(--text-muted); margin-top: 0.25rem; }
+    
+    .iw-cond-text { font-size: 1rem; font-weight: 600; color: var(--text-secondary); margin-top: 0.5rem; text-align: center; }
+    
+    .iw-data-val { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
+    .iw-data-label { font-size: 0.75rem; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem; }
+    
+    .iw-icon-circle { display: flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 9999px; margin-bottom: 0.75rem; }
     .iw-icon-circle.indigo { background-color: var(--icon-indigo-bg); color: var(--icon-indigo); }
     .iw-icon-circle.amber { background-color: var(--icon-amber-bg); color: var(--icon-amber); }
-    .iw-data-val { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.025em; line-height: 1; transition: opacity 0.3s; }
-    .iw-data-label { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.125rem; }
-    .iw-trend-badge { margin-top: 0.5rem; display: flex; align-items: center; gap: 0.375rem; font-size: 0.75rem; font-weight: 500; color: var(--text-secondary); background-color: var(--trend-bg); padding: 0.125rem 0.5rem; width: max-content; min-height: 24px; }
-    .iw-uv-bar-wrap { margin-top: 0.625rem; width: 100%; position: relative; display: flex; align-items: center; height: 0.5rem; }
-    .iw-uv-bar-bg { width: 100%; height: 0.25rem; display: flex; overflow: hidden; }
-    .iw-uv-green { height: 100%; background-color: #4ade80; width: 30%; }
-    .iw-uv-amber { height: 100%; background-color: #fbbf24; width: 30%; }
-    .iw-uv-red { height: 100%; background-color: #f87171; width: 40%; }
-    .iw-uv-marker { position: absolute; top: 50%; transform: translateY(-50%); width: 0.375rem; height: 0.375rem; background-color: #ffffff; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1); border: 1px solid #64748b; transition: left 0.5s ease; z-index: 10; }
     
-    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
-    .animate-float { width: 48px; height: 48px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.05)); animation: float 4s ease-in-out infinite; display: flex; align-items: center; justify-content: center; }
+    .iw-trend-badge { display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; font-weight: 600; background-color: var(--trend-bg); padding: 0.25rem 0.5rem; border-radius: 9999px; margin-top: 0.5rem; width: fit-content; }
     
-    @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    .iw-card-small:hover .animate-spin-slow { animation: spin-slow 4s linear infinite; }
-
-    #isolated-weather-widget text { font-family: 'Inter', sans-serif !important; fill: var(--text-primary); }
-    #isolated-weather-widget .center-speed { font-weight: 800; font-variant-numeric: tabular-nums !important; }
-    #isolated-weather-widget .speed-tick { stroke: var(--dial-tick); stroke-width: 1.5; stroke-linecap: round; }
-    #isolated-weather-widget .gauge-label { font-size: 9px !important; font-weight: 400 !important; fill: var(--text-secondary) !important; paint-order: stroke !important; stroke: var(--bg-panel) !important; stroke-width: 1px !important; opacity: 1; font-variant-numeric: tabular-nums !important; }
+    .iw-uv-bar-wrap { width: 100%; height: 0.375rem; background-color: var(--scale-bg); border-radius: 9999px; margin-top: 0.75rem; position: relative; }
+    .iw-uv-bar-bg { display: flex; width: 100%; height: 100%; border-radius: 9999px; overflow: hidden; }
+    .iw-uv-green { flex: 3; background-color: var(--trend-green); }
+    .iw-uv-amber { flex: 3; background-color: var(--icon-amber); }
+    .iw-uv-red { flex: 5; background-color: var(--trend-red); }
+    .iw-uv-marker { position: absolute; top: 50%; transform: translateY(-50%); width: 0.375rem; height: 0.75rem; background-color: white; border: 1px solid #d1d5db; border-radius: 9999px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); transition: left 0.5s ease; }
+    #isolated-weather-widget.is-dark .iw-uv-marker { background-color: #1f2937; border-color: #4b5563; }
+    
+    .iw-switch { position: relative; display: inline-block; width: 36px; height: 20px; }
+    .iw-switch input { opacity: 0; width: 0; height: 0; }
+    .iw-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--text-muted); transition: .4s; border-radius: 20px; }
+    .iw-slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+    .iw-switch input:checked + .iw-slider { background-color: var(--map-sensor); }
+    .iw-switch input:checked + .iw-slider:before { transform: translateX(16px); }
+    
+    .gauge-label { font-size: 8px; font-weight: 300; fill: var(--text-secondary); user-select: none; }
+    .gauge-marker { stroke-linecap: round; }
+    
+    /* Dedicated CSS for the tick bubbles */
+    .gauge-tick-bubble {
+        fill: var(--bg-panel);
+        stroke: #d1d5db; /* Light grey stroke */
+        stroke-width: 0.5px;
+    }
+    #isolated-weather-widget.is-dark .gauge-tick-bubble,
+    #isolated-weather-widget.map-mode .gauge-tick-bubble {
+        stroke: #4b5563 !important; /* Dark grey stroke */
+    }
+    
+    #icon-weather { width: 3.5rem; height: 3.5rem; }
+    @media (min-width: 640px) { #icon-weather { width: 4.5rem; height: 4.5rem; } }
+    
+    .animate-float { animation: float 6s ease-in-out infinite; }
+    @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+    .animate-spin-slow { animation: spin 8s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 </style>
 
 <div id="isolated-weather-widget">
@@ -452,7 +467,13 @@
         }
         for (let v = 0; v <= maxSpeed; v += 5) {
             const angle = speedScale(v);
-            tickGroup.append("text").attr("x", (R.speedTrack - 6) * Math.sin(angle)).attr("y", -(R.speedTrack - 6) * Math.cos(angle)).attr("class", "gauge-label").attr("text-anchor", "middle").attr("dy", "0.35em").text(v);
+            const cx = (R.speedTrack - 12) * Math.sin(angle);
+            const cy = -(R.speedTrack - 12) * Math.cos(angle);
+            
+            tickGroup.append("circle").attr("cx", cx).attr("cy", cy).attr("r", 7).attr("class", "gauge-tick-bubble");
+            
+            // Replaced dominant-baseline with precise dy="0.3em" for perfect optical cap-height centering
+            tickGroup.append("text").attr("x", cx).attr("y", cy).attr("class", "gauge-label").attr("text-anchor", "middle").attr("dy", "0.3em").text(v);
         }
     }
     drawSpeedTrack(currentMaxSpeed);
@@ -463,15 +484,14 @@
         const angle = (i * Math.PI) / 180, isMajor = i % 90 === 0;
         compassTicks.append("line").attr("x1", R.compass * Math.sin(angle)).attr("y1", -R.compass * Math.cos(angle)).attr("x2", (R.compass - (isMajor ? 10 : 7)) * Math.sin(angle)).attr("y2", -(R.compass - (isMajor ? 10 : 7)) * Math.cos(angle)).attr("stroke", "var(--grey-tick)").attr("stroke-width", 1); 
         if (isMajor) {
-            compassTicks.append("text").attr("x", (R.compass - 16) * Math.sin(angle)).attr("y", -(R.compass - 16) * Math.cos(angle)).attr("text-anchor", "middle").attr("dy", "0.35em").style("font-size", "11px").style("font-weight", "300").style("fill", "var(--compass-text)").text(cardinalLabels[i]);
+            compassTicks.append("text").attr("x", (R.compass - 19) * Math.sin(angle)).attr("y", -(R.compass - 19) * Math.cos(angle)).attr("text-anchor", "middle").attr("dy", "0.35em").style("font-size", "11px").style("font-weight", "300").attr("fill", "var(--compass-text)").text(cardinalLabels[i]);
         }
     }
 
     const pointer = svg.append("g"), vane = pointer.append("path").attr("d", "M 0,115 L 65,-95 L 0,-71 L -65,-95 Z").attr("opacity", 0.7);
     
-    // Elevate labels so the directional vane doesn't obscure them
+    // Elevate speed labels so the directional vane doesn't obscure them (compass ticks stay behind)
     tickGroup.raise(); 
-    compassTicks.raise();
 
     const bottomBubbleWrapper = svg.append("g").attr("mask", "url(#bottom-bubble-cutout)"), bottomBubble = bottomBubbleWrapper.append("g");
     bottomBubble.append("circle").attr("cx", 0).attr("cy", -50).attr("r", 21).attr("fill", "var(--bubble-fill)").attr("fill-opacity", "var(--bubble-opacity)");
@@ -482,24 +502,26 @@
     // Create new opposite bubble for Lull and Gust
     const oppBubbleWrapper = svg.append("g").attr("mask", "url(#bottom-bubble-cutout)"), oppBubble = oppBubbleWrapper.append("g");
     oppBubble.append("circle").attr("cx", 0).attr("cy", 46).attr("r", 18).attr("fill", "var(--bubble-fill)").attr("fill-opacity", "var(--bubble-opacity)");
-    const oppTextGroup = oppBubble.append("g").attr("transform", "translate(0, 46)");
     
-    oppTextGroup.append("text").attr("y", -3).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "6.5px").style("font-weight", "300").attr("fill", "var(--text-secondary)").text("gusting");
+    // Shift the anchor point 2px radially outward (to perfectly center it in the crescent)
+    const oppTextGroup = oppBubble.append("g").attr("transform", "translate(0, 48)");
     
-    const oppRangeText = oppTextGroup.append("text").attr("y", 6).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "6.5px").style("font-weight", "300").attr("fill", "var(--text-primary)");
+    // Balance the text above and below the new center anchor
+    oppTextGroup.append("text").attr("y", -4.5).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "6.5px").style("font-weight", "300").attr("fill", "var(--text-secondary)").text("gusting");
+    
+    const oppRangeText = oppTextGroup.append("text").attr("y", 4.5).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "6.5px").style("font-weight", "300").attr("fill", "var(--text-primary)");
     const oppLullVal = oppRangeText.append("tspan").text("0");
     oppRangeText.append("tspan").text(" to ");
     const oppGustVal = oppRangeText.append("tspan").text("0");
 
     const topBubble = svg.append("g");
-        
-    topBubble.append("circle").attr("cx", 0).attr("cy", 0).attr("r", 32).attr("fill", "var(--bubble-fill)").attr("fill-opacity", "var(--bubble-opacity)");
+    topBubble.append("circle").attr("r", 32).attr("fill", "var(--bubble-fill)").attr("fill-opacity", "var(--bubble-opacity)");
     
-    const defaultView = topBubble.append("g").attr("opacity", 1);
-    const speedVal = defaultView.append("text").attr("y", -4).attr("class", "center-speed").attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "52px").attr("fill", "var(--text-primary)").text("0");
-    defaultView.append("text").attr("y", 22).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "10px").style("font-weight", "300").attr("fill", "var(--text-secondary)").text("kt");
+    // Main wind speed readout (centered and maximized)
+    const speedReadout = topBubble.append("text").attr("y", -2).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "46px").style("font-weight", "800").style("letter-spacing", "-1px").attr("fill", "var(--text-primary)").text("0");
+    
+    const unitsReadout = topBubble.append("text").attr("y", 22).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "11px").style("font-weight", "700").attr("fill", "var(--text-secondary)").text("kt");
 
-    // CORE FIX: Passing isInstantRestore prevents the 2.4s "0-to-Data" animation on page load.
     function update(data, isInstantRestore = false) {
         const l = data.lull || 0, s = data.speed || 0, g = data.gust || 0, d = data.direction || 0;
         let targetMax = 30; if (g > 40 || s > 40) targetMax = 50; else if (g > 30 || s > 30) targetMax = 40; if (targetMax !== currentMaxSpeed) drawSpeedTrack(targetMax);
@@ -525,12 +547,15 @@
         bottomBubble.transition(t).attr("transform", `rotate(${d})`);
         dirTextGroup.transition(t).attr("transform", `translate(0, -50) rotate(${-d})`);
         oppBubble.transition(t).attr("transform", `rotate(${d})`);
-        oppTextGroup.transition(t).attr("transform", `translate(0, 46) rotate(${-d})`);
+        
+        // Also update the animation translation so it maintains the radial shift while moving
+        oppTextGroup.transition(t).attr("transform", `translate(0, 48) rotate(${-d})`);
+        
         vane.transition(t).attr("fill", colorScale(s));
         dirReadout.text(getCompassPoint(d));
         dirAngle.text(Math.round(d) + "\xB0");
         
-        speedVal.transition(t).style("font-size", Math.round(s) >= 10 ? "46px" : "52px").tween("text", function() { 
+        speedReadout.transition(t).style("font-size", Math.round(s) >= 10 ? "46px" : "52px").tween("text", function() { 
             const startVal = this._currentS !== undefined ? this._currentS : (isInstantRestore ? s : 0);
             const i = d3.interpolateNumber(startVal, s); 
             return time => { 
