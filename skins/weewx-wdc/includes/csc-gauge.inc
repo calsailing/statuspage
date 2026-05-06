@@ -1,5 +1,3 @@
-
-
 <style>
     #isolated-weather-widget {
         font-family: 'Inter', sans-serif !important;
@@ -27,7 +25,6 @@
         --grey-tick: #cbd5e1; 
         --bubble-fill: #ffffff; 
         --bubble-opacity: 0.75;
-        transition: color 0.3s ease;
         display: flex;
         flex-direction: column;
         gap: 1.5rem;
@@ -64,6 +61,21 @@
         --bubble-opacity: 0.9;
     }
 
+    #isolated-weather-widget.map-mode .iw-gauge-mount {
+        /* Force Dark Mode for Wind Gauge Elements */
+        --bg-panel: #2a2a2a !important; 
+        --text-primary: #e5e7eb !important;
+        --text-secondary: #9ca3af !important;
+        --track-bg: #2a2a2a !important;
+        --dial-tick: #4a4a4a !important;
+        --bubble-fill: #2a2a2a !important;
+        --bubble-opacity: 0.9 !important;
+        
+        /* Force Light Mode for Compass Elements */
+        --compass-text: #9ca3af !important;
+        --grey-tick: #cbd5e1 !important;
+    }
+
     #isolated-weather-widget, 
     #isolated-weather-widget .iw-dial-card, 
     #isolated-weather-widget .iw-card { 
@@ -89,7 +101,6 @@
         flex-direction: column; 
         align-items: center; 
         justify-content: center; 
-        transition: background-color 0.3s ease, border-color 0.3s ease; 
     }
 
     .iw-map-bg {
@@ -131,9 +142,7 @@
         background-color: var(--bg-panel);
         padding: 6px 10px;
         border-radius: 20px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         border: 1px solid var(--border-panel);
-        transition: background-color 0.3s ease, border-color 0.3s ease;
     }
     .iw-toggle-label {
         font-size: 10px; font-weight: 700; text-transform: uppercase;
@@ -156,18 +165,10 @@
     .gauge-bg-track, .gauge-gust-track, .gauge-color-track, .gauge-tick-group, .compass-ticks, .gauge-marker {
         transition: opacity 0.4s ease;
     }
-    #isolated-weather-widget.map-mode .gauge-bg-track, 
-    #isolated-weather-widget.map-mode .gauge-gust-track, 
-    #isolated-weather-widget.map-mode .gauge-color-track, 
-    #isolated-weather-widget.map-mode .gauge-tick-group, 
-    #isolated-weather-widget.map-mode .compass-ticks,
-    #isolated-weather-widget.map-mode .gauge-marker {
-        opacity: 0 !important;
-    }
 
     .iw-gauge-mount { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; z-index: 2; }
     .iw-weather-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; flex-grow: 1; width: 100%; height: 100%; }
-    .iw-card { padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); transition: all 0.3s ease; display: flex; flex-direction: column; background-color: var(--bg-panel); border: 1px solid var(--border-panel); }
+    .iw-card { padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); transition: transform 0.3s ease, box-shadow 0.3s ease; display: flex; flex-direction: column; background-color: var(--bg-panel); border: 1px solid var(--border-panel); }
     .iw-card:hover { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
     .iw-card-hero { grid-column: span 2 / span 2; background: linear-gradient(to bottom right, var(--hero-bg-1), var(--hero-bg-2)); border: 1px solid var(--hero-border); justify-content: center; }
     .iw-card-small { grid-column: span 1 / span 1; justify-content: space-between; }
@@ -190,7 +191,7 @@
     .iw-uv-green { height: 100%; background-color: #4ade80; width: 30%; }
     .iw-uv-amber { height: 100%; background-color: #fbbf24; width: 30%; }
     .iw-uv-red { height: 100%; background-color: #f87171; width: 40%; }
-    .iw-uv-marker { position: absolute; top: 50%; transform: translateY(-50%); width: 0.375rem; height: 0.375rem; background-color: #ffffff; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1); border: 1px solid #64748b; transition: all 0.5s; z-index: 10; }
+    .iw-uv-marker { position: absolute; top: 50%; transform: translateY(-50%); width: 0.375rem; height: 0.375rem; background-color: #ffffff; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1); border: 1px solid #64748b; transition: left 0.5s ease; z-index: 10; }
     
     @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
     .animate-float { width: 48px; height: 48px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.05)); animation: float 4s ease-in-out infinite; display: flex; align-items: center; justify-content: center; }
@@ -198,10 +199,10 @@
     @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     .iw-card-small:hover .animate-spin-slow { animation: spin-slow 4s linear infinite; }
 
-    #isolated-weather-widget text { font-family: 'Inter', sans-serif !important; fill: var(--text-primary); transition: fill 0.3s ease; }
+    #isolated-weather-widget text { font-family: 'Inter', sans-serif !important; fill: var(--text-primary); }
     #isolated-weather-widget .center-speed { font-weight: 800; font-variant-numeric: tabular-nums !important; }
-    #isolated-weather-widget .speed-tick { stroke: var(--dial-tick); stroke-width: 1.5; stroke-linecap: round; transition: stroke 0.3s ease; }
-    #isolated-weather-widget .gauge-label { font-size: 11px !important; font-weight: 300 !important; fill: var(--compass-text) !important; opacity: 1; font-variant-numeric: tabular-nums !important; }
+    #isolated-weather-widget .speed-tick { stroke: var(--dial-tick); stroke-width: 1.5; stroke-linecap: round; }
+    #isolated-weather-widget .gauge-label { font-size: 9px !important; font-weight: 400 !important; fill: var(--text-secondary) !important; paint-order: stroke !important; stroke: var(--bg-panel) !important; stroke-width: 1px !important; opacity: 1; font-variant-numeric: tabular-nums !important; }
 </style>
 
 <div id="isolated-weather-widget">
@@ -405,7 +406,7 @@
 
     // 5. D3 Setup
     const center = { x: 165, y: 180 }; 
-    const R = { speedTrack: 130, compass: 110 };
+    const R = { speedTrack: 145, compass: 115 };
     const SWEEP_START = -0.75 * Math.PI, SWEEP_END = 0.75 * Math.PI;
     let currentMaxSpeed = 30;
 
@@ -417,7 +418,12 @@
     const colorScale = d3.scaleLinear().domain([0, 8, 10, 13, 15, 18, 20, 30, 40, 50]).range(["#1e3a8a", "#3b82f6", "#22c55e", "#84cc16", "#eab308", "#f97316", "#ef4444", "#991b1b", "#7f1d1d", "#450a0a"]).clamp(true);
     const speedScale = d3.scaleLinear().domain([0, currentMaxSpeed]).range([SWEEP_START, SWEEP_END]);
     
-    svg.append("path").datum({startAngle: SWEEP_START, endAngle: SWEEP_END}).attr("d", d3.arc().innerRadius(R.speedTrack - 10).outerRadius(R.speedTrack)).attr("fill", "var(--track-bg)").attr("class", "gauge-bg-track");
+    // Background track with 0.7 opacity
+    svg.append("path").datum({startAngle: SWEEP_START, endAngle: SWEEP_END})
+        .attr("d", d3.arc().innerRadius(R.speedTrack - 12).outerRadius(R.speedTrack))
+        .attr("fill", "var(--track-bg)")
+        .attr("class", "gauge-bg-track")
+        .attr("opacity", 0.7);
     
     const d3defs = svg.append("defs");
     const speedMaskPath = d3defs.append("clipPath").attr("id", "speed-mask").append("path").datum({startAngle: SWEEP_START, endAngle: SWEEP_START});
@@ -429,11 +435,11 @@
     const gustTrackGroup = svg.append("g").attr("clip-path", "url(#gust-mask)").attr("opacity", 0.3).attr("class", "gauge-gust-track");
     const colorTrackGroup = svg.append("g").attr("clip-path", "url(#speed-mask)").attr("class", "gauge-color-track");
     const tickGroup = svg.append("g").attr("class", "gauge-tick-group");
-    const arcSpeed = d3.arc().innerRadius(R.speedTrack - 10).outerRadius(R.speedTrack);
+    const arcSpeed = d3.arc().innerRadius(R.speedTrack - 12).outerRadius(R.speedTrack);
     
-    const lullMarker = svg.append("line").attr("x1", 0).attr("y1", -R.speedTrack).attr("x2", 0).attr("y2", -(R.speedTrack - 10)).attr("stroke", "#1e3a8a").attr("stroke-width", 3).attr("class", "gauge-marker");
-    const speedMarker = svg.append("line").attr("x1", 0).attr("y1", -R.speedTrack).attr("x2", 0).attr("y2", -(R.speedTrack - 10)).attr("stroke", "#22c55e").attr("stroke-width", 3).attr("class", "gauge-marker");
-    const gustMarker = svg.append("line").attr("x1", 0).attr("y1", -R.speedTrack).attr("x2", 0).attr("y2", -(R.speedTrack - 10)).attr("stroke", "#ef4444").attr("stroke-width", 3).attr("class", "gauge-marker");
+    const lullMarker = svg.append("line").attr("x1", 0).attr("y1", -R.speedTrack).attr("x2", 0).attr("y2", -(R.speedTrack - 12)).attr("stroke", "#60a5fa").attr("stroke-width", 3).attr("class", "gauge-marker");
+    const speedMarker = svg.append("line").attr("x1", 0).attr("y1", -R.speedTrack).attr("x2", 0).attr("y2", -(R.speedTrack - 12)).attr("stroke", "#22c55e").attr("stroke-width", 3).attr("class", "gauge-marker");
+    const gustMarker = svg.append("line").attr("x1", 0).attr("y1", -R.speedTrack).attr("x2", 0).attr("y2", -(R.speedTrack - 12)).attr("stroke", "#ef4444").attr("stroke-width", 3).attr("class", "gauge-marker");
 
     function drawSpeedTrack(maxSpeed) {
         currentMaxSpeed = maxSpeed; speedScale.domain([0, maxSpeed]);
@@ -445,8 +451,7 @@
         }
         for (let v = 0; v <= maxSpeed; v += 5) {
             const angle = speedScale(v);
-            tickGroup.append("line").attr("x1", R.speedTrack * Math.sin(angle)).attr("y1", -R.speedTrack * Math.cos(angle)).attr("x2", (R.speedTrack - 10) * Math.sin(angle)).attr("y2", -(R.speedTrack - 10) * Math.cos(angle)).attr("class", "speed-tick");
-            tickGroup.append("text").attr("x", (R.speedTrack + 12) * Math.sin(angle)).attr("y", -(R.speedTrack + 12) * Math.cos(angle)).attr("class", "gauge-label").attr("text-anchor", "middle").attr("dy", "0.35em").text(v);
+            tickGroup.append("text").attr("x", (R.speedTrack - 6) * Math.sin(angle)).attr("y", -(R.speedTrack - 6) * Math.cos(angle)).attr("class", "gauge-label").attr("text-anchor", "middle").attr("dy", "0.35em").text(v);
         }
     }
     drawSpeedTrack(currentMaxSpeed);
@@ -457,44 +462,42 @@
         const angle = (i * Math.PI) / 180, isMajor = i % 90 === 0;
         compassTicks.append("line").attr("x1", R.compass * Math.sin(angle)).attr("y1", -R.compass * Math.cos(angle)).attr("x2", (R.compass - (isMajor ? 10 : 7)) * Math.sin(angle)).attr("y2", -(R.compass - (isMajor ? 10 : 7)) * Math.cos(angle)).attr("stroke", "var(--grey-tick)").attr("stroke-width", 1); 
         if (isMajor) {
-            compassTicks.append("text").attr("x", (R.compass - 20) * Math.sin(angle)).attr("y", -(R.compass - 20) * Math.cos(angle)).attr("text-anchor", "middle").attr("dy", "0.35em").style("font-size", "11px").style("font-weight", "300").style("fill", "var(--compass-text)").text(cardinalLabels[i]);
+            compassTicks.append("text").attr("x", (R.compass - 16) * Math.sin(angle)).attr("y", -(R.compass - 16) * Math.cos(angle)).attr("text-anchor", "middle").attr("dy", "0.35em").style("font-size", "11px").style("font-weight", "300").style("fill", "var(--compass-text)").text(cardinalLabels[i]);
         }
     }
 
     const pointer = svg.append("g"), vane = pointer.append("path").attr("d", "M 0,115 L 65,-95 L 0,-71 L -65,-95 Z").attr("opacity", 0.7);
+    
+    // Elevate labels so the directional vane doesn't obscure them
+    tickGroup.raise(); 
+    compassTicks.raise();
+
     const bottomBubbleWrapper = svg.append("g").attr("mask", "url(#bottom-bubble-cutout)"), bottomBubble = bottomBubbleWrapper.append("g");
     bottomBubble.append("circle").attr("cx", 0).attr("cy", -50).attr("r", 21).attr("fill", "var(--bubble-fill)").attr("fill-opacity", "var(--bubble-opacity)");
     const dirTextGroup = bottomBubble.append("g").attr("transform", "translate(0, -50)");
     const dirReadout = dirTextGroup.append("text").attr("y", -5).style("font-size", "10px").style("font-weight", "900").attr("fill", "var(--text-primary)").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("---");
     const dirAngle = dirTextGroup.append("text").attr("y", 7).style("font-size", "9px").style("font-weight", "500").attr("fill", "var(--text-primary)").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("---\xB0");
     
-    function showHoverState(e) {
-        if (e && e.type === 'touchstart' && e.cancelable) {
-            e.preventDefault();
-        }
-        defaultView.transition().duration(200).attr("opacity", 0);
-        hoverView.transition().duration(200).attr("opacity", 1);
-    }
-    function hideHoverState() {
-        defaultView.transition().duration(200).attr("opacity", 1);
-        hoverView.transition().duration(200).attr("opacity", 0);
-    }
+    // Create new opposite bubble for Lull and Gust
+    const oppBubbleWrapper = svg.append("g").attr("mask", "url(#bottom-bubble-cutout)"), oppBubble = oppBubbleWrapper.append("g");
+    oppBubble.append("circle").attr("cx", 0).attr("cy", 46).attr("r", 17).attr("fill", "var(--bubble-fill)").attr("fill-opacity", "var(--bubble-opacity)");
+    const oppTextGroup = oppBubble.append("g").attr("transform", "translate(0, 46)");
+    
+    const oppLullText = oppTextGroup.append("text").attr("y", -5).attr("text-anchor", "middle").attr("dominant-baseline", "central");
+    oppLullText.append("tspan").style("font-size", "8px").style("font-weight", "400").attr("fill", "var(--text-secondary)").text("l ");
+    const oppLullVal = oppLullText.append("tspan").style("font-size", "10px").style("font-weight", "400").attr("fill", "#60a5fa").text("0");
+    
+    const oppGustText = oppTextGroup.append("text").attr("y", 5).attr("text-anchor", "middle").attr("dominant-baseline", "central");
+    oppGustText.append("tspan").style("font-size", "8px").style("font-weight", "400").attr("fill", "var(--text-secondary)").text("g ");
+    const oppGustVal = oppGustText.append("tspan").style("font-size", "10px").style("font-weight", "400").attr("fill", "#ef4444").text("0");
 
-    const topBubble = svg.append("g").style("cursor", "pointer")
-        .on("mouseenter", showHoverState).on("mouseleave", hideHoverState)
-        .on("touchstart", showHoverState).on("touchend", hideHoverState);
+    const topBubble = svg.append("g");
         
     topBubble.append("circle").attr("cx", 0).attr("cy", 0).attr("r", 32).attr("fill", "var(--bubble-fill)").attr("fill-opacity", "var(--bubble-opacity)");
     
     const defaultView = topBubble.append("g").attr("opacity", 1);
     const speedVal = defaultView.append("text").attr("y", -4).attr("class", "center-speed").attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "52px").attr("fill", "var(--text-primary)").text("0");
-    defaultView.append("text").attr("y", 24).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "8px").style("font-weight", "400").style("letter-spacing", "0.05em").attr("fill", "var(--text-primary)").text("KNOTS");
-
-    const hoverView = topBubble.append("g").attr("opacity", 0).style("pointer-events", "none");
-    hoverView.append("text").attr("y", -18).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "8px").style("font-weight", "600").attr("fill", "var(--text-secondary)").text("LULL");
-    const lullText = hoverView.append("text").attr("y", -6).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "18px").style("font-weight", "700").attr("fill", "#3b82f6").text("0");
-    hoverView.append("text").attr("y", 6).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "8px").style("font-weight", "600").attr("fill", "var(--text-secondary)").text("GUST");
-    const gustText = hoverView.append("text").attr("y", 18).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "18px").style("font-weight", "700").attr("fill", "var(--trend-red)").text("0");
+    defaultView.append("text").attr("y", 24).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "10px").style("font-weight", "300").attr("fill", "var(--text-secondary)").text("kt");
 
     // CORE FIX: Passing isInstantRestore prevents the 2.4s "0-to-Data" animation on page load.
     function update(data, isInstantRestore = false) {
@@ -507,12 +510,12 @@
         speedMaskPath.transition(t).attrTween("d", dat => { 
             const startAngle = dat.endAngle !== undefined ? dat.endAngle : (isInstantRestore ? speedScale(s) : SWEEP_START);
             const i = d3.interpolate(startAngle, speedScale(s)); 
-            return time => { dat.endAngle = i(time); return d3.arc().innerRadius(115).outerRadius(135)(dat); }; 
+            return time => { dat.endAngle = i(time); return d3.arc().innerRadius(R.speedTrack - 14).outerRadius(R.speedTrack + 2)(dat); }; 
         });
         gustMaskPath.transition(t).attrTween("d", dat => { 
             const startAngle = dat.endAngle !== undefined ? dat.endAngle : (isInstantRestore ? speedScale(g) : SWEEP_START);
             const i = d3.interpolate(startAngle, speedScale(g)); 
-            return time => { dat.endAngle = i(time); return d3.arc().innerRadius(115).outerRadius(135)(dat); }; 
+            return time => { dat.endAngle = i(time); return d3.arc().innerRadius(R.speedTrack - 14).outerRadius(R.speedTrack + 2)(dat); }; 
         });
         
         lullMarker.transition(t).attr("transform", `rotate(${(speedScale(l) * 180) / Math.PI})`);
@@ -521,6 +524,8 @@
         pointer.transition(t).attr("transform", `rotate(${d})`);
         bottomBubble.transition(t).attr("transform", `rotate(${d})`);
         dirTextGroup.transition(t).attr("transform", `translate(0, -50) rotate(${-d})`);
+        oppBubble.transition(t).attr("transform", `rotate(${d})`);
+        oppTextGroup.transition(t).attr("transform", `translate(0, 46) rotate(${-d})`);
         vane.transition(t).attr("fill", colorScale(s));
         dirReadout.text(getCompassPoint(d));
         dirAngle.text(Math.round(d) + "\xB0");
@@ -528,14 +533,17 @@
         speedVal.transition(t).style("font-size", Math.round(s) >= 10 ? "46px" : "52px").tween("text", function() { 
             const startVal = this._currentS !== undefined ? this._currentS : (isInstantRestore ? s : 0);
             const i = d3.interpolateNumber(startVal, s); 
-            return time => { this._currentS = i(time); this.textContent = Math.round(this._currentS); }; 
+            return time => { 
+                this._currentS = i(time); 
+                this.textContent = Math.round(this._currentS); 
+            }; 
         });
-        lullText.transition(t).tween("text", function() { 
+        oppLullVal.transition(t).tween("text", function() { 
             const startVal = this._currentL !== undefined ? this._currentL : (isInstantRestore ? l : 0);
             const i = d3.interpolateNumber(startVal, l); 
             return time => { this._currentL = i(time); this.textContent = Math.round(this._currentL); }; 
         });
-        gustText.transition(t).tween("text", function() { 
+        oppGustVal.transition(t).tween("text", function() { 
             const startVal = this._currentG !== undefined ? this._currentG : (isInstantRestore ? g : 0);
             const i = d3.interpolateNumber(startVal, g); 
             return time => { this._currentG = i(time); this.textContent = Math.round(this._currentG); }; 
