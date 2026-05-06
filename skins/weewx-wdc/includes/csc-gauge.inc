@@ -1,3 +1,5 @@
+
+
 <style>
     #isolated-weather-widget {
         font-family: 'Inter', sans-serif !important;
@@ -480,24 +482,22 @@
     
     // Create new opposite bubble for Lull and Gust
     const oppBubbleWrapper = svg.append("g").attr("mask", "url(#bottom-bubble-cutout)"), oppBubble = oppBubbleWrapper.append("g");
-    oppBubble.append("circle").attr("cx", 0).attr("cy", 46).attr("r", 17).attr("fill", "var(--bubble-fill)").attr("fill-opacity", "var(--bubble-opacity)");
+    oppBubble.append("circle").attr("cx", 0).attr("cy", 46).attr("r", 18).attr("fill", "var(--bubble-fill)").attr("fill-opacity", "var(--bubble-opacity)");
     const oppTextGroup = oppBubble.append("g").attr("transform", "translate(0, 46)");
     
-    const oppLullText = oppTextGroup.append("text").attr("y", -5).attr("text-anchor", "middle").attr("dominant-baseline", "central");
-    oppLullText.append("tspan").style("font-size", "8px").style("font-weight", "400").attr("fill", "var(--text-secondary)").text("l ");
-    const oppLullVal = oppLullText.append("tspan").style("font-size", "10px").style("font-weight", "400").attr("fill", "#60a5fa").text("0");
+    oppTextGroup.append("text").attr("y", -8.5).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "6.5px").style("font-weight", "300").attr("fill", "var(--text-secondary)").text("gusting");
     
-    const oppGustText = oppTextGroup.append("text").attr("y", 5).attr("text-anchor", "middle").attr("dominant-baseline", "central");
-    oppGustText.append("tspan").style("font-size", "8px").style("font-weight", "400").attr("fill", "var(--text-secondary)").text("g ");
-    const oppGustVal = oppGustText.append("tspan").style("font-size", "10px").style("font-weight", "400").attr("fill", "#ef4444").text("0");
+    const oppRangeText = oppTextGroup.append("text").attr("y", 1.5).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "6.5px").style("font-weight", "300").attr("fill", "var(--text-primary)");
+    const oppLullVal = oppRangeText.append("tspan").text("0");
+    oppRangeText.append("tspan").text(" to ");
+    const oppGustVal = oppRangeText.append("tspan").text("0");
 
     const topBubble = svg.append("g");
         
     topBubble.append("circle").attr("cx", 0).attr("cy", 0).attr("r", 32).attr("fill", "var(--bubble-fill)").attr("fill-opacity", "var(--bubble-opacity)");
     
     const defaultView = topBubble.append("g").attr("opacity", 1);
-    const speedVal = defaultView.append("text").attr("y", -4).attr("class", "center-speed").attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "52px").attr("fill", "var(--text-primary)").text("0");
-    defaultView.append("text").attr("y", 24).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "10px").style("font-weight", "300").attr("fill", "var(--text-secondary)").text("kt");
+    const speedVal = defaultView.append("text").attr("y", 0).attr("class", "center-speed").attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "52px").attr("fill", "var(--text-primary)").text("0");
 
     // CORE FIX: Passing isInstantRestore prevents the 2.4s "0-to-Data" animation on page load.
     function update(data, isInstantRestore = false) {
