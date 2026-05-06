@@ -598,6 +598,28 @@
     // 7. Initialize
     syncTheme();
     
+    // Watch for theme changes dynamically (class changes on HTML tag)
+    const themeObserver = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.attributeName === 'class') {
+                syncTheme();
+            }
+        });
+    });
+    
+    // Observe current document
+    themeObserver.observe(document.documentElement, { attributes: true });
+    
+    // Try to observe parent document if embedded
+    try {
+        if (window.self !== window.top) {
+            themeObserver.observe(window.parent.document.documentElement, { attributes: true });
+        }
+    } catch (e) { /* Ignore cross-origin errors */ }
+
+    // Watch OS preference changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', syncTheme);
+    
     // Attempt to load from cache
     const hasCachedData = loadFromLocalStorage();
     
