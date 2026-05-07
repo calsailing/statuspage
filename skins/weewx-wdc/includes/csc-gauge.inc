@@ -1,5 +1,4 @@
 
-
 <style>
     #isolated-weather-widget {
         font-family: 'Inter', sans-serif !important;
