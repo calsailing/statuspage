@@ -90,15 +90,15 @@
 
     @media (min-width: 768px) { 
         #isolated-weather-widget { flex-direction: row; align-items: stretch; } 
-        .iw-dial-card { flex: 1.25; min-width: 350px; max-width: 550px; aspect-ratio: 330 / 263; }
+        .iw-dial-card { flex: 1.25; min-width: 350px; max-width: 550px; aspect-ratio: 330 / 284; }
     }
     
     .iw-panel { position: relative; flex: 1; width: 100%; display: flex; flex-direction: column; }
     .iw-dial-card { 
         background-color: var(--bg-panel); 
         border: 1px solid var(--border-panel); 
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); 
-        padding: 5px; 
+        box-shadow: none; 
+        padding: 3px; 
         display: flex; 
         flex-direction: column; 
         align-items: center; 
@@ -160,8 +160,9 @@
     .iw-weather-grid { display: grid; grid-template-columns: 1fr; gap: 0.5rem; flex: 1; }
     @media (min-width: 640px) { .iw-weather-grid { grid-template-columns: repeat(2, 1fr); } }
     
-    .iw-card { background-color: var(--bg-panel); border: 1px solid var(--border-panel); border-radius: 0.75rem; padding: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
-    .iw-card-hero { grid-column: 1 / -1; background: linear-gradient(135deg, var(--hero-bg-1) 0%, var(--hero-bg-2) 100%); border: 1px solid var(--hero-border); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+    .iw-card { background-color: var(--bg-panel); border: 1px solid var(--border-panel); border-radius: 0.75rem; padding: 1rem; box-shadow: none; transition: transform 0.2s ease; }
+    .iw-card:hover { transform: translateY(-2px); }
+    .iw-card-hero { grid-column: 1 / -1; background: linear-gradient(135deg, var(--hero-bg-1) 0%, var(--hero-bg-2) 100%); border: 1px solid var(--hero-border); box-shadow: none; }
     .iw-card-small { display: flex; flex-direction: column; justify-content: center; min-height: 110px; }
     
     .iw-flex-col { display: flex; flex-direction: column; }
@@ -422,12 +423,12 @@
 
     // 5. D3 Setup
     const center = { x: 165, y: 180 }; 
-    const R = { speedTrack: 145, compass: 115 };
+    const R = { speedTrack: 142, compass: 129 };
     const SWEEP_START = -0.75 * Math.PI, SWEEP_END = 0.75 * Math.PI;
     let currentMaxSpeed = 30;
 
     const svg = d3.select("#gauge-mount").append("svg")
-        .attr("viewBox", `0 32 330 263`)
+        .attr("viewBox", `0 25 330 284`)
         .style("width", "100%").style("height", "auto").style("display", "block").style("overflow", "visible")
         .append("g").attr("transform", `translate(${center.x},${center.y})`);
 
@@ -467,8 +468,9 @@
         }
         for (let v = 0; v <= maxSpeed; v += 5) {
             const angle = speedScale(v);
-            const cx = (R.speedTrack - 12) * Math.sin(angle);
-            const cy = -(R.speedTrack - 12) * Math.cos(angle);
+            const textRadius = R.speedTrack + 7; // Place numbers tightly outside the track
+            const cx = textRadius * Math.sin(angle);
+            const cy = -textRadius * Math.cos(angle);
             
             // Tighter rounded rectangle (12x10) centered under the text
             tickGroup.append("rect").attr("x", cx - 6).attr("y", cy - 5).attr("width", 12).attr("height", 10).attr("rx", 1.5).attr("ry", 1.5).attr("class", "gauge-tick-bubble");
@@ -489,7 +491,7 @@
         }
     }
 
-    const pointer = svg.append("g"), vane = pointer.append("path").attr("d", "M 0,115 L 65,-95 L 0,-71 L -65,-95 Z").attr("opacity", 0.7);
+    const pointer = svg.append("g"), vane = pointer.append("path").attr("d", "M 0,127 L 71.5,-105 L 0,-79 L -71.5,-105 Z").attr("opacity", 0.7);
     
     // Elevate speed labels so the directional vane doesn't obscure them (compass ticks stay behind)
     tickGroup.raise(); 
@@ -521,7 +523,7 @@
     // Main wind speed readout (centered and maximized)
     const speedReadout = topBubble.append("text").attr("y", -2).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "46px").style("font-weight", "800").style("letter-spacing", "-1px").attr("fill", "var(--text-primary)").text("0");
     
-    const unitsReadout = topBubble.append("text").attr("y", 22).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "11px").style("font-weight", "700").attr("fill", "var(--text-secondary)").text("kt");
+    const unitsReadout = topBubble.append("text").attr("y", 24).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "11px").style("font-weight", "300").attr("fill", "var(--text-secondary)").text("kt");
 
     function update(data, isInstantRestore = false) {
         const l = data.lull || 0, s = data.speed || 0, g = data.gust || 0, d = data.direction || 0;
