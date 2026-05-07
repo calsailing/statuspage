@@ -398,13 +398,18 @@
     // 4. Map Implementation
     const SENSOR_COORD = [37.85568, -122.31445];
     const MAP_CENTER = [37.85868, -122.31445]; 
-    const isMobile = window.innerWidth < 768;
-    const initialZoom = isMobile ? 14.5 : 15.0; // Zoomed in a tiny bit more
+    const initialZoom = 15.0; // Locked zoom level to keep the satellite view perfectly consistent
 
     const map = L.map('iw-map-container', {
         center: MAP_CENTER, zoom: initialZoom, zoomSnap: 0.1, zoomControl: false, attributionControl: false,
         dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, touchZoom: false
     });
+
+    // Automatically fix Leaflet rendering issues when the responsive layout resizes the container
+    new ResizeObserver(() => {
+        map.invalidateSize();
+        map.setView(MAP_CENTER, initialZoom, { animate: false }); // Force absolute center lock
+    }).observe(document.getElementById('iw-map-container'));
 
     // Custom Cached TileLayer to minimize Mapbox API calls
     L.TileLayer.Cached = L.TileLayer.extend({
