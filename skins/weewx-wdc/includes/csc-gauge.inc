@@ -97,7 +97,7 @@
     .iw-dial-card { 
         background-color: var(--bg-panel); 
         border: 1px solid var(--border-panel); 
-        box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); 
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); 
         padding: 5px; 
         display: flex; 
         flex-direction: column; 
@@ -160,19 +160,19 @@
     .iw-weather-grid { display: grid; grid-template-columns: 1fr; gap: 0.5rem; flex: 1; }
     @media (min-width: 640px) { .iw-weather-grid { grid-template-columns: repeat(2, 1fr); } }
     
-    .iw-card { background-color: var(--bg-panel); border: 1px solid var(--border-panel); border-radius: 0.75rem; padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); }
-    .iw-card-hero { grid-column: 1 / -1; background: linear-gradient(135deg, var(--hero-bg-1) 0%, var(--hero-bg-2) 100%); border: 1px solid var(--hero-border); box-shadow: none; }
+    .iw-card { background-color: var(--bg-panel); border: 1px solid var(--border-panel); border-radius: 0.75rem; padding: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+    .iw-card-hero { grid-column: 1 / -1; background: linear-gradient(135deg, var(--hero-bg-1) 0%, var(--hero-bg-2) 100%); border: 1px solid var(--hero-border); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
     .iw-card-small { display: flex; flex-direction: column; justify-content: center; min-height: 110px; }
     
     .iw-flex-col { display: flex; flex-direction: column; }
     .iw-justify-between { display: flex; justify-content: space-between; }
     .iw-items-center { display: flex; align-items: center; }
     
-    .iw-temp-label { display: flex; align-items: center; gap: 0.25rem; font-size: 0.875rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem; }
+    .iw-temp-label { display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; font-weight: 400; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem; }
     .iw-temp-val-f { font-size: 3rem; font-weight: 800; line-height: 1; letter-spacing: -0.025em; color: var(--text-primary); }
     .iw-temp-val-c { font-size: 1.125rem; font-weight: 500; color: var(--text-muted); margin-top: 0.25rem; }
     
-    .iw-cond-text { font-size: 1rem; font-weight: 600; color: var(--text-secondary); margin-top: 0.5rem; text-align: center; }
+    .iw-cond-text { font-size: 1rem; font-weight: 500; color: var(--text-secondary); margin-top: 0.5rem; text-align: center; }
     
     .iw-data-val { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
     .iw-data-label { font-size: 0.75rem; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem; }
@@ -204,12 +204,12 @@
     /* Dedicated CSS for the tick bubbles */
     .gauge-tick-bubble {
         fill: var(--bg-panel);
-        stroke: #d1d5db; /* Light grey stroke */
+        stroke: var(--track-bg);
         stroke-width: 0.5px;
     }
     #isolated-weather-widget.is-dark .gauge-tick-bubble,
     #isolated-weather-widget.map-mode .gauge-tick-bubble {
-        stroke: #4b5563 !important; /* Dark grey stroke */
+        stroke: var(--track-bg) !important;
     }
     
     #icon-weather { width: 3.5rem; height: 3.5rem; }
@@ -470,9 +470,10 @@
             const cx = (R.speedTrack - 12) * Math.sin(angle);
             const cy = -(R.speedTrack - 12) * Math.cos(angle);
             
-            tickGroup.append("circle").attr("cx", cx).attr("cy", cy).attr("r", 7).attr("class", "gauge-tick-bubble");
+            // Tighter rounded rectangle (12x10) centered under the text
+            tickGroup.append("rect").attr("x", cx - 6).attr("y", cy - 5).attr("width", 12).attr("height", 10).attr("rx", 1.5).attr("ry", 1.5).attr("class", "gauge-tick-bubble");
             
-            // Replaced dominant-baseline with precise dy="0.3em" for perfect optical cap-height centering
+            // Precise dy="0.3em" for perfect optical cap-height centering
             tickGroup.append("text").attr("x", cx).attr("y", cy).attr("class", "gauge-label").attr("text-anchor", "middle").attr("dy", "0.3em").text(v);
         }
     }
