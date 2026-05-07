@@ -36,8 +36,8 @@
         --bubble-opacity: 0.75;
         display: flex;
         flex-direction: column;
-        gap: 1.5rem;
-        padding: 0.5rem;
+        gap: 24px;
+        padding: 8px;
         width: 100%;
         position: relative;
         color: var(--text-primary);
@@ -91,8 +91,20 @@
         border-radius: 0 !important; 
     }
 
-    #isolated-weather-widget * { box-sizing: border-box; }
-    #isolated-weather-widget p, #isolated-weather-widget h1, #isolated-weather-widget h2 { margin: 0; padding: 0; }
+    /* Aggressive CSS Reset to isolate from host site styles */
+    #isolated-weather-widget * { 
+        box-sizing: border-box; 
+        font-family: 'Inter', sans-serif !important;
+    }
+    #isolated-weather-widget p, 
+    #isolated-weather-widget h1, 
+    #isolated-weather-widget h2, 
+    #isolated-weather-widget span { 
+        margin: 0 !important; 
+        padding: 0 !important; 
+        line-height: normal !important; 
+        letter-spacing: normal !important;
+    }
     #isolated-weather-widget .hidden { display: none !important; }
 
     @media (min-width: 768px) { 
@@ -169,10 +181,11 @@
         width: 100%;
     }
 
-    .iw-weather-grid { display: grid; grid-template-columns: 1fr; gap: 0.5rem; flex: 1; }
+    /* Converted all rem units to explicit px units to block external scaling */
+    .iw-weather-grid { display: grid; grid-template-columns: 1fr; gap: 8px; flex: 1; }
     @media (min-width: 640px) { .iw-weather-grid { grid-template-columns: repeat(2, 1fr); } }
     
-    .iw-card { background-color: var(--bg-panel); border: 1px solid var(--border-panel); border-radius: 0.75rem; padding: 1rem; box-shadow: none; transition: transform 0.2s ease; }
+    .iw-card { background-color: var(--bg-panel); border: 1px solid var(--border-panel); border-radius: 12px; padding: 16px; box-shadow: none; transition: transform 0.2s ease; }
     .iw-card:hover { transform: translateY(-2px); }
     .iw-card-hero { grid-column: 1 / -1; background: linear-gradient(135deg, var(--hero-bg-1) 0%, var(--hero-bg-2) 100%); border: 1px solid var(--hero-border); box-shadow: none; }
     .iw-card-small { display: flex; flex-direction: column; justify-content: center; min-height: 110px; }
@@ -181,27 +194,27 @@
     .iw-justify-between { display: flex; justify-content: space-between; }
     .iw-items-center { display: flex; align-items: center; }
     
-    .iw-temp-label { display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; font-weight: 400; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem; }
-    .iw-temp-val-f { font-size: 3rem; font-weight: 800; line-height: 1; letter-spacing: -0.025em; color: var(--text-primary); }
-    .iw-temp-val-c { font-size: 1.125rem; font-weight: 500; color: var(--text-muted); margin-top: 0.25rem; }
+    .iw-temp-label { display: flex; align-items: center; gap: 4px; font-size: 12px !important; font-weight: 400 !important; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em !important; margin-bottom: 4px; }
+    .iw-temp-val-f { font-size: 48px !important; font-weight: 800 !important; line-height: 1 !important; letter-spacing: -0.025em !important; color: var(--text-primary); }
+    .iw-temp-val-c { font-size: 18px !important; font-weight: 500 !important; color: var(--text-muted); margin-top: 4px; }
     
-    .iw-cond-text { font-size: 1rem; font-weight: 500; color: var(--text-secondary); margin-top: 0.5rem; text-align: center; }
+    .iw-cond-text { font-size: 16px !important; font-weight: 500 !important; color: var(--text-secondary); margin-top: 8px; text-align: center; }
     
-    .iw-data-val { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
-    .iw-data-label { font-size: 0.75rem; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem; }
+    .iw-data-val { font-size: 24px !important; font-weight: 700 !important; color: var(--text-primary); }
+    .iw-data-label { font-size: 12px !important; font-weight: 500 !important; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em !important; margin-top: 4px; }
     
-    .iw-icon-circle { display: flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 9999px; margin-bottom: 0.75rem; }
+    .iw-icon-circle { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 9999px; margin-bottom: 12px; }
     .iw-icon-circle.indigo { background-color: var(--icon-indigo-bg); color: var(--icon-indigo); }
     .iw-icon-circle.amber { background-color: var(--icon-amber-bg); color: var(--icon-amber); }
     
-    .iw-trend-badge { display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; font-weight: 600; background-color: var(--trend-bg); padding: 0.25rem 0.5rem; border-radius: 9999px; margin-top: 0.5rem; width: fit-content; }
+    .iw-trend-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px !important; font-weight: 600 !important; background-color: var(--trend-bg); padding: 4px 8px; border-radius: 9999px; margin-top: 8px; width: fit-content; }
     
-    .iw-uv-bar-wrap { width: 100%; height: 0.375rem; background-color: var(--scale-bg); border-radius: 9999px; margin-top: 0.75rem; position: relative; }
+    .iw-uv-bar-wrap { width: 100%; height: 6px; background-color: var(--scale-bg); border-radius: 9999px; margin-top: 12px; position: relative; }
     .iw-uv-bar-bg { display: flex; width: 100%; height: 100%; border-radius: 9999px; overflow: hidden; }
     .iw-uv-green { flex: 3; background-color: var(--trend-green); }
     .iw-uv-amber { flex: 3; background-color: var(--icon-amber); }
     .iw-uv-red { flex: 5; background-color: var(--trend-red); }
-    .iw-uv-marker { position: absolute; top: 50%; transform: translateY(-50%); width: 0.375rem; height: 0.75rem; background-color: white; border: 1px solid #d1d5db; border-radius: 9999px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); transition: left 0.5s ease; }
+    .iw-uv-marker { position: absolute; top: 50%; transform: translateY(-50%); width: 6px; height: 12px; background-color: white; border: 1px solid #d1d5db; border-radius: 9999px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); transition: left 0.5s ease; }
     #isolated-weather-widget.is-dark .iw-uv-marker { background-color: #1f2937; border-color: #4b5563; }
     
     .iw-switch { position: relative; display: inline-block; width: 36px; height: 20px; }
@@ -225,8 +238,8 @@
         stroke: var(--track-bg) !important;
     }
     
-    #icon-weather { width: 3.5rem; height: 3.5rem; }
-    @media (min-width: 640px) { #icon-weather { width: 4.5rem; height: 4.5rem; } }
+    #icon-weather { width: 56px; height: 56px; }
+    @media (min-width: 640px) { #icon-weather { width: 72px; height: 72px; } }
     
     .animate-float { animation: float 6s ease-in-out infinite; }
     @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
@@ -254,7 +267,7 @@
     <div class="iw-panel">
         <div class="iw-weather-grid">
             <div class="iw-card iw-card-hero">
-                <div class="iw-justify-between iw-items-center" style="padding: 0 0.5rem;">
+                <div class="iw-justify-between iw-items-center" style="padding: 0 8px;">
                     <div class="iw-flex-col">
                         <div class="iw-temp-label">
                             <svg style="width: 14px; height: 14px; color: #3b82f6;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
@@ -263,7 +276,7 @@
                         <h1 id="val-temp-f" class="iw-temp-val-f">--&deg;F</h1>
                         <p id="val-temp-c" class="iw-temp-val-c">--&deg;C</p>
                     </div>
-                    <div class="iw-flex-col iw-items-center" style="padding-top: 0.25rem;">
+                    <div class="iw-flex-col iw-items-center" style="padding-top: 4px;">
                         <div id="icon-weather" class="animate-float"></div>
                         <p id="val-conditions" class="iw-cond-text">--</p>
                     </div>
@@ -438,7 +451,7 @@
     L.tileLayer.cached = function (url, options) { return new L.TileLayer.Cached(url, options); };
 
     // Implement Mapbox using provided public access token and new cached layer
-    const mapboxToken = '';
+    const mapboxToken = 'TOKEN_HERE';
     L.tileLayer.cached(`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`, {
         maxZoom: 20,
         tileSize: 512,
