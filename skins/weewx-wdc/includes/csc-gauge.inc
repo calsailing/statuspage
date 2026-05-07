@@ -184,8 +184,7 @@
     }
 
     /* Converted all rem units to explicit px units to block external scaling */
-    .iw-weather-grid { display: grid; grid-template-columns: 1fr; gap: 8px; flex: 1; }
-    @media (min-width: 640px) { .iw-weather-grid { grid-template-columns: repeat(2, 1fr); } }
+    .iw-weather-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; flex: 1; }
     
     .iw-card { background-color: var(--bg-panel); border: 1px solid var(--border-panel); border-radius: 12px; padding: 16px; box-shadow: none; transition: transform 0.2s ease; }
     .iw-card:hover { transform: translateY(-2px); }
@@ -313,7 +312,7 @@
     /* #raw */
     // 1. API Configuration
     const STATIC_TOKEN = "8535e71d-2290-4965-ad3f-ab05b9294fdf";
-    const MAPBOX_TOKEN = "xxx";
+    const MAPBOX_TOKEN = "444";
     const API_OBS_BASE = "https://swd.weatherflow.com/swd/rest/observations/station/127241";
     const API_FCST_BASE = "https://swd.weatherflow.com/swd/rest/better_forecast?station_id=127241&units_wind=kts";
 
