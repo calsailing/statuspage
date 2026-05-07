@@ -144,6 +144,11 @@
         padding: 6px 10px;
         border-radius: 20px;
         border: 1px solid var(--border-panel);
+        transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+    #isolated-weather-widget.map-mode .iw-map-toggle {
+        background-color: rgba(0, 0, 0, 0.7);
+        border-color: rgba(255, 255, 255, 0.1);
     }
     .iw-toggle-label {
         font-size: 10px; font-weight: 700; text-transform: uppercase;
@@ -370,16 +375,101 @@
     const SENSOR_COORD = [37.85568, -122.31445];
     const MAP_CENTER = [37.85868, -122.31445]; 
     const isMobile = window.innerWidth < 768;
-    const initialZoom = isMobile ? 13.8 : 14.3;
+    const initialZoom = isMobile ? 14.5 : 15.0; // Zoomed in a tiny bit more
 
     const map = L.map('iw-map-container', {
         center: MAP_CENTER, zoom: initialZoom, zoomSnap: 0.1, zoomControl: false, attributionControl: false,
         dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, touchZoom: false
     });
 
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 19, attribution: 'Tiles &copy; Esri'
+    // Custom Cached TileLayer to minimize Mapbox API calls
+    L.TileLayer.Cached = L.TileLayer.extend({
+        createTile: function (coords, done) {
+            const tile = document.createElement('img');
+            tile.crossOrigin = 'Anonymous';
+            tile.alt = '';
+            const url = this.getTileUrl(coords);
+
+            if ('caches' in window) {
+                caches.match(url).then(response => {
+                    if (response) {
+                        // Serve instantly from browser cache API
+                        response.blob().then(blob => {
+                            tile.onload = () => done(null, tile);
+                            tile.onerror = err => done(err, tile);
+                            tile.src = URL.createObjectURL(blob);
+                        });
+                    } else {
+                        // Fetch from Mapbox API and cache it for next time
+                        fetch(url).then(res => {
+                            if (!res.ok) throw new Error("Network response was not ok");
+                            // Clone the response BEFORE using it (e.g. before reading the blob)
+                            const resClone = res.clone();
+                            caches.open('mapbox-tiles').then(cache => cache.put(url, resClone));
+                            return res.blob();
+                        }).then(blob => {
+                            tile.onload = () => done(null, tile);
+                            tile.onerror = err => done(err, tile);
+                            tile.src = URL.createObjectURL(blob);
+                        }).catch(() => {
+                            // Fallback to normal loading if fetch intercept fails
+                            tile.onload = () => done(null, tile);
+                            tile.onerror = err => done(err, tile);
+                            tile.src = url;
+                        });
+                    }
+                });
+            } else {
+                tile.onload = () => done(null, tile);
+                tile.onerror = err => done(err, tile);
+                tile.src = url;
+            }
+            return tile;
+        }
+    });
+    L.tileLayer.cached = function (url, options) { return new L.TileLayer.Cached(url, options); };
+
+    // Implement Mapbox using provided public access token and new cached layer
+    const mapboxToken = 'PUT_TOKEN_HERE';
+    L.tileLayer.cached(`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`, {
+        maxZoom: 20,
+        tileSize: 512,
+        zoomOffset: -1,
+        attribution: '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a>'
     }).addTo(map);
+
+    // Create a pure-code SVG replica of the clubhouse to prevent broken image links
+    const cscSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 70">
+        <rect x="10" y="15" width="80" height="55" fill="#10A5A8" stroke="#0A7A7D" stroke-width="2"/>
+        <rect x="8" y="10" width="84" height="5" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+        <rect x="62" y="22" width="22" height="48" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+        <rect x="65" y="25" width="16" height="45" fill="#964736" stroke="#6E3224" stroke-width="1"/>
+        <rect x="67" y="27" width="12" height="18" fill="#823B2A"/>
+        <rect x="67" y="47" width="12" height="20" fill="#823B2A"/>
+        <circle cx="68" cy="44" r="1.5" fill="#FDE047"/>
+        <rect x="15" y="25" width="40" height="25" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+        <rect x="18" y="28" width="16" height="10" fill="#FBBF24"/>
+        <rect x="36" y="28" width="16" height="10" fill="#FBBF24"/>
+        <rect x="18" y="39" width="16" height="8" fill="#FBBF24"/>
+        <rect x="36" y="39" width="16" height="8" fill="#FBBF24"/>
+        <rect x="8" y="52" width="54" height="4" fill="#BD7545" stroke="#73411E" stroke-width="1"/>
+        <rect x="8" y="59" width="54" height="4" fill="#BD7545" stroke="#73411E" stroke-width="1"/>
+        <rect x="12" y="63" width="4" height="7" fill="#A65317"/>
+        <rect x="28" y="63" width="4" height="7" fill="#A65317"/>
+        <rect x="44" y="63" width="4" height="7" fill="#A65317"/>
+        <rect x="58" y="63" width="4" height="7" fill="#A65317"/>
+        <ellipse cx="50" cy="10" rx="25" ry="10" fill="#2563EB" stroke="#1E40AF" stroke-width="2"/>
+        <text x="50" y="14" font-family="Arial, sans-serif" font-weight="900" font-size="12" fill="white" text-anchor="middle">CSC</text>
+    </svg>`;
+
+    // Add the tiny clubhouse icon
+    const clubhouseIcon = L.icon({
+        iconUrl: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(cscSvg),
+        iconSize: [40, 28], // Very small
+        iconAnchor: [20, 14] // Centered on the coordinates
+    });
+    // Moved further North
+    L.marker([37.863580, -122.313550], {icon: clubhouseIcon}).addTo(map);
 
     const weatherIcons = {
         'clear-day': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; color: #f59e0b;"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>`,
