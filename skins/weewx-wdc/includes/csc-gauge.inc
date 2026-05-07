@@ -313,7 +313,7 @@
     /* #raw */
     // 1. API Configuration
     const STATIC_TOKEN = "8535e71d-2290-4965-ad3f-ab05b9294fdf";
-    const MAPBOX_TOKEN = "TOKEN_HERE";
+    const MAPBOX_TOKEN = "";
     const API_OBS_BASE = "https://swd.weatherflow.com/swd/rest/observations/station/127241";
     const API_FCST_BASE = "https://swd.weatherflow.com/swd/rest/better_forecast?station_id=127241&units_wind=kts";
 
