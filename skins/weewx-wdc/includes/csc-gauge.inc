@@ -1,3 +1,11 @@
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+
+<!-- Import the Inter font so it always renders correctly on any website -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
 <style>
     #isolated-weather-widget {
@@ -430,7 +438,7 @@
     L.tileLayer.cached = function (url, options) { return new L.TileLayer.Cached(url, options); };
 
     // Implement Mapbox using provided public access token and new cached layer
-    const mapboxToken = 'PUT_TOKEN_HERE';
+    const mapboxToken = '';
     L.tileLayer.cached(`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`, {
         maxZoom: 20,
         tileSize: 512,
