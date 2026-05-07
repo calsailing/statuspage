@@ -313,7 +313,7 @@
     /* #raw */
     // 1. API Configuration
     const STATIC_TOKEN = "8535e71d-2290-4965-ad3f-ab05b9294fdf";
-    const MAPBOX_TOKEN = "";
+    const MAPBOX_TOKEN = "xxx";
     const API_OBS_BASE = "https://swd.weatherflow.com/swd/rest/observations/station/127241";
     const API_FCST_BASE = "https://swd.weatherflow.com/swd/rest/better_forecast?station_id=127241&units_wind=kts";
 
@@ -398,17 +398,24 @@
     // 4. Map Implementation
     const SENSOR_COORD = [37.85568, -122.31445];
     const MAP_CENTER = [37.85868, -122.31445]; 
-    const initialZoom = 15.0; // Locked zoom level to keep the satellite view perfectly consistent
+    
+    // Define a bounding box matching the ideal desktop view so it scales perfectly on smaller screens
+    const IDEAL_BOUNDS = L.latLngBounds(
+        [37.85018, -122.32445], // South-West corner
+        [37.86718, -122.30445]  // North-East corner (captures the clubhouse)
+    );
 
     const map = L.map('iw-map-container', {
-        center: MAP_CENTER, zoom: initialZoom, zoomSnap: 0.1, zoomControl: false, attributionControl: false,
+        zoomSnap: 0.01, // Allow very fine fractional zoom levels for smooth scaling
+        zoomControl: false, attributionControl: false,
         dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, touchZoom: false
-    });
+    }).fitBounds(IDEAL_BOUNDS, { animate: false, padding: [0, 0] });
 
     // Automatically fix Leaflet rendering issues when the responsive layout resizes the container
     new ResizeObserver(() => {
         map.invalidateSize();
-        map.setView(MAP_CENTER, initialZoom, { animate: false }); // Force absolute center lock
+        // Use fitBounds so the exact same map area stays visible, dynamically scaling down
+        map.fitBounds(IDEAL_BOUNDS, { animate: false, padding: [0, 0] }); 
     }).observe(document.getElementById('iw-map-container'));
 
     // Custom Cached TileLayer to minimize Mapbox API calls
