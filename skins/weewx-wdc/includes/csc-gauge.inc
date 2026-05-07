@@ -99,7 +99,9 @@
     #isolated-weather-widget p, 
     #isolated-weather-widget h1, 
     #isolated-weather-widget h2, 
-    #isolated-weather-widget span { 
+    #isolated-weather-widget span,
+    #isolated-weather-widget text,
+    #isolated-weather-widget tspan { 
         margin: 0 !important; 
         padding: 0 !important; 
         line-height: normal !important; 
@@ -224,7 +226,7 @@
     .iw-switch input:checked + .iw-slider { background-color: var(--map-sensor); }
     .iw-switch input:checked + .iw-slider:before { transform: translateX(16px); }
     
-    .gauge-label { font-size: 8px; font-weight: 300; fill: var(--text-secondary); user-select: none; }
+    .gauge-label { font-size: 8px !important; font-weight: 300 !important; fill: var(--text-secondary) !important; user-select: none !important; }
     .gauge-marker { stroke-linecap: round; }
     
     /* Dedicated CSS for the tick bubbles */
@@ -311,6 +313,7 @@
     /* #raw */
     // 1. API Configuration
     const STATIC_TOKEN = "8535e71d-2290-4965-ad3f-ab05b9294fdf";
+    const MAPBOX_TOKEN = "TOKEN_HERE";
     const API_OBS_BASE = "https://swd.weatherflow.com/swd/rest/observations/station/127241";
     const API_FCST_BASE = "https://swd.weatherflow.com/swd/rest/better_forecast?station_id=127241&units_wind=kts";
 
@@ -451,8 +454,7 @@
     L.tileLayer.cached = function (url, options) { return new L.TileLayer.Cached(url, options); };
 
     // Implement Mapbox using provided public access token and new cached layer
-    const mapboxToken = 'TOKEN_HERE';
-    L.tileLayer.cached(`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`, {
+    L.tileLayer.cached(`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, {
         maxZoom: 20,
         tileSize: 512,
         zoomOffset: -1,
