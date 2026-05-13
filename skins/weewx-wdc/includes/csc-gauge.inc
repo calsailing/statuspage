@@ -109,8 +109,10 @@
     }
     #isolated-weather-widget .hidden { display: none !important; }
 
+    .iw-main-row { display: flex; flex-direction: column; gap: 24px; width: 100%; }
+
     @media (min-width: 768px) { 
-        #isolated-weather-widget { flex-direction: row; align-items: stretch; } 
+        .iw-main-row { flex-direction: row; align-items: stretch; } 
         .iw-dial-card { flex: 1.25; min-width: 350px; max-width: 550px; aspect-ratio: 330 / 284; }
     }
     
@@ -249,58 +251,59 @@
 </style>
 
 <div id="isolated-weather-widget">
-    <div class="iw-panel iw-dial-card">
-        <div class="iw-map-toggle">
-            <span class="iw-toggle-label" title="Satellite Map" style="display: flex; align-items: center;">
-                <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
-            </span>
-            <label class="iw-switch">
-                <input type="checkbox" id="map-mode-toggle">
-                <span class="iw-slider"></span>
-            </label>
+    <div class="iw-main-row">
+        <div class="iw-panel iw-dial-card">
+            <div class="iw-map-toggle">
+                <span class="iw-toggle-label" title="Satellite Map" style="display: flex; align-items: center;">
+                    <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+                </span>
+                <label class="iw-switch">
+                    <input type="checkbox" id="map-mode-toggle">
+                    <span class="iw-slider"></span>
+                </label>
+            </div>
+            <div class="iw-map-bg">
+                <div id="iw-map-container"></div>
+                <div class="iw-map-overlay"></div>
+            </div>
+            <div id="gauge-mount" class="iw-gauge-mount"></div>
         </div>
-        <div class="iw-map-bg">
-            <div id="iw-map-container"></div>
-            <div class="iw-map-overlay"></div>
-        </div>
-        <div id="gauge-mount" class="iw-gauge-mount"></div>
-    </div>
-    <div class="iw-panel">
-        <div class="iw-weather-grid">
-            <div class="iw-card iw-card-hero">
-                <div class="iw-justify-between iw-items-center" style="padding: 0 8px;">
-                    <div class="iw-flex-col">
-                        <div class="iw-temp-label">
-                            <svg style="width: 14px; height: 14px; color: #3b82f6;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
-                            <span>Current</span>
+        <div class="iw-panel">
+            <div class="iw-weather-grid">
+                <div class="iw-card iw-card-hero">
+                    <div class="iw-justify-between iw-items-center" style="padding: 0 8px;">
+                        <div class="iw-flex-col">
+                            <div class="iw-temp-label">
+                                <svg style="width: 14px; height: 14px; color: #3b82f6;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
+                                <span>Current</span>
+                            </div>
+                            <h1 id="val-temp-f" class="iw-temp-val-f">--&deg;F</h1>
+                            <p id="val-temp-c" class="iw-temp-val-c">--&deg;C</p>
                         </div>
-                        <h1 id="val-temp-f" class="iw-temp-val-f">--&deg;F</h1>
-                        <p id="val-temp-c" class="iw-temp-val-c">--&deg;C</p>
-                    </div>
-                    <div class="iw-flex-col iw-items-center" style="padding-top: 4px;">
-                        <div id="icon-weather" class="animate-float"></div>
-                        <p id="val-conditions" class="iw-cond-text">--</p>
+                        <div class="iw-flex-col iw-items-center" style="padding-top: 4px;">
+                            <div id="icon-weather" class="animate-float"></div>
+                            <p id="val-conditions" class="iw-cond-text">--</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="iw-card iw-card-small">
-                <div class="iw-flex-col" style="height: 100%; justify-content: space-between;">
-                    <div class="iw-icon-circle indigo">
-                        <svg style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
+                <div class="iw-card iw-card-small">
+                    <div class="iw-flex-col" style="height: 100%; justify-content: space-between;">
+                        <div class="iw-icon-circle indigo">
+                            <svg style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
+                        </div>
+                        <div><h2 id="val-pressure" class="iw-data-val">--</h2><p class="iw-data-label">Pressure (mb)</p></div>
+                        <div id="val-pressure-trend" class="iw-trend-badge"></div>
                     </div>
-                    <div><h2 id="val-pressure" class="iw-data-val">--</h2><p class="iw-data-label">Pressure (mb)</p></div>
-                    <div id="val-pressure-trend" class="iw-trend-badge"></div>
                 </div>
-            </div>
-            <div class="iw-card iw-card-small">
-                <div class="iw-flex-col" style="height: 100%; justify-content: space-between;">
-                    <div class="iw-icon-circle amber">
-                        <svg class="animate-spin-slow" style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
-                    </div>
-                    <div><h2 id="val-uv" class="iw-data-val">--</h2><p class="iw-data-label">UV Index</p></div>
-                    <div class="iw-uv-bar-wrap">
-                        <div class="iw-uv-bar-bg"><div class="iw-uv-green"></div><div class="iw-uv-amber"></div><div class="iw-uv-red"></div></div>
-                        <div id="uv-marker" class="iw-uv-marker hidden"></div>
+                <div class="iw-card iw-card-small">
+                    <div class="iw-flex-col" style="height: 100%; justify-content: space-between;">
+                        <div class="iw-icon-circle amber">
+                            <svg class="animate-spin-slow" style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                        </div>
+                        <div><h2 id="val-uv" class="iw-data-val">--</h2><p class="iw-data-label">UV Index</p></div>
+                        <div class="iw-uv-bar-wrap">
+                            <div class="iw-uv-bar-bg"><div class="iw-uv-green"></div><div class="iw-uv-amber"></div><div class="iw-uv-red"></div></div>
+                            <div id="uv-marker" class="iw-uv-marker hidden"></div>
                     </div>
                 </div>
             </div>
@@ -312,9 +315,16 @@
     /* #raw */
     // 1. API Configuration
     const STATIC_TOKEN = "8535e71d-2290-4965-ad3f-ab05b9294fdf";
-    const MAPBOX_TOKEN = "444";
-    const API_OBS_BASE = "https://swd.weatherflow.com/swd/rest/observations/station/127241";
-    const API_FCST_BASE = "https://swd.weatherflow.com/swd/rest/better_forecast?station_id=127241&units_wind=kts";
+    const MAPBOX_TOKEN = "TOKEN_HERE";
+    const API_OBS_BASE = "https://swd.weatherflow.com/swd/rest/observations/stn/127241";
+    // Explicitly add token to forecast URL since we remove the auto-appender below
+    const API_FCST_BASE = `https://swd.weatherflow.com/swd/rest/better_forecast?station_id=127241&units_wind=kts&token=${STATIC_TOKEN}`;
+
+    const getObsUrl = () => {
+        const time_end = Math.floor(Date.now() / 1000);
+        const time_start = time_end - 600; // 10 minutes ago
+        return `${API_OBS_BASE}?time_start=${time_start}&time_end=${time_end}&bucket=1&api_key=${STATIC_TOKEN}`;
+    };
 
     // 2. Persistence Logic (Using localStorage)
     const STORAGE_KEY = 'cal_sailing_wind_state';
@@ -339,11 +349,12 @@
                 isRestored = true;
             }
             
-            if (state.tempF) document.getElementById('val-temp-f').innerText = state.tempF;
-            if (state.tempC) document.getElementById('val-temp-c').innerText = state.tempC;
-            if (state.pressure) document.getElementById('val-pressure').innerText = state.pressure;
+            if (state.tempF) { const el = document.getElementById('val-temp-f'); if(el) el.innerText = state.tempF; }
+            if (state.tempC) { const el = document.getElementById('val-temp-c'); if(el) el.innerText = state.tempC; }
+            if (state.pressure) { const el = document.getElementById('val-pressure'); if(el) el.innerText = state.pressure; }
             if (state.uv) {
-                document.getElementById('val-uv').innerText = state.uv;
+                const uvEl = document.getElementById('val-uv');
+                if (uvEl) uvEl.innerText = state.uv;
                 const marker = document.getElementById('uv-marker');
                 if (marker) {
                     marker.classList.remove('hidden');
@@ -351,13 +362,18 @@
                 }
             }
             if (state.fcst) {
-                document.getElementById('val-conditions').innerText = state.fcst.conditions || '--';
-                document.getElementById('icon-weather').innerHTML = weatherIcons[state.fcst.icon] || '';
-                document.getElementById('val-pressure-trend').innerHTML = trendIcons[state.fcst.trend] || '';
+                const condEl = document.getElementById('val-conditions');
+                if (condEl) condEl.innerText = state.fcst.conditions || '--';
+                const iconEl = document.getElementById('icon-weather');
+                if (iconEl) iconEl.innerHTML = weatherIcons[state.fcst.icon] || '';
+                const trendEl = document.getElementById('val-pressure-trend');
+                if (trendEl) trendEl.innerHTML = trendIcons[state.fcst.trend] || '';
             }
             if (state.mapMode) {
-                document.getElementById('map-mode-toggle').checked = true;
-                document.getElementById('isolated-weather-widget').classList.add('map-mode');
+                const toggle = document.getElementById('map-mode-toggle');
+                if (toggle) toggle.checked = true;
+                const widget = document.getElementById('isolated-weather-widget');
+                if (widget) widget.classList.add('map-mode');
                 setTimeout(() => map.invalidateSize(), 100);
             }
             
@@ -372,11 +388,9 @@
     const fetchWithRetry = async (url, maxRetries = 3) => {
         for (let i = 0; i < maxRetries; i++) {
             try {
-                const authenticatedUrl = new URL(url);
-                authenticatedUrl.searchParams.set('token', STATIC_TOKEN);
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 5000);
-                const response = await fetch(authenticatedUrl.toString(), { signal: controller.signal });
+                const response = await fetch(url, { signal: controller.signal });
                 clearTimeout(timeoutId);
                 if (response.ok) return await response.json();
                 if (response.status === 429) {
@@ -391,7 +405,7 @@
         }
     };
 
-    window.obsPrefetch = fetchWithRetry(API_OBS_BASE).catch(() => null);
+    window.obsPrefetch = fetchWithRetry(getObsUrl()).catch(() => null);
     window.fcstPrefetch = fetchWithRetry(API_FCST_BASE).catch(() => null);
 
     // 4. Map Implementation
@@ -708,31 +722,112 @@
     async function fetchWeatherData(isInitialLoad = false) {
         try {
             let obsData;
-            if (isInitialLoad && window.obsPrefetch) { obsData = await window.obsPrefetch; window.obsPrefetch = null; } 
-            else obsData = await fetchWithRetry(API_OBS_BASE).catch(() => null); 
-            
-            if (obsData && obsData.obs && obsData.obs.length > 0) {
-                const o = obsData.obs[0];
-                const weatherState = {
-                    lull: (o.wind_lull || 0) * 1.94384, speed: (o.wind_avg || 0) * 1.94384, gust: (o.wind_gust || 0) * 1.94384, direction: o.wind_direction || 0
-                };
-                update(weatherState); // Will use standard 2.4s smooth animation 
-                if (o.air_temperature != null) {
-                    const tempF = (o.air_temperature * 9/5) + 32;
-                    document.getElementById('val-temp-f').innerText = `${tempF.toFixed(1)}\xB0F`;
-                    document.getElementById('val-temp-c').innerText = `${o.air_temperature.toFixed(1)}\xB0C`;
-                    saveToLocalStorage({ tempF: `${tempF.toFixed(1)}\xB0F`, tempC: `${o.air_temperature.toFixed(1)}\xB0C` });
+            const currentUrl = getObsUrl();
+
+            if (isInitialLoad && window.obsPrefetch) { 
+                obsData = await window.obsPrefetch; 
+                window.obsPrefetch = null; 
+            } 
+            else {
+                obsData = await fetchWithRetry(currentUrl).catch(() => null); 
+            }
+
+            if (obsData && obsData.obs && Array.isArray(obsData.obs) && obsData.obs.length > 0) {
+                let speedSum = 0, uSum = 0, vSum = 0;
+                let minLull = Infinity, maxGust = -Infinity;
+                let tempSum = 0, pressureSum = 0, uvSum = 0;
+                let count = 0, tempCount = 0, pressureCount = 0, uvCount = 0;
+
+                const fields = obsData.obs_fields || obsData.ob_fields;
+                
+                // Extremely resilient data extractor that checks multiple naming variations
+                function extract(o, possibleNames) {
+                    if (Array.isArray(o) && fields) {
+                        for (let n of possibleNames) {
+                            const idx = fields.indexOf(n);
+                            if (idx !== -1 && o[idx] != null) return parseFloat(o[idx]);
+                        }
+                    } else if (typeof o === 'object' && o !== null && !Array.isArray(o)) {
+                        for (let n of possibleNames) {
+                            if (o[n] != null) return parseFloat(o[n]);
+                        }
+                    }
+                    return null;
                 }
-                const pressure = o.sea_level_pressure || o.barometric_pressure || o.station_pressure;
-                if (pressure != null) {
-                    document.getElementById('val-pressure').innerText = pressure.toFixed(1);
-                    saveToLocalStorage({ pressure: pressure.toFixed(1) });
+
+                obsData.obs.forEach(o => {
+                    const s = extract(o, ['wind_avg', 'wind_speed', 'wind', 'avg']);
+                    const l = extract(o, ['wind_lull', 'lull', 'wind_min']);
+                    const g = extract(o, ['wind_gust', 'gust', 'wind_max']);
+                    const d = extract(o, ['wind_direction', 'wind_dir', 'direction', 'dir']);
+                    const t = extract(o, ['air_temperature', 'air_temp', 'temperature', 'temp']);
+                    const p = extract(o, ['sea_level_pressure', 'station_pressure', 'barometric_pressure', 'pressure']);
+                    const uv = extract(o, ['uv', 'uv_index']);
+
+                    if (s != null && d != null) {
+                        const currentL = l != null ? l : s;
+                        const currentG = g != null ? g : s;
+
+                        minLull = Math.min(minLull, currentL);
+                        maxGust = Math.max(maxGust, currentG);
+
+                        speedSum += s;
+                        // Vector sum for calculating average wind direction
+                        uSum += s * Math.sin(d * Math.PI / 180);
+                        vSum += s * Math.cos(d * Math.PI / 180);
+                        count++;
+                    }
+
+                    if (t != null) { tempSum += t; tempCount++; }
+                    if (p != null) { pressureSum += p; pressureCount++; }
+                    if (uv != null) { uvSum += uv; uvCount++; }
+                });
+
+                if (count > 0) {
+                    const avgSpeed = speedSum / count;
+                    // Converts the U and V vectors back into degrees (0-359 format)
+                    const avgDir = (Math.atan2(uSum, vSum) * 180 / Math.PI + 360) % 360;
+
+                    if (minLull === Infinity) minLull = avgSpeed;
+                    if (maxGust === -Infinity) maxGust = avgSpeed;
+
+                    const weatherState = {
+                        lull: minLull * 1.94384, 
+                        speed: avgSpeed * 1.94384, 
+                        gust: maxGust * 1.94384, 
+                        direction: avgDir
+                    };
+                    update(weatherState); // Will use standard 2.4s smooth animation 
                 }
-                if (o.uv != null) {
-                    document.getElementById('val-uv').innerText = o.uv.toFixed(1);
+
+                if (tempCount > 0) {
+                    const avgTempC = tempSum / tempCount;
+                    const avgTempF = (avgTempC * 9/5) + 32;
+                    const tempFEl = document.getElementById('val-temp-f');
+                    if (tempFEl) tempFEl.innerText = `${avgTempF.toFixed(1)}\xB0F`;
+                    const tempCEl = document.getElementById('val-temp-c');
+                    if (tempCEl) tempCEl.innerText = `${avgTempC.toFixed(1)}\xB0C`;
+                    saveToLocalStorage({ tempF: `${avgTempF.toFixed(1)}\xB0F`, tempC: `${avgTempC.toFixed(1)}\xB0C` });
+                }
+                
+                if (pressureCount > 0) {
+                    const avgPress = pressureSum / pressureCount;
+                    const pressEl = document.getElementById('val-pressure');
+                    if (pressEl) pressEl.innerText = avgPress.toFixed(1);
+                    saveToLocalStorage({ pressure: avgPress.toFixed(1) });
+                }
+                
+                if (uvCount > 0) {
+                    const avgUv = uvSum / uvCount;
+                    const uvEl = document.getElementById('val-uv');
+                    if (uvEl) uvEl.innerText = avgUv.toFixed(1);
                     const marker = document.getElementById('uv-marker');
-                    if(marker) { marker.classList.remove('hidden'); let uvPercentage = Math.min((o.uv / 11) * 100, 100); marker.style.left = `calc(${uvPercentage}% - 3px)`; }
-                    saveToLocalStorage({ uv: o.uv.toFixed(1) });
+                    if(marker) { 
+                        marker.classList.remove('hidden'); 
+                        let uvPercentage = Math.min((avgUv / 11) * 100, 100); 
+                        marker.style.left = `calc(${uvPercentage}% - 3px)`; 
+                    }
+                    saveToLocalStorage({ uv: avgUv.toFixed(1) });
                 }
             }
         } catch (e) { console.error("Obs error:", e); }
@@ -745,9 +840,12 @@
 
                 if (fcstData && fcstData.current_conditions) {
                     const cc = fcstData.current_conditions;
-                    document.getElementById('val-conditions').innerText = cc.conditions || '--';
-                    document.getElementById('icon-weather').innerHTML = weatherIcons[cc.icon] || weatherIcons['default'];
-                    document.getElementById('val-pressure-trend').innerHTML = trendIcons[cc.pressure_trend] || '';
+                    const condEl = document.getElementById('val-conditions');
+                    if (condEl) condEl.innerText = cc.conditions || '--';
+                    const iconEl = document.getElementById('icon-weather');
+                    if (iconEl) iconEl.innerHTML = weatherIcons[cc.icon] || weatherIcons['default'];
+                    const trendEl = document.getElementById('val-pressure-trend');
+                    if (trendEl) trendEl.innerHTML = trendIcons[cc.pressure_trend] || '';
                     saveToLocalStorage({ fcst: { conditions: cc.conditions, icon: cc.icon, trend: cc.pressure_trend } });
                 }
             } catch (e) { console.error("Fcst error:", e); }
@@ -791,16 +889,19 @@
     fetchWeatherData(true); 
     setInterval(() => fetchWeatherData(false), 60000);
 
-    document.getElementById('map-mode-toggle').addEventListener('change', (e) => {
-        const widget = document.getElementById('isolated-weather-widget');
-        const isChecked = e.target.checked;
-        if (isChecked) {
-            widget.classList.add('map-mode');
-            setTimeout(() => map.invalidateSize(), 100);
-        } else {
-            widget.classList.remove('map-mode');
-        }
-        saveToLocalStorage({ mapMode: isChecked });
-    });
+    const mapToggle = document.getElementById('map-mode-toggle');
+    if (mapToggle) {
+        mapToggle.addEventListener('change', (e) => {
+            const widget = document.getElementById('isolated-weather-widget');
+            const isChecked = e.target.checked;
+            if (isChecked) {
+                if (widget) widget.classList.add('map-mode');
+                setTimeout(() => map.invalidateSize(), 100);
+            } else {
+                if (widget) widget.classList.remove('map-mode');
+            }
+            saveToLocalStorage({ mapMode: isChecked });
+        });
+    }
     /* #end raw */
 </script>
