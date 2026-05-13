@@ -304,6 +304,7 @@
                         <div class="iw-uv-bar-wrap">
                             <div class="iw-uv-bar-bg"><div class="iw-uv-green"></div><div class="iw-uv-amber"></div><div class="iw-uv-red"></div></div>
                             <div id="uv-marker" class="iw-uv-marker hidden"></div>
+                        </div>
                     </div>
                 </div>
             </div>
