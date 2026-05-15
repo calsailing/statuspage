@@ -110,7 +110,7 @@
   html.dark .offline .wf-dot { background-color: #f28b82; }
 </style>
 
-              <h2><span style="vertical-align: middle;">$current.dateTime.format("%d-%b-%Y") </span><span class="wf-update-time" id="wf-time"></span> <div class="wf-status-pill" id="wf-pill" style="display: none;"></div></h2> 
+              <h2><span style="vertical-align: middle;">$current.dateTime.format("%d-%b-%Y") </span> Last update: <span class="wf-update-time" id="wf-time"></span> <div class="wf-status-pill" id="wf-pill" style="display: none;"></div></h2> 
 
 
 
@@ -177,23 +177,22 @@
     // 1. Run immediately on page load
     checkWeatherFlowStatus();
     
-    // 2. Sync future updates exactly to the top of the system clock's minute
+    // 2. Sync future updates exactly to the top of the system clock's minute (plus a 8-second delay)
     function scheduleNextMinuteUpdate() {
         const now = new Date();
-        // Calculate exactly how many milliseconds until the next minute starts (:00 seconds)
-        const msUntilNextMinute = 60000 - (now.getSeconds() * 1000 + now.getMilliseconds());
+        // Calculate exactly how many milliseconds until the next minute starts (:00 seconds), then add 8000ms
+        const msUntilNextUpdate = 60000 - (now.getSeconds() * 1000 + now.getMilliseconds()) + 8000;
         
         setTimeout(() => {
             checkWeatherFlowStatus();
             scheduleNextMinuteUpdate(); // Re-sync for the next minute
-        }, msUntilNextMinute);
+        }, msUntilNextUpdate);
     }
     
     scheduleNextMinuteUpdate();
 })();
 /* #end raw */
 </script>
-
 
     
 
