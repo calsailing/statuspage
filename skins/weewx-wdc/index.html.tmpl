@@ -174,8 +174,22 @@
         }
     }
 
+    // 1. Run immediately on page load
     checkWeatherFlowStatus();
-    setInterval(checkWeatherFlowStatus, 60000);
+    
+    // 2. Sync future updates exactly to the top of the system clock's minute
+    function scheduleNextMinuteUpdate() {
+        const now = new Date();
+        // Calculate exactly how many milliseconds until the next minute starts (:00 seconds)
+        const msUntilNextMinute = 60000 - (now.getSeconds() * 1000 + now.getMilliseconds());
+        
+        setTimeout(() => {
+            checkWeatherFlowStatus();
+            scheduleNextMinuteUpdate(); // Re-sync for the next minute
+        }, msUntilNextMinute);
+    }
+    
+    scheduleNextMinuteUpdate();
 })();
 /* #end raw */
 </script>
