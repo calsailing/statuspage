@@ -54,7 +54,135 @@
             <header class="bx--col page-header">
             <div id="header-area">
               <h1><a href="">Today's Conditions</a></h1> 
-              <h2>$current.dateTime.format("%d-%b-%Y")</h2>
+              <h2>$current.dateTime.format("%d-%b-%Y")</h2> 
+
+
+<style>
+        /* =======================================================================
+           1. COPY THIS CSS TO YOUR STYLESHEET
+           ======================================================================= */
+        .wf-indicator-container {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            font-size: 0.9em;
+            font-weight: 500;
+            margin-left: 10px;
+            padding: 4px 10px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            color: #333;
+        }
+
+        /* Dark mode support */
+        html.dark .wf-indicator-container {
+            background: #374151;
+            border-color: #4b5563;
+            color: #f3f4f6;
+        }
+
+        .wf-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .wf-status-dot.live {
+            background-color: #10b981; /* Emerald green */
+            box-shadow: 0 0 0 rgba(16, 185, 129, 0.7);
+            animation: wf-pulse-green 2s infinite;
+        }
+        .wf-status-dot.delayed {
+            background-color: #ef4444; /* Red */
+        }
+        @keyframes wf-pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 5px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+    </style>
+
+    <!-- =======================================================================
+         2. COPY THIS HTML EXACTLY WHERE YOU WANT IT (e.g., next to the date)
+         ======================================================================= -->
+    <div class="wf-indicator-container" id="wf-indicator" style="display: none;">
+        <div class="wf-status-dot" id="wf-dot"></div>
+        <span id="wf-text">Checking status...</span>
+    </div>
+    <!-- ======================================================================= -->
+
+    <script>
+        /* #raw */
+        /* =======================================================================
+           3. COPY THIS JAVASCRIPT TO YOUR PAGE
+           ======================================================================= */
+        (async function() {
+            const apiUrl = 'https://swd.weatherflow.com/swd/rest/observations/device/314522?api_key=8535e71d-2290-4965-ad3f-ab05b9294fdf';
+            
+            const indicatorContainer = document.getElementById('wf-indicator');
+            const indicatorText = document.getElementById('wf-text');
+            const indicatorDot = document.getElementById('wf-dot');
+
+            function updateUI(isLive, text) {
+                indicatorContainer.style.display = 'inline-flex'; // Unhide once script runs
+                indicatorText.textContent = text;
+                indicatorDot.className = 'wf-status-dot ' + (isLive ? 'live' : 'delayed');
+            }
+
+            function getTimeAgoString(obsTimeMs) {
+                const seconds = Math.floor((Date.now() - obsTimeMs) / 1000);
+                const minutes = Math.floor(seconds / 60);
+                const hours = Math.floor(minutes / 60);
+                const days = Math.floor(hours / 24);
+
+                if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
+                if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+                return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+            }
+
+            async function checkWeatherFlowStatus() {
+                try {
+                    const response = await fetch(apiUrl);
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    
+                    const data = await response.json();
+                    
+                    // Validate data exists
+                    if (data && data.obs && data.obs.length > 0) {
+                        const latestObs = data.obs[0];
+                        
+                        // Handle both {timestamp: ...} and [timestamp, ...] formats
+                        const timestampEpoch = latestObs.timestamp || latestObs[0]; 
+                        const obsTimeMs = timestampEpoch * 1000;
+                        
+                        const diffMinutes = (Date.now() - obsTimeMs) / (1000 * 60);
+
+                        if (diffMinutes <= 5) {
+                            updateUI(true, 'Live');
+                        } else {
+                            updateUI(false, 'Last update ' + getTimeAgoString(obsTimeMs));
+                        }
+                    } else {
+                        updateUI(false, 'No data available');
+                    }
+                } catch (error) {
+                    console.error('Error fetching WeatherFlow data:', error);
+                    updateUI(false, 'Sensor Offline');
+                }
+            }
+
+            // Run immediately on page load
+            checkWeatherFlowStatus();
+            
+            // Refresh the status silently every 60 seconds
+            setInterval(checkWeatherFlowStatus, 60000);
+        })();
+        /* #end raw */
+    </script>
+
+
+
             </div>
        
               
