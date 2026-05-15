@@ -55,11 +55,10 @@
             <div id="header-area">
               <h1><a href="">Today's Conditions</a></h1> 
  <div style="display: flex; align-items: center;">
-              <h2>$current.dateTime.format("%d-%b-%Y")</h2> <style>
+              <h2>$current.dateTime.format("%d-%b-%Y")</h2> 
 
-        /* =======================================================================
-           1. COPY THIS CSS TO YOUR STYLESHEET
-           ======================================================================= */
+
+<style>
         .wf-indicator-container {
             display: inline-flex;
             align-items: center;
@@ -126,9 +125,6 @@
 
     <script>
         /* #raw */
-        /* =======================================================================
-           3. COPY THIS JAVASCRIPT TO YOUR PAGE
-           ======================================================================= */
         (async function() {
             const apiUrl = 'https://swd.weatherflow.com/swd/rest/observations/device/314522?api_key=8535e71d-2290-4965-ad3f-ab05b9294fdf';
             
