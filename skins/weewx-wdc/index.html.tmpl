@@ -54,134 +54,133 @@
             <header class="bx--col page-header">
             <div id="header-area">
               <h1><a href="" style="text-decoration: none">Today's Conditions</a></h1> 
+<style>
+  /* 1. Time string placed next to your Date */
+  .wf-update-time {
+    color: #666;
+    margin-left: 8px;
+    font-weight: normal;
+  }
+  
+  /* 2. Modern Status Pill placed at the far right */
+  .wf-status-pill {
+    float: right;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-family: system-ui, -apple-system, sans-serif; /* Clean native font for the pill */
+    vertical-align: middle;
+    margin-top: 2px;
+  }
 
-              <h2>$current.dateTime.format("%d-%b-%Y") <style>
-        /* =======================================================================
-           1. COPY THIS CSS TO YOUR STYLESHEET
-           ======================================================================= */
-        .wf-indicator-container {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
-            font-size: 14px; /* Resets h2 scaling */
-            line-height: normal; /* Resets h2 line-height */
-            letter-spacing: normal; /* Resets h2 letter spacing */
-            text-transform: none; /* Resets h2 capitalization */
-            font-weight: 400; /* Normal weight to keep it subtle */
-            color: #6c757d; /* Subtle gray text */
-            margin-left: 12px;
-            vertical-align: middle;
-        }
+  /* Status Colors - Light Backgrounds, Darker Text */
+  .wf-status-pill.online { background-color: #e6f4ea; color: #1e8e3e; }
+  .wf-status-pill.delayed { background-color: #fef7e0; color: #b06000; }
+  .wf-status-pill.offline { background-color: #fce8e6; color: #c5221f; }
+  
+  /* The Dots */
+  .wf-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+  .online .wf-dot {
+    background-color: #1e8e3e;
+    animation: wf-pulse-green 2s infinite;
+  }
+  .delayed .wf-dot { background-color: #f9ab00; }
+  .offline .wf-dot { background-color: #d93025; }
 
-        /* Dark mode support */
-        html.dark .wf-indicator-container {
-            color: #9ca3af;
-        }
+  /* Pulsing Animation for Live Status */
+  @keyframes wf-pulse-green {
+    0% { box-shadow: 0 0 0 0 rgba(30, 142, 62, 0.4); }
+    70% { box-shadow: 0 0 0 4px rgba(30, 142, 62, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(30, 142, 62, 0); }
+  }
 
-        .wf-status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-        }
-        .wf-status-dot.live {
-            background-color: #10b981; /* Emerald green */
-            box-shadow: 0 0 0 rgba(16, 185, 129, 0.7);
-            animation: wf-pulse-green 2s infinite;
-        }
-        .wf-status-dot.delayed {
-            background-color: #ef4444; /* Red */
-        }
-        @keyframes wf-pulse-green {
-            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-            70% { box-shadow: 0 0 0 5px rgba(16, 185, 129, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-        }
-    </style>
+  /* Dark Mode Support (Optional: Triggers if html tag has class="dark") */
+  html.dark .wf-update-time { color: #aaa; }
+  html.dark .wf-status-pill.online { background-color: rgba(30, 142, 62, 0.2); color: #81c995; }
+  html.dark .online .wf-dot { background-color: #81c995; }
+  html.dark .wf-status-pill.delayed { background-color: rgba(249, 171, 0, 0.2); color: #fde293; }
+  html.dark .delayed .wf-dot { background-color: #fde293; }
+  html.dark .wf-status-pill.offline { background-color: rgba(217, 48, 37, 0.2); color: #f28b82; }
+  html.dark .offline .wf-dot { background-color: #f28b82; }
+</style>
 
-    <!-- =======================================================================
-         2. COPY THIS HTML EXACTLY WHERE YOU WANT IT 
-            (Tip: Paste this right inside your <h2> tag, after the main text:
-             <h2>Today's Conditions <div class="wf-indicator-container"...></div></h2>)
-         ======================================================================= -->
-    <div class="wf-indicator-container" id="wf-indicator" style="display: none;">
-        <div class="wf-status-dot" id="wf-dot"></div>
-        <span id="wf-text">Checking status...</span>
-    </div>
-    <!-- ======================================================================= -->
+              <h2>$current.dateTime.format("%d-%b-%Y") <span class="wf-update-time" id="wf-time"></span><div class="wf-status-pill" id="wf-pill" style="display: none;"></div></h2> 
 
-    <script>
-        /* #raw */
-        /* =======================================================================
-           3. COPY THIS JAVASCRIPT TO YOUR PAGE
-           ======================================================================= */
-        (async function() {
-            const apiUrl = 'https://swd.weatherflow.com/swd/rest/observations/device/314522?api_key=8535e71d-2290-4965-ad3f-ab05b9294fdf';
+
+
+<script>
+/* #raw */
+(async function() {
+    const apiUrl = 'https://swd.weatherflow.com/swd/rest/observations/device/314522?api_key=8535e71d-2290-4965-ad3f-ab05b9294fdf';
+    
+    const timeText = document.getElementById('wf-time');
+    const pill = document.getElementById('wf-pill');
+
+    function getCompactTimeAgo(obsTimeMs) {
+        const seconds = Math.floor((Date.now() - obsTimeMs) / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
+
+        if (days > 0) return `${days}d`;
+        if (hours > 0) return `${hours}h`;
+        return `${minutes}m`;
+    }
+
+    async function checkWeatherFlowStatus() {
+        try {
+            const response = await fetch(apiUrl);
+            if (!response.ok) throw new Error('Network response error');
             
-            const indicatorContainer = document.getElementById('wf-indicator');
-            const indicatorText = document.getElementById('wf-text');
-            const indicatorDot = document.getElementById('wf-dot');
+            const data = await response.json();
+            
+            if (data && data.obs && data.obs.length > 0) {
+                const latestObs = data.obs[0];
+                const timestampEpoch = latestObs.timestamp || latestObs[0]; 
+                const obsTimeMs = timestampEpoch * 1000;
+                
+                // Set the exact time next to the date (e.g. 14:30)
+                const obsDate = new Date(obsTimeMs);
+                timeText.textContent = obsDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                
+                // Calculate delay
+                const diffMinutes = (Date.now() - obsTimeMs) / (1000 * 60);
 
-            function updateUI(isLive, text) {
-                indicatorContainer.style.display = 'inline-flex'; // Unhide once script runs
-                indicatorText.innerHTML = text;
-                indicatorDot.className = 'wf-status-dot ' + (isLive ? 'live' : 'delayed');
-            }
-
-            function getTimeAgoString(obsTimeMs) {
-                const seconds = Math.floor((Date.now() - obsTimeMs) / 1000);
-                const minutes = Math.floor(seconds / 60);
-                const hours = Math.floor(minutes / 60);
-                const days = Math.floor(hours / 24);
-
-                if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
-                if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-                return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
-            }
-
-            async function checkWeatherFlowStatus() {
-                try {
-                    const response = await fetch(apiUrl);
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    
-                    const data = await response.json();
-                    
-                    // Validate data exists
-                    if (data && data.obs && data.obs.length > 0) {
-                        const latestObs = data.obs[0];
-                        
-                        // Handle both {timestamp: ...} and [timestamp, ...] formats
-                        const timestampEpoch = latestObs.timestamp || latestObs[0]; 
-                        const obsTimeMs = timestampEpoch * 1000;
-                        
-                        const diffMinutes = (Date.now() - obsTimeMs) / (1000 * 60);
-
-                        if (diffMinutes <= 5) {
-                            const timeString = new Date(obsTimeMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-                            updateUI(true, `${timeString} Online`);
-                        } else {
-                            updateUI(false, 'Last update ' + getTimeAgoString(obsTimeMs));
-                        }
-                    } else {
-                        updateUI(false, 'No data available');
-                    }
-                } catch (error) {
-                    console.error('Error fetching WeatherFlow data:', error);
-                    updateUI(false, 'Sensor Offline');
+                pill.style.display = 'inline-flex'; // Unhide pill
+                
+                if (diffMinutes <= 5) {
+                    pill.className = 'wf-status-pill online';
+                    pill.innerHTML = '<div class="wf-dot"></div>Online';
+                } else {
+                    const delayStr = getCompactTimeAgo(obsTimeMs);
+                    pill.className = 'wf-status-pill delayed';
+                    pill.innerHTML = `<div class="wf-dot"></div>Delayed ${delayStr}`;
                 }
+            } else {
+                throw new Error('No observation data');
             }
+        } catch (error) {
+            console.error('WeatherFlow fetch error:', error);
+            pill.style.display = 'inline-flex';
+            pill.className = 'wf-status-pill offline';
+            pill.innerHTML = '<div class="wf-dot"></div>Offline';
+            timeText.textContent = ''; // Clear time if completely offline
+        }
+    }
 
-            // Run immediately on page load
-            checkWeatherFlowStatus();
-            
-            // Refresh the status silently every 60 seconds
-            setInterval(checkWeatherFlowStatus, 60000);
-        })();
-        /* #end raw */
-    </script></h2> 
-
-
-
+    checkWeatherFlowStatus();
+    setInterval(checkWeatherFlowStatus, 60000);
+})();
+/* #end raw */
+</script>
 
 
     
