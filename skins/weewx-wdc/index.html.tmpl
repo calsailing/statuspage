@@ -54,7 +54,8 @@
             <header class="bx--col page-header">
             <div id="header-area">
               <h1><a href="">Today's Conditions</a></h1> 
-              <h2>$current.dateTime.format("%d-%b-%Y") <style>
+ <div style="display: flex; align-items: center;">
+              <h2>$current.dateTime.format("%d-%b-%Y")</h2> <style>
         /* =======================================================================
            1. COPY THIS CSS TO YOUR STYLESHEET
            ======================================================================= */
@@ -117,7 +118,11 @@
 
     <!-- =======================================================================
          2. COPY THIS HTML EXACTLY WHERE YOU WANT IT 
-            (Tip: Paste it INSIDE your <h2> tag, right after the text, to keep it on the same line)
+            (Tip: To keep it on the same line outside your heading, wrap them like this:
+            <div style="display: flex; align-items: center;">
+                <h2 style="margin: 0;">Today's Conditions</h2>
+                <!-- PASTE INDICATOR HERE -->
+            )
          ======================================================================= -->
     <div class="wf-indicator-container" id="wf-indicator" style="display: none;">
         <div class="wf-status-dot" id="wf-dot"></div>
@@ -193,7 +198,7 @@
             setInterval(checkWeatherFlowStatus, 60000);
         })();
         /* #end raw */
-    </script></h2> 
+    </script></div>
 
 
 
