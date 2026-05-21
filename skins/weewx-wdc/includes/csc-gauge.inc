@@ -480,11 +480,9 @@
     L.tileLayer.cached = function (url, options) { return new L.TileLayer.Cached(url, options); };
 
     // Implement Mapbox using provided public access token and new cached layer
-    L.tileLayer.cached(`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, {
-        maxZoom: 20,
-        tileSize: 512,
-        zoomOffset: -1,
-        attribution: '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a>'
+    L.tileLayer.cached(`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/256/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`, {
+       maxZoom: 20,
+       attribution: '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a>'
     }).addTo(map);
 
     // Create a pure-code SVG replica of the clubhouse to prevent broken image links
