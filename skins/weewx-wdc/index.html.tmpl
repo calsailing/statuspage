@@ -147,7 +147,7 @@
                 
                 // Set the exact time next to the date (e.g. 14:30)
                 const obsDate = new Date(obsTimeMs);
-                timeText.textContent = obsDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                timeText.textContent = obsDate.toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles', hour: '2-digit', minute: '2-digit', hour12: false });
                 
                 // Calculate delay
                 const diffMinutes = (Date.now() - obsTimeMs) / (1000 * 60);
