@@ -708,6 +708,20 @@
     }
 
     function updateIndicatorUI() {
+        let isOffline = false;
+
+        // Determine actual connection state
+        if (!wsSocket || wsSocket.readyState === WebSocket.CONNECTING) {
+            // It's just establishing
+        } else if (wsSocket.readyState !== WebSocket.OPEN) {
+            isOffline = true;
+        }
+
+        // Hide the wind arrow instantly when the connection drops
+        if (typeof pointer !== 'undefined') {
+            pointer.style("display", isOffline ? "none" : null);
+        }
+
         const pill = document.getElementById('wf-pill');
         if (!pill) return; // Exit cleanly if the indicator HTML isn't on the page
 
@@ -719,7 +733,7 @@
             return;
         }
 
-        if (wsSocket.readyState !== WebSocket.OPEN) {
+        if (isOffline) {
             pill.className = 'wf-status-pill offline';
             pill.innerHTML = '<div class="wf-dot"></div>Offline';
             return;
