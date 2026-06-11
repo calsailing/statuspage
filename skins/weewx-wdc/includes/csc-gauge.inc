@@ -326,6 +326,9 @@
     const API_OBS_BASE = `https://swd.weatherflow.com/swd/rest/observations/stn/${STATION_ID}`;
     const API_FCST_BASE = `https://swd.weatherflow.com/swd/rest/better_forecast?station_id=${STATION_ID}&units_wind=kts&token=${STATIC_TOKEN}`;
 
+    let lastObsTimeMs = 0;
+    let watchdogTimer = null;
+
     // 2. Persistence Logic (Using localStorage)
     const STORAGE_KEY = 'cal_sailing_wind_state';
 
@@ -693,6 +696,53 @@
     }
 
     // 6. WebSocket Connection and Data Logic 
+    function getCompactTimeAgo(obsTimeMs) {
+        const seconds = Math.floor((Date.now() - obsTimeMs) / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
+
+        if (days > 0) return `${days}d`;
+        if (hours > 0) return `${hours}h`;
+        return `${minutes}m`;
+    }
+
+    function updateIndicatorUI() {
+        const pill = document.getElementById('wf-pill');
+        if (!pill) return; // Exit cleanly if the indicator HTML isn't on the page
+
+        pill.style.display = 'inline-flex';
+
+        if (!wsSocket || wsSocket.readyState === WebSocket.CONNECTING) {
+            pill.className = 'wf-status-pill delayed';
+            pill.innerHTML = '<div class="wf-dot"></div>Connecting...';
+            return;
+        }
+
+        if (wsSocket.readyState !== WebSocket.OPEN) {
+            pill.className = 'wf-status-pill offline';
+            pill.innerHTML = '<div class="wf-dot"></div>Offline';
+            return;
+        }
+
+        if (lastObsTimeMs === 0) {
+            pill.className = 'wf-status-pill delayed';
+            pill.innerHTML = '<div class="wf-dot"></div>Waiting for data...';
+            return;
+        }
+
+        const diffMinutes = (Date.now() - lastObsTimeMs) / (1000 * 60);
+        
+        if (diffMinutes <= 5) {
+            pill.className = 'wf-status-pill online';
+            pill.innerHTML = '<div class="wf-dot"></div>Online';
+        } else {
+            const delayStr = getCompactTimeAgo(lastObsTimeMs);
+            pill.className = 'wf-status-pill delayed';
+            pill.innerHTML = `<div class="wf-dot"></div>Delayed ${delayStr}`;
+        }
+    }
+
     function update10MinAvg() {
         if (obsHistory.length === 0) return;
         const now = Math.floor(Date.now() / 1000);
@@ -814,20 +864,28 @@
     function startWebsocket() {
         const wsUrl = `wss://ws.weatherflow.com/swd/data?token=${STATIC_TOKEN}`;
         wsSocket = new WebSocket(wsUrl);
+        updateIndicatorUI();
 
         wsSocket.onopen = () => {
             console.log("WebSocket connected. Listening for 60-second observation chunks.");
-            // Send the standard 60-second listen payload.
-            // Rapid wind (every 3 secs) was removed to provide the stable 10-min average.
+            // Subscribe to both rapid wind and standard observations so the indicator lights up immediately.
+            // The widget gauge will continue to ignore rapid_wind for the 10-minute average math.
+            wsSocket.send(JSON.stringify({ type: "listen_rapid_start", device_id: DEVICE_ID, id: "indicator_rapid" }));
             wsSocket.send(JSON.stringify({ type: "listen_start", device_id: DEVICE_ID, id: "listen_start" }));
+            updateIndicatorUI();
         };
 
         wsSocket.onmessage = (event) => {
             const msg = JSON.parse(event.data);
+            let packetTimeEpoch = 0;
             
+            if (msg.type === 'rapid_wind') {
+                packetTimeEpoch = msg.ob[0];
+            }
             // obs_st updates every ~60s for standard telemetry
-            if (msg.type === 'obs_st') {
+            else if (msg.type === 'obs_st') {
                 const ob = msg.obs[0];
+                packetTimeEpoch = ob[0];
                 const time = ob[0];
                 const lull = ob[1] * 1.94384; 
                 const speed = ob[2] * 1.94384; 
@@ -864,10 +922,22 @@
                     saveToLocalStorage({ uv: uv.toFixed(1) });
                 }
             }
+            
+            // Update the pill indicator and time readout whenever any packet arrives
+            if (packetTimeEpoch > 0) {
+                lastObsTimeMs = packetTimeEpoch * 1000;
+                const timeText = document.getElementById('wf-time');
+                if (timeText) {
+                    const obsDate = new Date(lastObsTimeMs);
+                    timeText.textContent = obsDate.toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles', hour: '2-digit', minute: '2-digit', hour12: false });
+                }
+                updateIndicatorUI();
+            }
         };
 
         wsSocket.onclose = () => {
             console.warn("WebSocket Closed. Attempting reconnect...");
+            updateIndicatorUI();
             setTimeout(startWebsocket, 5000);
         };
 
@@ -911,6 +981,10 @@
     }
 
     initApp(); // Boot up the live process
+    
+    // Start a continuous watchdog timer to check for data delays every 10 seconds
+    if (typeof watchdogTimer !== 'undefined' && watchdogTimer) clearInterval(watchdogTimer);
+    watchdogTimer = setInterval(updateIndicatorUI, 10000);
 
     const mapToggle = document.getElementById('map-mode-toggle');
     if (mapToggle) {
