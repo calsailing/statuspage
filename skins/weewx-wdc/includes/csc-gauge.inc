@@ -331,8 +331,9 @@
     let restPollingTimer = null;
     
     // Independent health tracking for both data sources
+    // Start restFailing as false so we naturally show "Connecting..." initially
     let wsFailing = true;
-    let restFailing = false;
+    let restFailing = false; 
 
     // 2. Persistence Logic (Using localStorage)
     const STORAGE_KEY = 'cal_sailing_wind_state';
@@ -357,6 +358,15 @@
                 isRestored = true;
             }
             
+            if (state.lastObsTimeMs) {
+                lastObsTimeMs = state.lastObsTimeMs;
+                const timeText = document.getElementById('wf-time');
+                if (timeText) {
+                    const obsDate = new Date(lastObsTimeMs);
+                    timeText.textContent = obsDate.toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles', hour: '2-digit', minute: '2-digit', hour12: false });
+                }
+            }
+
             if (state.tempF) { const el = document.getElementById('val-temp-f'); if(el) el.innerText = state.tempF; }
             if (state.tempC) { const el = document.getElementById('val-temp-c'); if(el) el.innerText = state.tempC; }
             if (state.pressure) { const el = document.getElementById('val-pressure'); if(el) el.innerText = state.pressure; }
@@ -714,48 +724,44 @@
 
     function updateIndicatorUI() {
         // Only trigger an offline state if BOTH the WebSocket and the REST API fetches have failed.
-        let isOffline = wsFailing && restFailing;
+        let bothFailing = wsFailing && restFailing;
+        
+        let hasData = lastObsTimeMs > 0;
+        let dataRecent = hasData && ((Date.now() - lastObsTimeMs) / (1000 * 60) <= 5);
 
-        // Hide the wind arrow and bubbles instantly when the connection drops entirely
-        if (typeof pointer !== 'undefined') {
-            pointer.style("display", isOffline ? "none" : null);
-        }
-        if (typeof topBubble !== 'undefined') {
-            topBubble.style("display", isOffline ? "none" : null);
-        }
-        if (typeof bottomBubbleWrapper !== 'undefined') {
-            bottomBubbleWrapper.style("display", isOffline ? "none" : null);
-        }
-        if (typeof oppBubbleWrapper !== 'undefined') {
-            oppBubbleWrapper.style("display", isOffline ? "none" : null);
-        }
+        // Hide the wind gauge elements entirely if we are fully disconnected AND have no historical data to show
+        let hideGauge = bothFailing && !hasData;
+
+        if (typeof pointer !== 'undefined') pointer.style("display", hideGauge ? "none" : null);
+        if (typeof topBubble !== 'undefined') topBubble.style("display", hideGauge ? "none" : null);
+        if (typeof bottomBubbleWrapper !== 'undefined') bottomBubbleWrapper.style("display", hideGauge ? "none" : null);
+        if (typeof oppBubbleWrapper !== 'undefined') oppBubbleWrapper.style("display", hideGauge ? "none" : null);
 
         const pill = document.getElementById('wf-pill');
         if (!pill) return; // Exit cleanly if the indicator HTML isn't on the page
 
         pill.style.display = 'inline-flex';
 
-        if (isOffline) {
-            pill.className = 'wf-status-pill offline';
-            pill.innerHTML = '<div class="wf-dot"></div>Offline';
-            return;
-        }
-
-        if (lastObsTimeMs === 0) {
-            pill.className = 'wf-status-pill delayed';
-            pill.innerHTML = '<div class="wf-dot"></div>Connecting...';
-            return;
-        }
-
-        const diffMinutes = (Date.now() - lastObsTimeMs) / (1000 * 60);
-        
-        if (diffMinutes <= 5) {
+        // 1. We have recent data from either WebSocket or REST
+        if (dataRecent) {
             pill.className = 'wf-status-pill online';
             pill.innerHTML = '<div class="wf-dot"></div>Online';
-        } else {
+        } 
+        // 2. Both streams are failing and we have old cached history (Graceful Degradation to "Delayed")
+        else if (hasData) {
             const delayStr = getCompactTimeAgo(lastObsTimeMs);
             pill.className = 'wf-status-pill delayed';
             pill.innerHTML = `<div class="wf-dot"></div>Delayed ${delayStr}`;
+        } 
+        // 3. Both streams are failing and we have NO history (Hard Offline)
+        else if (bothFailing) {
+            pill.className = 'wf-status-pill offline';
+            pill.innerHTML = '<div class="wf-dot"></div>Offline';
+        } 
+        // 4. We are currently attempting to connect/fetch for the very first time
+        else {
+            pill.className = 'wf-status-pill delayed';
+            pill.innerHTML = '<div class="wf-dot"></div>Connecting...';
         }
     }
 
@@ -802,7 +808,7 @@
             const res = await fetch(url);
             if (res.ok) {
                 const data = await res.json();
-                if (data && data.obs) {
+                if (data && data.obs && data.obs.length > 0) {
                     data.obs.forEach(ob => {
                         // The REST API returns labeled objects, unlike the WebSocket which returns raw arrays
                         const time = ob.timestamp || ob.time;
@@ -821,40 +827,40 @@
                     update10MinAvg();
                     
                     // Immediately paint the rest of the telemetry from the latest fetched point
-                    if (data.obs.length > 0) {
-                        const latestOb = data.obs[data.obs.length - 1];
-                        const packetTimeEpoch = latestOb.timestamp || latestOb.time;
-                        
-                        if (packetTimeEpoch > 0) {
-                            lastObsTimeMs = packetTimeEpoch * 1000;
-                            const timeText = document.getElementById('wf-time');
-                            if (timeText) {
-                                const obsDate = new Date(lastObsTimeMs);
-                                timeText.textContent = obsDate.toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles', hour: '2-digit', minute: '2-digit', hour12: false });
-                            }
-                        }
-
-                        if (latestOb.air_temperature != null) {
-                            const tempC = latestOb.air_temperature;
-                            const tempF = (tempC * 9/5) + 32;
-                            document.getElementById('val-temp-f').innerText = `${tempF.toFixed(1)}\xB0F`;
-                            document.getElementById('val-temp-c').innerText = `${tempC.toFixed(1)}\xB0C`;
-                            saveToLocalStorage({ tempF: `${tempF.toFixed(1)}\xB0F`, tempC: `${tempC.toFixed(1)}\xB0C` });
-                        }
-                        if (latestOb.barometric_pressure != null) {
-                            document.getElementById('val-pressure').innerText = latestOb.barometric_pressure.toFixed(1);
-                            saveToLocalStorage({ pressure: latestOb.barometric_pressure.toFixed(1) });
-                        }
-                        if (latestOb.uv != null) {
-                            document.getElementById('val-uv').innerText = latestOb.uv.toFixed(1);
-                            const marker = document.getElementById('uv-marker');
-                            if (marker) {
-                                marker.classList.remove('hidden');
-                                marker.style.left = `calc(${Math.min((latestOb.uv / 11) * 100, 100)}% - 3px)`;
-                            }
-                            saveToLocalStorage({ uv: latestOb.uv.toFixed(1) });
+                    const latestOb = data.obs[data.obs.length - 1];
+                    const packetTimeEpoch = latestOb.timestamp || latestOb.time;
+                    
+                    if (packetTimeEpoch > 0) {
+                        lastObsTimeMs = packetTimeEpoch * 1000;
+                        saveToLocalStorage({ lastObsTimeMs }); // Cache the timestamp
+                        const timeText = document.getElementById('wf-time');
+                        if (timeText) {
+                            const obsDate = new Date(lastObsTimeMs);
+                            timeText.textContent = obsDate.toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles', hour: '2-digit', minute: '2-digit', hour12: false });
                         }
                     }
+
+                    if (latestOb.air_temperature != null) {
+                        const tempC = latestOb.air_temperature;
+                        const tempF = (tempC * 9/5) + 32;
+                        document.getElementById('val-temp-f').innerText = `${tempF.toFixed(1)}\xB0F`;
+                        document.getElementById('val-temp-c').innerText = `${tempC.toFixed(1)}\xB0C`;
+                        saveToLocalStorage({ tempF: `${tempF.toFixed(1)}\xB0F`, tempC: `${tempC.toFixed(1)}\xB0C` });
+                    }
+                    if (latestOb.barometric_pressure != null) {
+                        document.getElementById('val-pressure').innerText = latestOb.barometric_pressure.toFixed(1);
+                        saveToLocalStorage({ pressure: latestOb.barometric_pressure.toFixed(1) });
+                    }
+                    if (latestOb.uv != null) {
+                        document.getElementById('val-uv').innerText = latestOb.uv.toFixed(1);
+                        const marker = document.getElementById('uv-marker');
+                        if (marker) {
+                            marker.classList.remove('hidden');
+                            marker.style.left = `calc(${Math.min((latestOb.uv / 11) * 100, 100)}% - 3px)`;
+                        }
+                        saveToLocalStorage({ uv: latestOb.uv.toFixed(1) });
+                    }
+                    
                     restFailing = false; // Successfully fetched, mark REST as healthy
                 } else {
                     restFailing = true;
@@ -895,7 +901,6 @@
         wsSocket.onopen = () => {
             console.log("WebSocket connected. Listening for 60-second observation chunks.");
             wsFailing = false;
-            restFailing = false; // Clear failures if WS is back up
             
             // Subscribe to both rapid wind and standard observations so the indicator lights up immediately.
             // The widget gauge will continue to ignore rapid_wind for the 10-minute average math.
@@ -955,8 +960,8 @@
             // Update the pill indicator and time readout whenever any packet arrives
             if (packetTimeEpoch > 0) {
                 lastObsTimeMs = packetTimeEpoch * 1000;
+                saveToLocalStorage({ lastObsTimeMs }); // Cache the timestamp
                 wsFailing = false;
-                restFailing = false; // Mark overall health as good
                 
                 const timeText = document.getElementById('wf-time');
                 if (timeText) {
@@ -986,17 +991,15 @@
         fetchForecast();
         setInterval(fetchForecast, 15 * 60 * 1000); // Update forecast every 15 mins
 
-        // Pre-fill the array with the previous 10 minutes of REST data to 
-        // make the math accurate instantly without waiting for the socket.
-        await fetchRestData();
-
-        // Establish the Websocket Connection
+        // Launch BOTH the REST fetch and the WebSocket initialization simultaneously
+        // This inherently prioritizes whichever stream returns data first.
+        fetchRestData();
         startWebsocket();
         
         // Start the REST fallback loop. Runs every 60 seconds
         if (restPollingTimer) clearInterval(restPollingTimer);
         restPollingTimer = setInterval(() => {
-            // If WebSocket is dead OR hasn't received data in > 65 seconds
+            // If WebSocket is actively flagged as failing OR hasn't received data in > 65 seconds
             const diffSeconds = (Date.now() - lastObsTimeMs) / 1000;
             if (wsFailing || diffSeconds > 65) {
                 console.log("WebSocket inactive/delayed. Falling back to REST API fetch.");
