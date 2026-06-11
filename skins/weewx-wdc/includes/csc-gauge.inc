@@ -328,6 +328,11 @@
 
     let lastObsTimeMs = 0;
     let watchdogTimer = null;
+    let restPollingTimer = null;
+    
+    // Independent health tracking for both data sources
+    let wsFailing = true;
+    let restFailing = false;
 
     // 2. Persistence Logic (Using localStorage)
     const STORAGE_KEY = 'cal_sailing_wind_state';
@@ -708,16 +713,10 @@
     }
 
     function updateIndicatorUI() {
-        let isOffline = false;
+        // Only trigger an offline state if BOTH the WebSocket and the REST API fetches have failed.
+        let isOffline = wsFailing && restFailing;
 
-        // Determine actual connection state
-        if (!wsSocket || wsSocket.readyState === WebSocket.CONNECTING) {
-            // It's just establishing
-        } else if (wsSocket.readyState !== WebSocket.OPEN) {
-            isOffline = true;
-        }
-
-        // Hide the wind arrow and bubbles instantly when the connection drops
+        // Hide the wind arrow and bubbles instantly when the connection drops entirely
         if (typeof pointer !== 'undefined') {
             pointer.style("display", isOffline ? "none" : null);
         }
@@ -736,12 +735,6 @@
 
         pill.style.display = 'inline-flex';
 
-        if (!wsSocket || wsSocket.readyState === WebSocket.CONNECTING) {
-            pill.className = 'wf-status-pill delayed';
-            pill.innerHTML = '<div class="wf-dot"></div>Connecting...';
-            return;
-        }
-
         if (isOffline) {
             pill.className = 'wf-status-pill offline';
             pill.innerHTML = '<div class="wf-dot"></div>Offline';
@@ -750,7 +743,7 @@
 
         if (lastObsTimeMs === 0) {
             pill.className = 'wf-status-pill delayed';
-            pill.innerHTML = '<div class="wf-dot"></div>Waiting for data...';
+            pill.innerHTML = '<div class="wf-dot"></div>Connecting...';
             return;
         }
 
@@ -800,27 +793,11 @@
         });
     }
 
-    // Forecast is not available on websocket, so we still poll this occasionally
-    async function fetchForecast() {
-        try {
-            const res = await fetch(API_FCST_BASE);
-            if(res.ok) {
-                const fcstData = await res.json();
-                if (fcstData && fcstData.current_conditions) {
-                    const cc = fcstData.current_conditions;
-                    document.getElementById('val-conditions').innerText = cc.conditions || '--';
-                    document.getElementById('icon-weather').innerHTML = weatherIcons[cc.icon] || weatherIcons['default'];
-                    document.getElementById('val-pressure-trend').innerHTML = trendIcons[cc.pressure_trend] || '';
-                    saveToLocalStorage({ fcst: { conditions: cc.conditions, icon: cc.icon, trend: cc.pressure_trend } });
-                }
-            }
-        } catch (e) { console.error("Fcst error:", e); }
-    }
-
-    async function fetchInitialHistory() {
+    async function fetchRestData() {
         const time_end = Math.floor(Date.now() / 1000);
         const time_start = time_end - 600; // Past 10 minutes
         const url = `${API_OBS_BASE}?time_start=${time_start}&time_end=${time_end}&bucket=1&token=${STATIC_TOKEN}`;
+        
         try {
             const res = await fetch(url);
             if (res.ok) {
@@ -840,11 +817,23 @@
                             });
                         }
                     });
+                    
                     update10MinAvg();
                     
                     // Immediately paint the rest of the telemetry from the latest fetched point
                     if (data.obs.length > 0) {
                         const latestOb = data.obs[data.obs.length - 1];
+                        const packetTimeEpoch = latestOb.timestamp || latestOb.time;
+                        
+                        if (packetTimeEpoch > 0) {
+                            lastObsTimeMs = packetTimeEpoch * 1000;
+                            const timeText = document.getElementById('wf-time');
+                            if (timeText) {
+                                const obsDate = new Date(lastObsTimeMs);
+                                timeText.textContent = obsDate.toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles', hour: '2-digit', minute: '2-digit', hour12: false });
+                            }
+                        }
+
                         if (latestOb.air_temperature != null) {
                             const tempC = latestOb.air_temperature;
                             const tempF = (tempC * 9/5) + 32;
@@ -866,22 +855,36 @@
                             saveToLocalStorage({ uv: latestOb.uv.toFixed(1) });
                         }
                     }
+                    restFailing = false; // Successfully fetched, mark REST as healthy
+                } else {
+                    restFailing = true;
                 }
+            } else {
+                restFailing = true;
             }
-        } catch(e) { console.error("History fetch error:", e); }
+        } catch(e) { 
+            console.error("History REST fetch error:", e); 
+            restFailing = true;
+        }
+        
+        updateIndicatorUI();
     }
 
-    async function initApp() {
-        // Fetch forecast initially
-        fetchForecast();
-        setInterval(fetchForecast, 15 * 60 * 1000); // Update forecast every 15 mins
-
-        // Pre-fill the array with the previous 10 minutes of REST data to 
-        // make the math accurate instantly without waiting for the socket.
-        await fetchInitialHistory();
-
-        // Establish the Websocket Connection
-        startWebsocket();
+    // Forecast is not available on websocket, so we still poll this occasionally
+    async function fetchForecast() {
+        try {
+            const res = await fetch(API_FCST_BASE);
+            if(res.ok) {
+                const fcstData = await res.json();
+                if (fcstData && fcstData.current_conditions) {
+                    const cc = fcstData.current_conditions;
+                    document.getElementById('val-conditions').innerText = cc.conditions || '--';
+                    document.getElementById('icon-weather').innerHTML = weatherIcons[cc.icon] || weatherIcons['default'];
+                    document.getElementById('val-pressure-trend').innerHTML = trendIcons[cc.pressure_trend] || '';
+                    saveToLocalStorage({ fcst: { conditions: cc.conditions, icon: cc.icon, trend: cc.pressure_trend } });
+                }
+            }
+        } catch (e) { console.error("Fcst error:", e); }
     }
 
     function startWebsocket() {
@@ -891,6 +894,9 @@
 
         wsSocket.onopen = () => {
             console.log("WebSocket connected. Listening for 60-second observation chunks.");
+            wsFailing = false;
+            restFailing = false; // Clear failures if WS is back up
+            
             // Subscribe to both rapid wind and standard observations so the indicator lights up immediately.
             // The widget gauge will continue to ignore rapid_wind for the 10-minute average math.
             wsSocket.send(JSON.stringify({ type: "listen_rapid_start", device_id: DEVICE_ID, id: "indicator_rapid" }));
@@ -949,6 +955,9 @@
             // Update the pill indicator and time readout whenever any packet arrives
             if (packetTimeEpoch > 0) {
                 lastObsTimeMs = packetTimeEpoch * 1000;
+                wsFailing = false;
+                restFailing = false; // Mark overall health as good
+                
                 const timeText = document.getElementById('wf-time');
                 if (timeText) {
                     const obsDate = new Date(lastObsTimeMs);
@@ -960,14 +969,41 @@
 
         wsSocket.onclose = () => {
             console.warn("WebSocket Closed. Attempting reconnect...");
+            wsFailing = true;
             updateIndicatorUI();
             setTimeout(startWebsocket, 5000);
         };
 
         wsSocket.onerror = (error) => {
             console.error("WebSocket Error:", error);
+            wsFailing = true;
             wsSocket.close(); // Force the onclose handler to fire and reconnect
         };
+    }
+
+    async function initApp() {
+        // Fetch forecast initially
+        fetchForecast();
+        setInterval(fetchForecast, 15 * 60 * 1000); // Update forecast every 15 mins
+
+        // Pre-fill the array with the previous 10 minutes of REST data to 
+        // make the math accurate instantly without waiting for the socket.
+        await fetchRestData();
+
+        // Establish the Websocket Connection
+        startWebsocket();
+        
+        // Start the REST fallback loop. Runs every 60 seconds
+        if (restPollingTimer) clearInterval(restPollingTimer);
+        restPollingTimer = setInterval(() => {
+            // If WebSocket is dead OR hasn't received data in > 65 seconds
+            const diffSeconds = (Date.now() - lastObsTimeMs) / 1000;
+            if (wsFailing || diffSeconds > 65) {
+                console.log("WebSocket inactive/delayed. Falling back to REST API fetch.");
+                wsFailing = true; 
+                fetchRestData();
+            }
+        }, 60000);
     }
 
     // 7. Initialize
