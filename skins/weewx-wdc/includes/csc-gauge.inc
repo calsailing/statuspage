@@ -248,6 +248,29 @@
     @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
     .animate-spin-slow { animation: spin 8s linear infinite; }
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    /* Status indicator for WebSocket connection */
+    #ws-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-top: 8px;
+        text-transform: uppercase;
+    }
+    .ws-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: var(--trend-red);
+        transition: background-color 0.3s;
+    }
+    .ws-dot.live {
+        background-color: var(--trend-green);
+        box-shadow: 0 0 8px var(--trend-green);
+    }
 </style>
 
 <div id="isolated-weather-widget">
@@ -267,6 +290,7 @@
                 <div class="iw-map-overlay"></div>
             </div>
             <div id="gauge-mount" class="iw-gauge-mount"></div>
+            <div id="ws-status"><div id="ws-dot" class="ws-dot"></div> <span id="ws-text">Connecting...</span></div>
         </div>
         <div class="iw-panel">
             <div class="iw-weather-grid">
@@ -317,15 +341,14 @@
     // 1. API Configuration
     const STATIC_TOKEN = "8535e71d-2290-4965-ad3f-ab05b9294fdf";
     const MAPBOX_TOKEN = "TOKEN_HERE";
-    const API_OBS_BASE = "https://swd.weatherflow.com/swd/rest/observations/stn/127241";
-    // Explicitly add token to forecast URL since we remove the auto-appender below
-    const API_FCST_BASE = `https://swd.weatherflow.com/swd/rest/better_forecast?station_id=127241&units_wind=kts&token=${STATIC_TOKEN}`;
+    const STATION_ID = "127241";
+    const DEVICE_ID = "314522";
+    
+    let wsSocket = null;
+    let latestLull = 0;
+    let latestGust = 0;
 
-    const getObsUrl = () => {
-        const time_end = Math.floor(Date.now() / 1000);
-        const time_start = time_end - 600; // 10 minutes ago
-        return `${API_OBS_BASE}?time_start=${time_start}&time_end=${time_end}&bucket=1&api_key=${STATIC_TOKEN}`;
-    };
+    const API_FCST_BASE = `https://swd.weatherflow.com/swd/rest/better_forecast?station_id=${STATION_ID}&units_wind=kts&token=${STATIC_TOKEN}`;
 
     // 2. Persistence Logic (Using localStorage)
     const STORAGE_KEY = 'cal_sailing_wind_state';
@@ -345,6 +368,8 @@
             
             let isRestored = false;
             if (state.obs) {
+                latestLull = state.obs.lull || 0;
+                latestGust = state.obs.gust || 0;
                 // Pass true so update knows to make the transition 0ms
                 update(state.obs, true);
                 isRestored = true;
@@ -384,30 +409,6 @@
             return false; 
         }
     };
-
-    // 3. Fetch Helper
-    const fetchWithRetry = async (url, maxRetries = 3) => {
-        for (let i = 0; i < maxRetries; i++) {
-            try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 5000);
-                const response = await fetch(url, { signal: controller.signal });
-                clearTimeout(timeoutId);
-                if (response.ok) return await response.json();
-                if (response.status === 429) {
-                    await new Promise(res => setTimeout(res, 1000));
-                    continue;
-                }
-                throw new Error(`HTTP ${response.status}`);
-            } catch (err) {
-                if (i === maxRetries - 1) throw err;
-                await new Promise(res => setTimeout(res, 500)); 
-            }
-        }
-    };
-
-    window.obsPrefetch = fetchWithRetry(getObsUrl()).catch(() => null);
-    window.fcstPrefetch = fetchWithRetry(API_FCST_BASE).catch(() => null);
 
     // 4. Map Implementation
     const SENSOR_COORD = [37.85568, -122.31445];
@@ -665,7 +666,8 @@
         const l = data.lull || 0, s = data.speed || 0, g = data.gust || 0, d = data.direction || 0;
         let targetMax = 30; if (g > 40 || s > 40) targetMax = 50; else if (g > 30 || s > 30) targetMax = 40; if (targetMax !== currentMaxSpeed) drawSpeedTrack(targetMax);
         
-        const duration = isInstantRestore ? 0 : 2400; // 0 duration when restoring cache!
+        // Smoother, slightly shorter transition for 3s websocket pacing
+        const duration = isInstantRestore ? 0 : 1800; 
         const t = d3.transition().duration(duration).ease(d3.easeCubicInOut);
         
         speedMaskPath.transition(t).attrTween("d", dat => { 
@@ -717,138 +719,121 @@
         if (!isInstantRestore) saveToLocalStorage({ obs: { lull: l, speed: s, gust: g, direction: d } });
     }
 
-    // 6. Data Fetching
-    async function fetchWeatherData(isInitialLoad = false) {
+    // 6. WebSocket Connection and Data Logic 
+    function updateStatus(isLive, msg) {
+        const dot = document.getElementById('ws-dot');
+        const text = document.getElementById('ws-text');
+        if (isLive) {
+            dot.classList.add('live');
+            text.innerText = msg || "Live Connection";
+        } else {
+            dot.classList.remove('live');
+            text.innerText = msg || "Reconnecting...";
+        }
+    }
+
+    // Forecast is not available on websocket, so we still poll this occasionally
+    async function fetchForecast() {
         try {
-            let obsData;
-            const currentUrl = getObsUrl();
-
-            if (isInitialLoad && window.obsPrefetch) { 
-                obsData = await window.obsPrefetch; 
-                window.obsPrefetch = null; 
-            } 
-            else {
-                obsData = await fetchWithRetry(currentUrl).catch(() => null); 
+            const res = await fetch(API_FCST_BASE);
+            if(res.ok) {
+                const fcstData = await res.json();
+                if (fcstData && fcstData.current_conditions) {
+                    const cc = fcstData.current_conditions;
+                    document.getElementById('val-conditions').innerText = cc.conditions || '--';
+                    document.getElementById('icon-weather').innerHTML = weatherIcons[cc.icon] || weatherIcons['default'];
+                    document.getElementById('val-pressure-trend').innerHTML = trendIcons[cc.pressure_trend] || '';
+                    saveToLocalStorage({ fcst: { conditions: cc.conditions, icon: cc.icon, trend: cc.pressure_trend } });
+                }
             }
+        } catch (e) { console.error("Fcst error:", e); }
+    }
 
-            if (obsData && obsData.obs && Array.isArray(obsData.obs) && obsData.obs.length > 0) {
-                let speedSum = 0, uSum = 0, vSum = 0;
-                let minLull = Infinity, maxGust = -Infinity;
-                let tempSum = 0, pressureSum = 0, uvSum = 0;
-                let count = 0, tempCount = 0, pressureCount = 0, uvCount = 0;
+    async function initApp() {
+        // Fetch forecast initially
+        fetchForecast();
+        setInterval(fetchForecast, 15 * 60 * 1000); // Update forecast every 15 mins
 
-                const fields = obsData.obs_fields || obsData.ob_fields;
+        // Establish the Websocket Connection
+        startWebsocket();
+    }
+
+    function startWebsocket() {
+        const wsUrl = `wss://ws.weatherflow.com/swd/data?token=${STATIC_TOKEN}`;
+        wsSocket = new WebSocket(wsUrl);
+
+        wsSocket.onopen = () => {
+            console.log("WebSocket connected.");
+            updateStatus(true);
+            // Send the exact payloads the python driver sends
+            wsSocket.send(JSON.stringify({ type: "listen_rapid_start", device_id: DEVICE_ID, id: "listen_rapid_start" }));
+            wsSocket.send(JSON.stringify({ type: "listen_start", device_id: DEVICE_ID, id: "listen_start" }));
+        };
+
+        wsSocket.onmessage = (event) => {
+            const msg = JSON.parse(event.data);
+            
+            // rapid_wind updates every ~3s for real-time wind speed/direction
+            if (msg.type === 'rapid_wind') {
+                const ob = msg.ob;
+                const speed = ob[1] * 1.94384; // m/s to knots
+                const direction = ob[2];
                 
-                // Extremely resilient data extractor that checks multiple naming variations
-                function extract(o, possibleNames) {
-                    if (Array.isArray(o) && fields) {
-                        for (let n of possibleNames) {
-                            const idx = fields.indexOf(n);
-                            if (idx !== -1 && o[idx] != null) return parseFloat(o[idx]);
-                        }
-                    } else if (typeof o === 'object' && o !== null && !Array.isArray(o)) {
-                        for (let n of possibleNames) {
-                            if (o[n] != null) return parseFloat(o[n]);
-                        }
-                    }
-                    return null;
+                // Track bounds dynamically inside the current minute 
+                if (latestLull === 0 || speed < latestLull) latestLull = speed;
+                if (latestGust === 0 || speed > latestGust) latestGust = speed;
+
+                update({ lull: latestLull, speed: speed, gust: latestGust, direction: direction });
+            } 
+            // obs_st updates every ~60s for standard telemetry
+            else if (msg.type === 'obs_st') {
+                const ob = msg.obs[0];
+                // Map arrays based on python index map
+                const s = ob[2] * 1.94384; 
+                const d = ob[4];
+                const pressure = ob[6];
+                const tempC = ob[7];
+                const uv = ob[10];
+
+                // Set the official 1-min boundaries for wind
+                latestLull = ob[1] * 1.94384; // ob[1] is lull according to docs
+                latestGust = ob[3] * 1.94384; // ob[3] is gust
+
+                update({ lull: latestLull, speed: s, gust: latestGust, direction: d });
+
+                // Update UI text panels
+                if (tempC != null) {
+                    const tempF = (tempC * 9/5) + 32;
+                    document.getElementById('val-temp-f').innerText = `${tempF.toFixed(1)}\xB0F`;
+                    document.getElementById('val-temp-c').innerText = `${tempC.toFixed(1)}\xB0C`;
+                    saveToLocalStorage({ tempF: `${tempF.toFixed(1)}\xB0F`, tempC: `${tempC.toFixed(1)}\xB0C` });
                 }
-
-                obsData.obs.forEach(o => {
-                    const s = extract(o, ['wind_avg', 'wind_speed', 'wind', 'avg']);
-                    const l = extract(o, ['wind_lull', 'lull', 'wind_min']);
-                    const g = extract(o, ['wind_gust', 'gust', 'wind_max']);
-                    const d = extract(o, ['wind_direction', 'wind_dir', 'direction', 'dir']);
-                    const t = extract(o, ['air_temperature', 'air_temp', 'temperature', 'temp']);
-                    const p = extract(o, ['sea_level_pressure', 'station_pressure', 'barometric_pressure', 'pressure']);
-                    const uv = extract(o, ['uv', 'uv_index']);
-
-                    if (s != null && d != null) {
-                        const currentL = l != null ? l : s;
-                        const currentG = g != null ? g : s;
-
-                        minLull = Math.min(minLull, currentL);
-                        maxGust = Math.max(maxGust, currentG);
-
-                        speedSum += s;
-                        // Vector sum for calculating average wind direction
-                        uSum += s * Math.sin(d * Math.PI / 180);
-                        vSum += s * Math.cos(d * Math.PI / 180);
-                        count++;
-                    }
-
-                    if (t != null) { tempSum += t; tempCount++; }
-                    if (p != null) { pressureSum += p; pressureCount++; }
-                    if (uv != null) { uvSum += uv; uvCount++; }
-                });
-
-                if (count > 0) {
-                    const avgSpeed = speedSum / count;
-                    // Converts the U and V vectors back into degrees (0-359 format)
-                    const avgDir = (Math.atan2(uSum, vSum) * 180 / Math.PI + 360) % 360;
-
-                    if (minLull === Infinity) minLull = avgSpeed;
-                    if (maxGust === -Infinity) maxGust = avgSpeed;
-
-                    const weatherState = {
-                        lull: minLull * 1.94384, 
-                        speed: avgSpeed * 1.94384, 
-                        gust: maxGust * 1.94384, 
-                        direction: avgDir
-                    };
-                    update(weatherState); // Will use standard 2.4s smooth animation 
+                if (pressure != null) {
+                    document.getElementById('val-pressure').innerText = pressure.toFixed(1);
+                    saveToLocalStorage({ pressure: pressure.toFixed(1) });
                 }
-
-                if (tempCount > 0) {
-                    const avgTempC = tempSum / tempCount;
-                    const avgTempF = (avgTempC * 9/5) + 32;
-                    const tempFEl = document.getElementById('val-temp-f');
-                    if (tempFEl) tempFEl.innerText = `${avgTempF.toFixed(1)}\xB0F`;
-                    const tempCEl = document.getElementById('val-temp-c');
-                    if (tempCEl) tempCEl.innerText = `${avgTempC.toFixed(1)}\xB0C`;
-                    saveToLocalStorage({ tempF: `${avgTempF.toFixed(1)}\xB0F`, tempC: `${avgTempC.toFixed(1)}\xB0C` });
-                }
-                
-                if (pressureCount > 0) {
-                    const avgPress = pressureSum / pressureCount;
-                    const pressEl = document.getElementById('val-pressure');
-                    if (pressEl) pressEl.innerText = avgPress.toFixed(1);
-                    saveToLocalStorage({ pressure: avgPress.toFixed(1) });
-                }
-                
-                if (uvCount > 0) {
-                    const avgUv = uvSum / uvCount;
-                    const uvEl = document.getElementById('val-uv');
-                    if (uvEl) uvEl.innerText = avgUv.toFixed(1);
+                if (uv != null) {
+                    document.getElementById('val-uv').innerText = uv.toFixed(1);
                     const marker = document.getElementById('uv-marker');
                     if(marker) { 
                         marker.classList.remove('hidden'); 
-                        let uvPercentage = Math.min((avgUv / 11) * 100, 100); 
-                        marker.style.left = `calc(${uvPercentage}% - 3px)`; 
+                        marker.style.left = `calc(${Math.min((uv / 11) * 100, 100)}% - 3px)`; 
                     }
-                    saveToLocalStorage({ uv: avgUv.toFixed(1) });
+                    saveToLocalStorage({ uv: uv.toFixed(1) });
                 }
             }
-        } catch (e) { console.error("Obs error:", e); }
+        };
 
-        if (isInitialLoad) {
-            try {
-                let fcstData;
-                if (window.fcstPrefetch) { fcstData = await window.fcstPrefetch; window.fcstPrefetch = null; } 
-                else fcstData = await fetchWithRetry(API_FCST_BASE).catch(() => null);
+        wsSocket.onclose = () => {
+            console.warn("WebSocket Closed. Attempting reconnect...");
+            updateStatus(false);
+            setTimeout(startWebsocket, 5000);
+        };
 
-                if (fcstData && fcstData.current_conditions) {
-                    const cc = fcstData.current_conditions;
-                    const condEl = document.getElementById('val-conditions');
-                    if (condEl) condEl.innerText = cc.conditions || '--';
-                    const iconEl = document.getElementById('icon-weather');
-                    if (iconEl) iconEl.innerHTML = weatherIcons[cc.icon] || weatherIcons['default'];
-                    const trendEl = document.getElementById('val-pressure-trend');
-                    if (trendEl) trendEl.innerHTML = trendIcons[cc.pressure_trend] || '';
-                    saveToLocalStorage({ fcst: { conditions: cc.conditions, icon: cc.icon, trend: cc.pressure_trend } });
-                }
-            } catch (e) { console.error("Fcst error:", e); }
-        }
+        wsSocket.onerror = (error) => {
+            console.error("WebSocket Error:", error);
+            wsSocket.close(); // Force the onclose handler to fire and reconnect
+        };
     }
 
     // 7. Initialize
@@ -884,9 +869,7 @@
         update({ lull: 0, speed: 0, gust: 0, direction: 0 }, true); 
     }
 
-    // Always run fresh data update (which will smoothly animate from cache to real-time value)
-    fetchWeatherData(true); 
-    setInterval(() => fetchWeatherData(false), 60000);
+    initApp(); // Boot up the live process
 
     const mapToggle = document.getElementById('map-mode-toggle');
     if (mapToggle) {
