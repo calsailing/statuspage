@@ -717,9 +717,18 @@
             isOffline = true;
         }
 
-        // Hide the wind arrow instantly when the connection drops
+        // Hide the wind arrow and bubbles instantly when the connection drops
         if (typeof pointer !== 'undefined') {
             pointer.style("display", isOffline ? "none" : null);
+        }
+        if (typeof topBubble !== 'undefined') {
+            topBubble.style("display", isOffline ? "none" : null);
+        }
+        if (typeof bottomBubbleWrapper !== 'undefined') {
+            bottomBubbleWrapper.style("display", isOffline ? "none" : null);
+        }
+        if (typeof oppBubbleWrapper !== 'undefined') {
+            oppBubbleWrapper.style("display", isOffline ? "none" : null);
         }
 
         const pill = document.getElementById('wf-pill');
