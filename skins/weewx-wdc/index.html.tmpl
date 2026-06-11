@@ -54,120 +54,68 @@
             <header class="bx--col page-header">
             <div id="header-area">
               <h1><a href="" style="text-decoration: none">Today's Conditions</a></h1> 
-<script>
-/* #raw */
-(function() {
-    const STATIC_TOKEN = '8535e71d-2290-4965-ad3f-ab05b9294fdf';
-    const DEVICE_ID = '314522';
-    
-    const timeText = document.getElementById('wf-time');
-    const pill = document.getElementById('wf-pill');
+<style>
+  /* 1. Time string placed next to your Date */
+  .wf-update-time {
+    font-weight: normal;
+    vertical-align: middle;
+  }
+  
+  /* 2. Modern Status Pill placed right after the time */
+  .wf-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-family: system-ui, -apple-system, sans-serif; /* Clean native font for the pill */
+    vertical-align: middle;
+    margin-left: 8px;
+  }
 
-    let wsStatusSocket = null;
-    let lastObsTimeMs = 0;
-    let watchdogTimer = null;
+  /* Status Colors - Light Backgrounds, Darker Text */
+  .wf-status-pill.online { background-color: #e6f4ea; color: #1e8e3e; }
+  .wf-status-pill.delayed { background-color: #fef7e0; color: #b06000; }
+  .wf-status-pill.offline { background-color: #fce8e6; color: #c5221f; }
+  
+  /* The Dots */
+  .wf-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+  .online .wf-dot {
+    background-color: #1e8e3e;
+    animation: wf-pulse-green 2s infinite;
+  }
+  .delayed .wf-dot { background-color: #f9ab00; }
+  .offline .wf-dot { background-color: #d93025; }
 
-    function getCompactTimeAgo(obsTimeMs) {
-        const seconds = Math.floor((Date.now() - obsTimeMs) / 1000);
-        const minutes = Math.floor(seconds / 60);
-        const hours = Math.floor(minutes / 60);
-        const days = Math.floor(hours / 24);
+  /* Pulsing Animation for Live Status */
+  @keyframes wf-pulse-green {
+    0% { box-shadow: 0 0 0 0 rgba(30, 142, 62, 0.4); }
+    70% { box-shadow: 0 0 0 4px rgba(30, 142, 62, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(30, 142, 62, 0); }
+  }
 
-        if (days > 0) return `${days}d`;
-        if (hours > 0) return `${hours}h`;
-        return `${minutes}m`;
-    }
+  /* Dark Mode Support (Optional: Triggers if html tag has class="dark") */
+  html.dark .wf-update-time { color: #fff; }
+  html.dark .wf-status-pill.online { background-color: rgba(30, 142, 62, 0.2); color: #81c995; }
+  html.dark .online .wf-dot { background-color: #81c995; }
+  html.dark .wf-status-pill.delayed { background-color: rgba(249, 171, 0, 0.2); color: #fde293; }
+  html.dark .delayed .wf-dot { background-color: #fde293; }
+  html.dark .wf-status-pill.offline { background-color: rgba(217, 48, 37, 0.2); color: #f28b82; }
+  html.dark .offline .wf-dot { background-color: #f28b82; }
+</style>
 
-    function updateIndicatorUI() {
-        pill.style.display = 'inline-flex';
+<h2>
+    <span style="vertical-align: middle;">$current.dateTime.format("%d-%b-%Y") </span> 
+    <span class="wf-update-time" id="wf-time"></span> 
+    <div class="wf-status-pill" id="wf-pill" style="display: none;"></div>
+</h2> 
 
-        // 1. Still in the process of establishing the initial connection
-        if (!wsStatusSocket || wsStatusSocket.readyState === WebSocket.CONNECTING) {
-            pill.className = 'wf-status-pill delayed';
-            pill.innerHTML = '<div class="wf-dot"></div>Connecting...';
-            return;
-        }
-
-        // 2. Connection entirely broken, closing, or closed
-        if (wsStatusSocket.readyState !== WebSocket.OPEN) {
-            pill.className = 'wf-status-pill offline';
-            pill.innerHTML = '<div class="wf-dot"></div>Offline';
-            return;
-        }
-
-        // 3. Socket open, but waiting for the very first data packet
-        if (lastObsTimeMs === 0) {
-            pill.className = 'wf-status-pill delayed';
-            pill.innerHTML = '<div class="wf-dot"></div>Waiting for data...';
-            return;
-        }
-
-        // 4. Connected and receiving data normally
-        const diffMinutes = (Date.now() - lastObsTimeMs) / (1000 * 60);
-        
-        if (diffMinutes <= 5) {
-            pill.className = 'wf-status-pill online';
-            pill.innerHTML = '<div class="wf-dot"></div>Online';
-        } else {
-            const delayStr = getCompactTimeAgo(lastObsTimeMs);
-            pill.className = 'wf-status-pill delayed';
-            pill.innerHTML = `<div class="wf-dot"></div>Delayed ${delayStr}`;
-        }
-    }
-
-    function startStatusWebsocket() {
-        const wsUrl = `wss://ws.weatherflow.com/swd/data?token=${STATIC_TOKEN}`;
-        wsStatusSocket = new WebSocket(wsUrl);
-        
-        // Instantly update the UI so it shows "Connecting..." immediately instead of a previous state
-        updateIndicatorUI();
-
-        wsStatusSocket.onopen = () => {
-            wsStatusSocket.send(JSON.stringify({ type: "listen_rapid_start", device_id: DEVICE_ID, id: "indicator_rapid" }));
-            wsStatusSocket.send(JSON.stringify({ type: "listen_start", device_id: DEVICE_ID, id: "indicator_obs" }));
-            updateIndicatorUI();
-        };
-
-        wsStatusSocket.onmessage = (event) => {
-            const msg = JSON.parse(event.data);
-            let packetTimeEpoch = 0;
-            
-            if (msg.type === 'obs_st') {
-                packetTimeEpoch = msg.obs[0][0]; 
-            } else if (msg.type === 'rapid_wind') {
-                packetTimeEpoch = msg.ob[0];
-            }
-
-            if (packetTimeEpoch > 0) {
-                lastObsTimeMs = packetTimeEpoch * 1000;
-                
-                const obsDate = new Date(lastObsTimeMs);
-                timeText.textContent = obsDate.toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles', hour: '2-digit', minute: '2-digit', hour12: false });
-                
-                updateIndicatorUI();
-            }
-        };
-
-        wsStatusSocket.onclose = () => {
-            updateIndicatorUI(); // Flips to offline
-            setTimeout(startStatusWebsocket, 5000); // Wait 5 seconds and reconnect
-        };
-
-        wsStatusSocket.onerror = () => {
-            wsStatusSocket.close(); // Force the onclose handler to fire
-        };
-    }
-
-    // 1. Start the WebSocket immediately
-    startStatusWebsocket();
-
-    // 2. Start a continuous watchdog timer to check for data delays every 10 seconds
-    if (watchdogTimer) clearInterval(watchdogTimer);
-    watchdogTimer = setInterval(updateIndicatorUI, 10000);
-
-})();
-/* #end raw */
-</script>
 
     
 
