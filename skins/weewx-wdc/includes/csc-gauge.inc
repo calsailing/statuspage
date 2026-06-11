@@ -248,29 +248,6 @@
     @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
     .animate-spin-slow { animation: spin 8s linear infinite; }
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-
-    /* Status indicator for WebSocket connection */
-    #ws-status {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 10px;
-        font-weight: 600;
-        color: var(--text-secondary);
-        margin-top: 8px;
-        text-transform: uppercase;
-    }
-    .ws-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background-color: var(--trend-red);
-        transition: background-color 0.3s;
-    }
-    .ws-dot.live {
-        background-color: var(--trend-green);
-        box-shadow: 0 0 8px var(--trend-green);
-    }
 </style>
 
 <div id="isolated-weather-widget">
@@ -290,7 +267,6 @@
                 <div class="iw-map-overlay"></div>
             </div>
             <div id="gauge-mount" class="iw-gauge-mount"></div>
-            <div id="ws-status"><div id="ws-dot" class="ws-dot"></div> <span id="ws-text">Connecting...</span></div>
         </div>
         <div class="iw-panel">
             <div class="iw-weather-grid">
@@ -345,9 +321,9 @@
     const DEVICE_ID = "314522";
     
     let wsSocket = null;
-    let latestLull = 0;
-    let latestGust = 0;
+    let obsHistory = []; // Stores rolling 10-minute history
 
+    const API_OBS_BASE = `https://swd.weatherflow.com/swd/rest/observations/stn/${STATION_ID}`;
     const API_FCST_BASE = `https://swd.weatherflow.com/swd/rest/better_forecast?station_id=${STATION_ID}&units_wind=kts&token=${STATIC_TOKEN}`;
 
     // 2. Persistence Logic (Using localStorage)
@@ -368,8 +344,6 @@
             
             let isRestored = false;
             if (state.obs) {
-                latestLull = state.obs.lull || 0;
-                latestGust = state.obs.gust || 0;
                 // Pass true so update knows to make the transition 0ms
                 update(state.obs, true);
                 isRestored = true;
@@ -666,8 +640,7 @@
         const l = data.lull || 0, s = data.speed || 0, g = data.gust || 0, d = data.direction || 0;
         let targetMax = 30; if (g > 40 || s > 40) targetMax = 50; else if (g > 30 || s > 30) targetMax = 40; if (targetMax !== currentMaxSpeed) drawSpeedTrack(targetMax);
         
-        // Smoother, slightly shorter transition for 3s websocket pacing
-        const duration = isInstantRestore ? 0 : 1800; 
+        const duration = isInstantRestore ? 0 : 2000; 
         const t = d3.transition().duration(duration).ease(d3.easeCubicInOut);
         
         speedMaskPath.transition(t).attrTween("d", dat => { 
@@ -720,16 +693,38 @@
     }
 
     // 6. WebSocket Connection and Data Logic 
-    function updateStatus(isLive, msg) {
-        const dot = document.getElementById('ws-dot');
-        const text = document.getElementById('ws-text');
-        if (isLive) {
-            dot.classList.add('live');
-            text.innerText = msg || "Live Connection";
-        } else {
-            dot.classList.remove('live');
-            text.innerText = msg || "Reconnecting...";
-        }
+    function update10MinAvg() {
+        if (obsHistory.length === 0) return;
+        const now = Math.floor(Date.now() / 1000);
+        
+        // Filter out readings older than 10 minutes (600 seconds) + a small grace period
+        obsHistory = obsHistory.filter(ob => ob.time >= now - 660); 
+        
+        if (obsHistory.length === 0) return;
+
+        let minLull = Infinity;
+        let maxGust = -Infinity;
+        let uSum = 0, vSum = 0, speedSum = 0;
+        
+        obsHistory.forEach(ob => {
+            minLull = Math.min(minLull, ob.lull);
+            maxGust = Math.max(maxGust, ob.gust);
+            speedSum += ob.speed;
+            
+            // Calculate Vector Sum for Direction Average
+            uSum += ob.speed * Math.sin(ob.dir * Math.PI / 180);
+            vSum += ob.speed * Math.cos(ob.dir * Math.PI / 180);
+        });
+        
+        const avgSpeed = speedSum / obsHistory.length;
+        const avgDir = (Math.atan2(uSum, vSum) * 180 / Math.PI + 360) % 360;
+        
+        update({
+            lull: minLull,
+            speed: avgSpeed,
+            gust: maxGust,
+            direction: avgDir
+        });
     }
 
     // Forecast is not available on websocket, so we still poll this occasionally
@@ -749,10 +744,42 @@
         } catch (e) { console.error("Fcst error:", e); }
     }
 
+    async function fetchInitialHistory() {
+        const time_end = Math.floor(Date.now() / 1000);
+        const time_start = time_end - 600; // Past 10 minutes
+        const url = `${API_OBS_BASE}?time_start=${time_start}&time_end=${time_end}&bucket=1&token=${STATIC_TOKEN}`;
+        try {
+            const res = await fetch(url);
+            if (res.ok) {
+                const data = await res.json();
+                if (data && data.obs) {
+                    data.obs.forEach(ob => {
+                        const time = ob[0];
+                        // Ensure we don't duplicate a timestamp if WebSocket connected simultaneously
+                        if (!obsHistory.some(o => o.time === time)) {
+                            obsHistory.push({
+                                time: time,
+                                lull: ob[1] * 1.94384,
+                                speed: ob[2] * 1.94384,
+                                gust: ob[3] * 1.94384,
+                                dir: ob[4]
+                            });
+                        }
+                    });
+                    update10MinAvg();
+                }
+            }
+        } catch(e) { console.error("History fetch error:", e); }
+    }
+
     async function initApp() {
         // Fetch forecast initially
         fetchForecast();
         setInterval(fetchForecast, 15 * 60 * 1000); // Update forecast every 15 mins
+
+        // Pre-fill the array with the previous 10 minutes of REST data to 
+        // make the math accurate instantly without waiting for the socket.
+        await fetchInitialHistory();
 
         // Establish the Websocket Connection
         startWebsocket();
@@ -763,43 +790,32 @@
         wsSocket = new WebSocket(wsUrl);
 
         wsSocket.onopen = () => {
-            console.log("WebSocket connected.");
-            updateStatus(true);
-            // Send the exact payloads the python driver sends
-            wsSocket.send(JSON.stringify({ type: "listen_rapid_start", device_id: DEVICE_ID, id: "listen_rapid_start" }));
+            console.log("WebSocket connected. Listening for 60-second observation chunks.");
+            // Send the standard 60-second listen payload.
+            // Rapid wind (every 3 secs) was removed to provide the stable 10-min average.
             wsSocket.send(JSON.stringify({ type: "listen_start", device_id: DEVICE_ID, id: "listen_start" }));
         };
 
         wsSocket.onmessage = (event) => {
             const msg = JSON.parse(event.data);
             
-            // rapid_wind updates every ~3s for real-time wind speed/direction
-            if (msg.type === 'rapid_wind') {
-                const ob = msg.ob;
-                const speed = ob[1] * 1.94384; // m/s to knots
-                const direction = ob[2];
-                
-                // Track bounds dynamically inside the current minute 
-                if (latestLull === 0 || speed < latestLull) latestLull = speed;
-                if (latestGust === 0 || speed > latestGust) latestGust = speed;
-
-                update({ lull: latestLull, speed: speed, gust: latestGust, direction: direction });
-            } 
             // obs_st updates every ~60s for standard telemetry
-            else if (msg.type === 'obs_st') {
+            if (msg.type === 'obs_st') {
                 const ob = msg.obs[0];
-                // Map arrays based on python index map
-                const s = ob[2] * 1.94384; 
-                const d = ob[4];
+                const time = ob[0];
+                const lull = ob[1] * 1.94384; 
+                const speed = ob[2] * 1.94384; 
+                const gust = ob[3] * 1.94384; 
+                const dir = ob[4];
                 const pressure = ob[6];
                 const tempC = ob[7];
                 const uv = ob[10];
 
-                // Set the official 1-min boundaries for wind
-                latestLull = ob[1] * 1.94384; // ob[1] is lull according to docs
-                latestGust = ob[3] * 1.94384; // ob[3] is gust
-
-                update({ lull: latestLull, speed: s, gust: latestGust, direction: d });
+                // Push new data packet to history buffer and re-average the gauge
+                if (!obsHistory.some(o => o.time === time)) {
+                    obsHistory.push({ time, lull, speed, gust, dir });
+                }
+                update10MinAvg();
 
                 // Update UI text panels
                 if (tempC != null) {
@@ -826,7 +842,6 @@
 
         wsSocket.onclose = () => {
             console.warn("WebSocket Closed. Attempting reconnect...");
-            updateStatus(false);
             setTimeout(startWebsocket, 5000);
         };
 
