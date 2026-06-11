@@ -754,19 +754,45 @@
                 const data = await res.json();
                 if (data && data.obs) {
                     data.obs.forEach(ob => {
-                        const time = ob[0];
+                        // The REST API returns labeled objects, unlike the WebSocket which returns raw arrays
+                        const time = ob.timestamp || ob.time;
                         // Ensure we don't duplicate a timestamp if WebSocket connected simultaneously
-                        if (!obsHistory.some(o => o.time === time)) {
+                        if (time && !obsHistory.some(o => o.time === time)) {
                             obsHistory.push({
                                 time: time,
-                                lull: ob[1] * 1.94384,
-                                speed: ob[2] * 1.94384,
-                                gust: ob[3] * 1.94384,
-                                dir: ob[4]
+                                lull: (ob.wind_lull || 0) * 1.94384,
+                                speed: (ob.wind_avg || 0) * 1.94384,
+                                gust: (ob.wind_gust || 0) * 1.94384,
+                                dir: ob.wind_direction || 0
                             });
                         }
                     });
                     update10MinAvg();
+                    
+                    // Immediately paint the rest of the telemetry from the latest fetched point
+                    if (data.obs.length > 0) {
+                        const latestOb = data.obs[data.obs.length - 1];
+                        if (latestOb.air_temperature != null) {
+                            const tempC = latestOb.air_temperature;
+                            const tempF = (tempC * 9/5) + 32;
+                            document.getElementById('val-temp-f').innerText = `${tempF.toFixed(1)}\xB0F`;
+                            document.getElementById('val-temp-c').innerText = `${tempC.toFixed(1)}\xB0C`;
+                            saveToLocalStorage({ tempF: `${tempF.toFixed(1)}\xB0F`, tempC: `${tempC.toFixed(1)}\xB0C` });
+                        }
+                        if (latestOb.barometric_pressure != null) {
+                            document.getElementById('val-pressure').innerText = latestOb.barometric_pressure.toFixed(1);
+                            saveToLocalStorage({ pressure: latestOb.barometric_pressure.toFixed(1) });
+                        }
+                        if (latestOb.uv != null) {
+                            document.getElementById('val-uv').innerText = latestOb.uv.toFixed(1);
+                            const marker = document.getElementById('uv-marker');
+                            if (marker) {
+                                marker.classList.remove('hidden');
+                                marker.style.left = `calc(${Math.min((latestOb.uv / 11) * 100, 100)}% - 3px)`;
+                            }
+                            saveToLocalStorage({ uv: latestOb.uv.toFixed(1) });
+                        }
+                    }
                 }
             }
         } catch(e) { console.error("History fetch error:", e); }
