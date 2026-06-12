@@ -317,23 +317,15 @@
     // 1. API Configuration
     const STATIC_TOKEN = "8535e71d-2290-4965-ad3f-ab05b9294fdf";
     const MAPBOX_TOKEN = "TOKEN_HERE";
-    const STATION_ID = "127241";
-    const DEVICE_ID = "314522";
-    
-    let wsSocket = null;
-    let obsHistory = []; // Stores rolling 10-minute history
+    const API_OBS_BASE = "https://swd.weatherflow.com/swd/rest/observations/stn/127241";
+    // Explicitly add token to forecast URL since we remove the auto-appender below
+    const API_FCST_BASE = `https://swd.weatherflow.com/swd/rest/better_forecast?station_id=127241&units_wind=kts&token=${STATIC_TOKEN}`;
 
-    // Using the /device endpoint instead of /stn so history loads properly
-    const API_DEVICE_BASE = `https://swd.weatherflow.com/swd/rest/observations/device/${DEVICE_ID}`;
-    const API_FCST_BASE = `https://swd.weatherflow.com/swd/rest/better_forecast?station_id=${STATION_ID}&units_wind=kts&token=${STATIC_TOKEN}`;
-
-    let lastObsTimeMs = 0;
-    let watchdogTimer = null;
-    let restPollingTimer = null;
-    
-    // Start restFailing as false so we naturally show "Connecting..." initially
-    let wsFailing = true;
-    let restFailing = false; 
+    const getObsUrl = () => {
+        const time_end = Math.floor(Date.now() / 1000);
+        const time_start = time_end - 600; // 10 minutes ago
+        return `${API_OBS_BASE}?time_start=${time_start}&time_end=${time_end}&bucket=1&api_key=${STATIC_TOKEN}`;
+    };
 
     // 2. Persistence Logic (Using localStorage)
     const STORAGE_KEY = 'cal_sailing_wind_state';
@@ -358,15 +350,6 @@
                 isRestored = true;
             }
             
-            if (state.lastObsTimeMs) {
-                lastObsTimeMs = state.lastObsTimeMs;
-                const timeText = document.getElementById('wf-time');
-                if (timeText) {
-                    const obsDate = new Date(lastObsTimeMs);
-                    timeText.textContent = obsDate.toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles', hour: '2-digit', minute: '2-digit', hour12: false });
-                }
-            }
-
             if (state.tempF) { const el = document.getElementById('val-temp-f'); if(el) el.innerText = state.tempF; }
             if (state.tempC) { const el = document.getElementById('val-temp-c'); if(el) el.innerText = state.tempC; }
             if (state.pressure) { const el = document.getElementById('val-pressure'); if(el) el.innerText = state.pressure; }
@@ -401,6 +384,30 @@
             return false; 
         }
     };
+
+    // 3. Fetch Helper
+    const fetchWithRetry = async (url, maxRetries = 3) => {
+        for (let i = 0; i < maxRetries; i++) {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                const response = await fetch(url, { signal: controller.signal });
+                clearTimeout(timeoutId);
+                if (response.ok) return await response.json();
+                if (response.status === 429) {
+                    await new Promise(res => setTimeout(res, 1000));
+                    continue;
+                }
+                throw new Error(`HTTP ${response.status}`);
+            } catch (err) {
+                if (i === maxRetries - 1) throw err;
+                await new Promise(res => setTimeout(res, 500)); 
+            }
+        }
+    };
+
+    window.obsPrefetch = fetchWithRetry(getObsUrl()).catch(() => null);
+    window.fcstPrefetch = fetchWithRetry(API_FCST_BASE).catch(() => null);
 
     // 4. Map Implementation
     const SENSOR_COORD = [37.85568, -122.31445];
@@ -658,7 +665,7 @@
         const l = data.lull || 0, s = data.speed || 0, g = data.gust || 0, d = data.direction || 0;
         let targetMax = 30; if (g > 40 || s > 40) targetMax = 50; else if (g > 30 || s > 30) targetMax = 40; if (targetMax !== currentMaxSpeed) drawSpeedTrack(targetMax);
         
-        const duration = isInstantRestore ? 0 : 2000; 
+        const duration = isInstantRestore ? 0 : 2400; // 0 duration when restoring cache!
         const t = d3.transition().duration(duration).ease(d3.easeCubicInOut);
         
         speedMaskPath.transition(t).attrTween("d", dat => { 
@@ -710,305 +717,138 @@
         if (!isInstantRestore) saveToLocalStorage({ obs: { lull: l, speed: s, gust: g, direction: d } });
     }
 
-    // 6. WebSocket Connection and Data Logic 
-    function getCompactTimeAgo(obsTimeMs) {
-        const seconds = Math.floor((Date.now() - obsTimeMs) / 1000);
-        const minutes = Math.floor(seconds / 60);
-        const hours = Math.floor(minutes / 60);
-        const days = Math.floor(hours / 24);
-
-        if (days > 0) return `${days}d`;
-        if (hours > 0) return `${hours}h`;
-        return `${minutes}m`;
-    }
-
-    function updateIndicatorUI() {
-        // Only trigger an offline state if BOTH the WebSocket and the REST API fetches have failed.
-        let bothFailing = wsFailing && restFailing;
-        
-        let hasData = lastObsTimeMs > 0;
-        let dataRecent = hasData && ((Date.now() - lastObsTimeMs) / (1000 * 60) <= 5);
-
-        // Hide the wind gauge elements entirely if we are fully disconnected AND have no historical data to show
-        let hideGauge = bothFailing && !hasData;
-
-        if (typeof pointer !== 'undefined') pointer.style("display", hideGauge ? "none" : null);
-        if (typeof topBubble !== 'undefined') topBubble.style("display", hideGauge ? "none" : null);
-        if (typeof bottomBubbleWrapper !== 'undefined') bottomBubbleWrapper.style("display", hideGauge ? "none" : null);
-        if (typeof oppBubbleWrapper !== 'undefined') oppBubbleWrapper.style("display", hideGauge ? "none" : null);
-
-        const pill = document.getElementById('wf-pill');
-        if (!pill) return; // Exit cleanly if the indicator HTML isn't on the page
-
-        pill.style.display = 'inline-flex';
-
-        // 1. We have recent data from either WebSocket or REST
-        if (dataRecent) {
-            pill.className = 'wf-status-pill online';
-            pill.innerHTML = '<div class="wf-dot"></div>Online';
-        } 
-        // 2. Both streams are failing and we have old cached history (Graceful Degradation to "Delayed")
-        else if (hasData) {
-            const delayStr = getCompactTimeAgo(lastObsTimeMs);
-            pill.className = 'wf-status-pill delayed';
-            pill.innerHTML = `<div class="wf-dot"></div>Delayed ${delayStr}`;
-        } 
-        // 3. Both streams are failing and we have NO history (Hard Offline)
-        else if (bothFailing) {
-            pill.className = 'wf-status-pill offline';
-            pill.innerHTML = '<div class="wf-dot"></div>Offline';
-        } 
-        // 4. We are currently attempting to connect/fetch for the very first time
-        else {
-            pill.className = 'wf-status-pill delayed';
-            pill.innerHTML = '<div class="wf-dot"></div>Connecting...';
-        }
-    }
-
-    function update10MinAvg() {
-        if (obsHistory.length === 0) return;
-        const now = Math.floor(Date.now() / 1000);
-        
-        // Filter out readings older than 10 minutes (600 seconds) + a small grace period
-        obsHistory = obsHistory.filter(ob => ob.time >= now - 660); 
-        
-        if (obsHistory.length === 0) return;
-
-        let minLull = Infinity;
-        let maxGust = -Infinity;
-        let uSum = 0, vSum = 0, speedSum = 0;
-        
-        obsHistory.forEach(ob => {
-            minLull = Math.min(minLull, ob.lull);
-            maxGust = Math.max(maxGust, ob.gust);
-            speedSum += ob.speed;
-            
-            // Calculate Vector Sum for Direction Average
-            uSum += ob.speed * Math.sin(ob.dir * Math.PI / 180);
-            vSum += ob.speed * Math.cos(ob.dir * Math.PI / 180);
-        });
-        
-        const avgSpeed = speedSum / obsHistory.length;
-        const avgDir = (Math.atan2(uSum, vSum) * 180 / Math.PI + 360) % 360;
-        
-        update({
-            lull: minLull,
-            speed: avgSpeed,
-            gust: maxGust,
-            direction: avgDir
-        });
-    }
-
-    async function fetchRestData() {
-        const time_end = Math.floor(Date.now() / 1000);
-        const time_start = time_end - 600; // Past 10 minutes
-        const url = `${API_DEVICE_BASE}?time_start=${time_start}&time_end=${time_end}&bucket=1&token=${STATIC_TOKEN}`;
-        
+    // 6. Data Fetching
+    async function fetchWeatherData(isInitialLoad = false) {
         try {
-            const res = await fetch(url);
-            if (res.ok) {
-                const data = await res.json();
-                if (data && data.obs && data.obs.length > 0) {
-                    data.obs.forEach(ob => {
-                        // The device REST API returns raw arrays exactly like the WebSocket!
-                        const time = ob[0];
-                        // Ensure we don't duplicate a timestamp if WebSocket connected simultaneously
-                        if (time && !obsHistory.some(o => o.time === time)) {
-                            obsHistory.push({
-                                time: time,
-                                lull: (ob[1] || 0) * 1.94384,
-                                speed: (ob[2] || 0) * 1.94384,
-                                gust: (ob[3] || 0) * 1.94384,
-                                dir: ob[4] || 0
-                            });
+            let obsData;
+            const currentUrl = getObsUrl();
+
+            if (isInitialLoad && window.obsPrefetch) { 
+                obsData = await window.obsPrefetch; 
+                window.obsPrefetch = null; 
+            } 
+            else {
+                obsData = await fetchWithRetry(currentUrl).catch(() => null); 
+            }
+
+            if (obsData && obsData.obs && Array.isArray(obsData.obs) && obsData.obs.length > 0) {
+                let speedSum = 0, uSum = 0, vSum = 0;
+                let minLull = Infinity, maxGust = -Infinity;
+                let tempSum = 0, pressureSum = 0, uvSum = 0;
+                let count = 0, tempCount = 0, pressureCount = 0, uvCount = 0;
+
+                const fields = obsData.obs_fields || obsData.ob_fields;
+                
+                // Extremely resilient data extractor that checks multiple naming variations
+                function extract(o, possibleNames) {
+                    if (Array.isArray(o) && fields) {
+                        for (let n of possibleNames) {
+                            const idx = fields.indexOf(n);
+                            if (idx !== -1 && o[idx] != null) return parseFloat(o[idx]);
                         }
-                    });
-                    
-                    update10MinAvg();
-                    
-                    // Immediately paint the rest of the telemetry from the latest fetched point
-                    const latestOb = data.obs[data.obs.length - 1];
-                    const packetTimeEpoch = latestOb[0];
-                    
-                    if (packetTimeEpoch > 0) {
-                        lastObsTimeMs = packetTimeEpoch * 1000;
-                        saveToLocalStorage({ lastObsTimeMs }); // Cache the timestamp
-                        const timeText = document.getElementById('wf-time');
-                        if (timeText) {
-                            const obsDate = new Date(lastObsTimeMs);
-                            timeText.textContent = obsDate.toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles', hour: '2-digit', minute: '2-digit', hour12: false });
+                    } else if (typeof o === 'object' && o !== null && !Array.isArray(o)) {
+                        for (let n of possibleNames) {
+                            if (o[n] != null) return parseFloat(o[n]);
                         }
                     }
+                    return null;
+                }
 
-                    if (latestOb[7] != null) {
-                        const tempC = latestOb[7];
-                        const tempF = (tempC * 9/5) + 32;
-                        document.getElementById('val-temp-f').innerText = `${tempF.toFixed(1)}\xB0F`;
-                        document.getElementById('val-temp-c').innerText = `${tempC.toFixed(1)}\xB0C`;
-                        saveToLocalStorage({ tempF: `${tempF.toFixed(1)}\xB0F`, tempC: `${tempC.toFixed(1)}\xB0C` });
+                obsData.obs.forEach(o => {
+                    const s = extract(o, ['wind_avg', 'wind_speed', 'wind', 'avg']);
+                    const l = extract(o, ['wind_lull', 'lull', 'wind_min']);
+                    const g = extract(o, ['wind_gust', 'gust', 'wind_max']);
+                    const d = extract(o, ['wind_direction', 'wind_dir', 'direction', 'dir']);
+                    const t = extract(o, ['air_temperature', 'air_temp', 'temperature', 'temp']);
+                    const p = extract(o, ['sea_level_pressure', 'station_pressure', 'barometric_pressure', 'pressure']);
+                    const uv = extract(o, ['uv', 'uv_index']);
+
+                    if (s != null && d != null) {
+                        const currentL = l != null ? l : s;
+                        const currentG = g != null ? g : s;
+
+                        minLull = Math.min(minLull, currentL);
+                        maxGust = Math.max(maxGust, currentG);
+
+                        speedSum += s;
+                        // Vector sum for calculating average wind direction
+                        uSum += s * Math.sin(d * Math.PI / 180);
+                        vSum += s * Math.cos(d * Math.PI / 180);
+                        count++;
                     }
-                    if (latestOb[6] != null) {
-                        document.getElementById('val-pressure').innerText = latestOb[6].toFixed(1);
-                        saveToLocalStorage({ pressure: latestOb[6].toFixed(1) });
-                    }
-                    if (latestOb[10] != null) {
-                        document.getElementById('val-uv').innerText = latestOb[10].toFixed(1);
-                        const marker = document.getElementById('uv-marker');
-                        if (marker) {
-                            marker.classList.remove('hidden');
-                            marker.style.left = `calc(${Math.min((latestOb[10] / 11) * 100, 100)}% - 3px)`;
-                        }
-                        saveToLocalStorage({ uv: latestOb[10].toFixed(1) });
-                    }
-                    
-                    restFailing = false; // Successfully fetched, mark REST as healthy
-                } else {
-                    restFailing = true;
+
+                    if (t != null) { tempSum += t; tempCount++; }
+                    if (p != null) { pressureSum += p; pressureCount++; }
+                    if (uv != null) { uvSum += uv; uvCount++; }
+                });
+
+                if (count > 0) {
+                    const avgSpeed = speedSum / count;
+                    // Converts the U and V vectors back into degrees (0-359 format)
+                    const avgDir = (Math.atan2(uSum, vSum) * 180 / Math.PI + 360) % 360;
+
+                    if (minLull === Infinity) minLull = avgSpeed;
+                    if (maxGust === -Infinity) maxGust = avgSpeed;
+
+                    const weatherState = {
+                        lull: minLull * 1.94384, 
+                        speed: avgSpeed * 1.94384, 
+                        gust: maxGust * 1.94384, 
+                        direction: avgDir
+                    };
+                    update(weatherState); // Will use standard 2.4s smooth animation 
                 }
-            } else {
-                restFailing = true;
-            }
-        } catch(e) { 
-            console.error("History REST fetch error:", e); 
-            restFailing = true;
-        }
-        
-        updateIndicatorUI();
-    }
 
-    // Forecast is not available on websocket, so we still poll this occasionally
-    async function fetchForecast() {
-        try {
-            const res = await fetch(API_FCST_BASE);
-            if(res.ok) {
-                const fcstData = await res.json();
-                if (fcstData && fcstData.current_conditions) {
-                    const cc = fcstData.current_conditions;
-                    document.getElementById('val-conditions').innerText = cc.conditions || '--';
-                    document.getElementById('icon-weather').innerHTML = weatherIcons[cc.icon] || weatherIcons['default'];
-                    document.getElementById('val-pressure-trend').innerHTML = trendIcons[cc.pressure_trend] || '';
-                    saveToLocalStorage({ fcst: { conditions: cc.conditions, icon: cc.icon, trend: cc.pressure_trend } });
+                if (tempCount > 0) {
+                    const avgTempC = tempSum / tempCount;
+                    const avgTempF = (avgTempC * 9/5) + 32;
+                    const tempFEl = document.getElementById('val-temp-f');
+                    if (tempFEl) tempFEl.innerText = `${avgTempF.toFixed(1)}\xB0F`;
+                    const tempCEl = document.getElementById('val-temp-c');
+                    if (tempCEl) tempCEl.innerText = `${avgTempC.toFixed(1)}\xB0C`;
+                    saveToLocalStorage({ tempF: `${avgTempF.toFixed(1)}\xB0F`, tempC: `${avgTempC.toFixed(1)}\xB0C` });
                 }
-            }
-        } catch (e) { console.error("Fcst error:", e); }
-    }
-
-    function startWebsocket() {
-        const wsUrl = `wss://ws.weatherflow.com/swd/data?token=${STATIC_TOKEN}`;
-        wsSocket = new WebSocket(wsUrl);
-        updateIndicatorUI();
-
-        wsSocket.onopen = () => {
-            console.log("WebSocket connected. Listening for 60-second observation chunks.");
-            wsFailing = false;
-            restFailing = false; // Clear failures if WS is back up
-            
-            // Subscribe to both rapid wind and standard observations so the indicator lights up immediately.
-            // The widget gauge will continue to ignore rapid_wind for the 10-minute average math.
-            wsSocket.send(JSON.stringify({ type: "listen_rapid_start", device_id: DEVICE_ID, id: "indicator_rapid" }));
-            wsSocket.send(JSON.stringify({ type: "listen_start", device_id: DEVICE_ID, id: "listen_start" }));
-            updateIndicatorUI();
-        };
-
-        wsSocket.onmessage = (event) => {
-            const msg = JSON.parse(event.data);
-            let packetTimeEpoch = 0;
-            
-            if (msg.type === 'rapid_wind') {
-                packetTimeEpoch = msg.ob[0];
-            }
-            // obs_st updates every ~60s for standard telemetry
-            else if (msg.type === 'obs_st') {
-                const ob = msg.obs[0];
-                packetTimeEpoch = ob[0];
-                const time = ob[0];
-                const lull = ob[1] * 1.94384; 
-                const speed = ob[2] * 1.94384; 
-                const gust = ob[3] * 1.94384; 
-                const dir = ob[4];
-                const pressure = ob[6];
-                const tempC = ob[7];
-                const uv = ob[10];
-
-                // Push new data packet to history buffer and re-average the gauge
-                if (!obsHistory.some(o => o.time === time)) {
-                    obsHistory.push({ time, lull, speed, gust, dir });
+                
+                if (pressureCount > 0) {
+                    const avgPress = pressureSum / pressureCount;
+                    const pressEl = document.getElementById('val-pressure');
+                    if (pressEl) pressEl.innerText = avgPress.toFixed(1);
+                    saveToLocalStorage({ pressure: avgPress.toFixed(1) });
                 }
-                update10MinAvg();
-
-                // Update UI text panels
-                if (tempC != null) {
-                    const tempF = (tempC * 9/5) + 32;
-                    document.getElementById('val-temp-f').innerText = `${tempF.toFixed(1)}\xB0F`;
-                    document.getElementById('val-temp-c').innerText = `${tempC.toFixed(1)}\xB0C`;
-                    saveToLocalStorage({ tempF: `${tempF.toFixed(1)}\xB0F`, tempC: `${tempC.toFixed(1)}\xB0C` });
-                }
-                if (pressure != null) {
-                    document.getElementById('val-pressure').innerText = pressure.toFixed(1);
-                    saveToLocalStorage({ pressure: pressure.toFixed(1) });
-                }
-                if (uv != null) {
-                    document.getElementById('val-uv').innerText = uv.toFixed(1);
+                
+                if (uvCount > 0) {
+                    const avgUv = uvSum / uvCount;
+                    const uvEl = document.getElementById('val-uv');
+                    if (uvEl) uvEl.innerText = avgUv.toFixed(1);
                     const marker = document.getElementById('uv-marker');
                     if(marker) { 
                         marker.classList.remove('hidden'); 
-                        marker.style.left = `calc(${Math.min((uv / 11) * 100, 100)}% - 3px)`; 
+                        let uvPercentage = Math.min((avgUv / 11) * 100, 100); 
+                        marker.style.left = `calc(${uvPercentage}% - 3px)`; 
                     }
-                    saveToLocalStorage({ uv: uv.toFixed(1) });
+                    saveToLocalStorage({ uv: avgUv.toFixed(1) });
                 }
             }
-            
-            // Update the pill indicator and time readout whenever any packet arrives
-            if (packetTimeEpoch > 0) {
-                lastObsTimeMs = packetTimeEpoch * 1000;
-                saveToLocalStorage({ lastObsTimeMs }); // Cache the timestamp
-                wsFailing = false;
-                restFailing = false; // Mark overall health as good
-                
-                const timeText = document.getElementById('wf-time');
-                if (timeText) {
-                    const obsDate = new Date(lastObsTimeMs);
-                    timeText.textContent = obsDate.toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles', hour: '2-digit', minute: '2-digit', hour12: false });
+        } catch (e) { console.error("Obs error:", e); }
+
+        if (isInitialLoad) {
+            try {
+                let fcstData;
+                if (window.fcstPrefetch) { fcstData = await window.fcstPrefetch; window.fcstPrefetch = null; } 
+                else fcstData = await fetchWithRetry(API_FCST_BASE).catch(() => null);
+
+                if (fcstData && fcstData.current_conditions) {
+                    const cc = fcstData.current_conditions;
+                    const condEl = document.getElementById('val-conditions');
+                    if (condEl) condEl.innerText = cc.conditions || '--';
+                    const iconEl = document.getElementById('icon-weather');
+                    if (iconEl) iconEl.innerHTML = weatherIcons[cc.icon] || weatherIcons['default'];
+                    const trendEl = document.getElementById('val-pressure-trend');
+                    if (trendEl) trendEl.innerHTML = trendIcons[cc.pressure_trend] || '';
+                    saveToLocalStorage({ fcst: { conditions: cc.conditions, icon: cc.icon, trend: cc.pressure_trend } });
                 }
-                updateIndicatorUI();
-            }
-        };
-
-        wsSocket.onclose = () => {
-            console.warn("WebSocket Closed. Attempting reconnect...");
-            wsFailing = true;
-            updateIndicatorUI();
-            setTimeout(startWebsocket, 5000);
-        };
-
-        wsSocket.onerror = (error) => {
-            console.error("WebSocket Error:", error);
-            wsFailing = true;
-            wsSocket.close(); // Force the onclose handler to fire and reconnect
-        };
-    }
-
-    async function initApp() {
-        // Fetch forecast initially
-        fetchForecast();
-        setInterval(fetchForecast, 15 * 60 * 1000); // Update forecast every 15 mins
-
-        // Launch BOTH the REST fetch and the WebSocket initialization simultaneously
-        // This inherently prioritizes whichever stream returns data first.
-        fetchRestData();
-        startWebsocket();
-        
-        // Start the REST fallback loop. Runs every 60 seconds
-        if (restPollingTimer) clearInterval(restPollingTimer);
-        restPollingTimer = setInterval(() => {
-            // If WebSocket is actively flagged as failing OR hasn't received data in > 65 seconds
-            const diffSeconds = (Date.now() - lastObsTimeMs) / 1000;
-            if (wsFailing || diffSeconds > 65) {
-                console.log("WebSocket inactive/delayed. Falling back to REST API fetch.");
-                wsFailing = true; 
-                fetchRestData();
-            }
-        }, 60000);
+            } catch (e) { console.error("Fcst error:", e); }
+        }
     }
 
     // 7. Initialize
@@ -1044,11 +884,9 @@
         update({ lull: 0, speed: 0, gust: 0, direction: 0 }, true); 
     }
 
-    initApp(); // Boot up the live process
-    
-    // Start a continuous watchdog timer to check for data delays every 10 seconds
-    if (typeof watchdogTimer !== 'undefined' && watchdogTimer) clearInterval(watchdogTimer);
-    watchdogTimer = setInterval(updateIndicatorUI, 10000);
+    // Always run fresh data update (which will smoothly animate from cache to real-time value)
+    fetchWeatherData(true); 
+    setInterval(() => fetchWeatherData(false), 60000);
 
     const mapToggle = document.getElementById('map-mode-toggle');
     if (mapToggle) {
