@@ -246,6 +246,50 @@
     @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
     .animate-spin-slow { animation: spin 8s linear infinite; }
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    /* --- Status Pill Styles (For elements outside widget) --- */
+    .wf-update-time {
+        font-weight: normal;
+        vertical-align: middle;
+        margin-left: 8px;
+        color: var(--text-secondary, #64748b);
+        font-size: 14px;
+    }
+    .wf-status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+        vertical-align: middle;
+        margin-left: 8px;
+    }
+    .wf-status-pill.online { background-color: #e6f4ea; color: #1e8e3e; }
+    .wf-status-pill.delayed { background-color: #fef7e0; color: #b06000; }
+    .wf-status-pill.offline { background-color: #fce8e6; color: #c5221f; }
+    
+    .wf-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .online .wf-dot { background-color: #1e8e3e; animation: wf-pulse-green 2s infinite; }
+    .delayed .wf-dot { background-color: #f9ab00; }
+    .offline .wf-dot { background-color: #d93025; }
+
+    @keyframes wf-pulse-green {
+        0% { box-shadow: 0 0 0 0 rgba(30, 142, 62, 0.4); }
+        70% { box-shadow: 0 0 0 4px rgba(30, 142, 62, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(30, 142, 62, 0); }
+    }
+
+    /* Dark Mode Hooks - Assuming 'dark' class on html */
+    html.dark .wf-update-time { color: #e5e7eb; }
+    html.dark .wf-status-pill.online { background-color: rgba(30, 142, 62, 0.2); color: #81c995; }
+    html.dark .online .wf-dot { background-color: #81c995; }
+    html.dark .wf-status-pill.delayed { background-color: rgba(249, 171, 0, 0.2); color: #fde293; }
+    html.dark .delayed .wf-dot { background-color: #fde293; }
+    html.dark .wf-status-pill.offline { background-color: rgba(217, 48, 37, 0.2); color: #f28b82; }
+    html.dark .offline .wf-dot { background-color: #f28b82; }
 </style>
 
 <div id="isolated-weather-widget">
@@ -631,6 +675,47 @@
     const speedReadout = topBubble.append("text").attr("y", -2).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "46px").style("font-weight", "800").style("letter-spacing", "-1px").attr("fill", "var(--text-primary)").text("0");
     const unitsReadout = topBubble.append("text").attr("y", 24).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "11px").style("font-weight", "300").attr("fill", "var(--text-secondary)").text("kt");
 
+    /* --- Status Pill Helper Functions --- */
+    function getCompactTimeAgo(obsTimeMs) {
+        const seconds = Math.floor((Date.now() - obsTimeMs) / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
+
+        if (days > 0) return `${days}d`;
+        if (hours > 0) return `${hours}h`;
+        return `${minutes}m`;
+    }
+
+    function updateStatusPill(obsTimeMs) {
+        const timeText = document.getElementById('wf-time');
+        const pill = document.getElementById('wf-pill');
+        if (!timeText || !pill) return; // Fail gracefully if elements are not on page
+
+        if (!obsTimeMs) {
+            pill.style.display = 'inline-flex';
+            pill.className = 'wf-status-pill offline';
+            pill.innerHTML = '<div class="wf-dot"></div>Offline';
+            timeText.textContent = '';
+            return;
+        }
+
+        const obsDate = new Date(obsTimeMs);
+        timeText.textContent = obsDate.toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles', hour: '2-digit', minute: '2-digit', hour12: false });
+        
+        const diffMinutes = (Date.now() - obsTimeMs) / (1000 * 60);
+        pill.style.display = 'inline-flex'; 
+        
+        if (diffMinutes <= 5) {
+            pill.className = 'wf-status-pill online';
+            pill.innerHTML = '<div class="wf-dot"></div>Online';
+        } else {
+            const delayStr = getCompactTimeAgo(obsTimeMs);
+            pill.className = 'wf-status-pill delayed';
+            pill.innerHTML = `<div class="wf-dot"></div>Delayed ${delayStr}`;
+        }
+    }
+
     function update(data, isInstantRestore = false) {
         // Detect if Lull data is available (null during fallback state)
         const hasLull = data.lull !== null && data.lull !== undefined;
@@ -778,6 +863,10 @@
                         primarySuccess = false;
                     } else {
                         primarySuccess = true;
+                        
+                        // Update the UI pill with the fresh timestamp
+                        updateStatusPill(latestObsTime * 1000);
+                        
                         const avgSpeed = speedSum / count;
                         const avgDir = (Math.atan2(uSum, vSum) * 180 / Math.PI + 360) % 360;
 
@@ -837,6 +926,10 @@
                 if (fallbackData && fallbackData.current) {
                     const curr = fallbackData.current;
                     
+                    // Update the UI pill with the fallback timestamp (or Date.now if missing)
+                    const fallbackTimeMs = curr.dateTime ? (parseFloat(curr.dateTime) * 1000) : Date.now();
+                    updateStatusPill(fallbackTimeMs);
+
                     // Explicitly pass `null` to disable Lull UI features
                     const weatherState = {
                         lull: null, 
@@ -874,9 +967,14 @@
                         }
                         saveToLocalStorage({ uv: uv.toFixed(1) });
                     }
+                } else {
+                    // Fallback JSON format was invalid
+                    updateStatusPill(null);
                 }
             } catch (fallbackErr) {
                 console.error("Fallback API failed:", fallbackErr);
+                // Both API and Fallback failed
+                updateStatusPill(null);
             }
         }
 
