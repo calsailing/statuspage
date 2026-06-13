@@ -252,8 +252,6 @@
         font-weight: normal;
         vertical-align: middle;
         margin-left: 8px;
-        color: var(--text-secondary, #64748b);
-        font-size: 14px;
     }
     .wf-status-pill {
         display: inline-flex;
