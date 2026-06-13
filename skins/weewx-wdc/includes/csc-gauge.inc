@@ -185,7 +185,6 @@
         width: 100%;
     }
 
-    /* Converted all rem units to explicit px units to block external scaling */
     .iw-weather-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; flex: 1; }
     
     .iw-card { background-color: var(--bg-panel); border: 1px solid var(--border-panel); border-radius: 12px; padding: 16px; box-shadow: none; transition: transform 0.2s ease; }
@@ -230,7 +229,6 @@
     .gauge-label { font-size: 8px !important; font-weight: 300 !important; fill: var(--text-secondary) !important; user-select: none !important; }
     .gauge-marker { stroke-linecap: round; }
     
-    /* Dedicated CSS for the tick bubbles */
     .gauge-tick-bubble {
         fill: var(--bg-panel);
         stroke: var(--track-bg);
@@ -318,8 +316,8 @@
     const STATIC_TOKEN = "8535e71d-2290-4965-ad3f-ab05b9294fdf";
     const MAPBOX_TOKEN = "TOKEN_HERE";
     const API_OBS_BASE = "https://swd.weatherflow.com/swd/rest/observations/stn/127241";
-    // Explicitly add token to forecast URL since we remove the auto-appender below
     const API_FCST_BASE = `https://swd.weatherflow.com/swd/rest/better_forecast?station_id=127241&units_wind=kts&token=${STATIC_TOKEN}`;
+    const WEEWX_FALLBACK_URL = "https://status.cal-sailing.org/weewx.json";
 
     const getObsUrl = () => {
         const time_end = Math.floor(Date.now() / 1000);
@@ -327,7 +325,7 @@
         return `${API_OBS_BASE}?time_start=${time_start}&time_end=${time_end}&bucket=1&api_key=${STATIC_TOKEN}`;
     };
 
-    // 2. Persistence Logic (Using localStorage)
+    // 2. Persistence Logic
     const STORAGE_KEY = 'cal_sailing_wind_state';
 
     const saveToLocalStorage = (data) => {
@@ -345,7 +343,6 @@
             
             let isRestored = false;
             if (state.obs) {
-                // Pass true so update knows to make the transition 0ms
                 update(state.obs, true);
                 isRestored = true;
             }
@@ -410,29 +407,21 @@
     window.fcstPrefetch = fetchWithRetry(API_FCST_BASE).catch(() => null);
 
     // 4. Map Implementation
-    const SENSOR_COORD = [37.85568, -122.31445];
-    const MAP_CENTER = [37.85868, -122.31445]; 
-    
-    // Define a bounding box matching the ideal desktop view so it scales perfectly on smaller screens
     const IDEAL_BOUNDS = L.latLngBounds(
-        [37.85018, -122.32445], // South-West corner
-        [37.86718, -122.30445]  // North-East corner (captures the clubhouse)
+        [37.85018, -122.32445], 
+        [37.86718, -122.30445]  
     );
 
     const map = L.map('iw-map-container', {
-        zoomSnap: 0.01, // Allow very fine fractional zoom levels for smooth scaling
-        zoomControl: false, attributionControl: false,
+        zoomSnap: 0.01, zoomControl: false, attributionControl: false,
         dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, touchZoom: false
     }).fitBounds(IDEAL_BOUNDS, { animate: false, padding: [0, 0] });
 
-    // Automatically fix Leaflet rendering issues when the responsive layout resizes the container
     new ResizeObserver(() => {
         map.invalidateSize();
-        // Use fitBounds so the exact same map area stays visible, dynamically scaling down
         map.fitBounds(IDEAL_BOUNDS, { animate: false, padding: [0, 0] }); 
     }).observe(document.getElementById('iw-map-container'));
 
-    // Custom Cached TileLayer to minimize Mapbox API calls
     L.TileLayer.Cached = L.TileLayer.extend({
         createTile: function (coords, done) {
             const tile = document.createElement('img');
@@ -443,17 +432,14 @@
             if ('caches' in window) {
                 caches.match(url).then(response => {
                     if (response) {
-                        // Serve instantly from browser cache API
                         response.blob().then(blob => {
                             tile.onload = () => done(null, tile);
                             tile.onerror = err => done(err, tile);
                             tile.src = URL.createObjectURL(blob);
                         });
                     } else {
-                        // Fetch from Mapbox API and cache it for next time
                         fetch(url).then(res => {
                             if (!res.ok) throw new Error("Network response was not ok");
-                            // Clone the response BEFORE using it (e.g. before reading the blob)
                             const resClone = res.clone();
                             caches.open('mapbox-tiles').then(cache => cache.put(url, resClone));
                             return res.blob();
@@ -462,7 +448,6 @@
                             tile.onerror = err => done(err, tile);
                             tile.src = URL.createObjectURL(blob);
                         }).catch(() => {
-                            // Fallback to normal loading if fetch intercept fails
                             tile.onload = () => done(null, tile);
                             tile.onerror = err => done(err, tile);
                             tile.src = url;
@@ -479,13 +464,11 @@
     });
     L.tileLayer.cached = function (url, options) { return new L.TileLayer.Cached(url, options); };
 
-    // Implement Mapbox using provided public access token and new cached layer
     L.tileLayer.cached(`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/256/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`, {
        maxZoom: 20,
        attribution: '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a>'
     }).addTo(map);
 
-    // Create a pure-code SVG replica of the clubhouse to prevent broken image links
     const cscSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 70">
         <rect x="10" y="15" width="80" height="55" fill="#10A5A8" stroke="#0A7A7D" stroke-width="2"/>
         <rect x="8" y="10" width="84" height="5" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
@@ -509,13 +492,11 @@
         <text x="50" y="14" font-family="Arial, sans-serif" font-weight="900" font-size="12" fill="white" text-anchor="middle">CSC</text>
     </svg>`;
 
-    // Add the tiny clubhouse icon
     const clubhouseIcon = L.icon({
         iconUrl: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(cscSvg),
-        iconSize: [40, 28], // Very small
-        iconAnchor: [20, 14] // Centered on the coordinates
+        iconSize: [40, 28], 
+        iconAnchor: [20, 14]
     });
-    // Moved further North
     L.marker([37.863580, -122.313550], {icon: clubhouseIcon}).addTo(map);
 
     const weatherIcons = {
@@ -571,7 +552,6 @@
     const colorScale = d3.scaleLinear().domain([0, 8, 10, 13, 15, 18, 20, 30, 40, 50]).range(["#1e3a8a", "#3b82f6", "#22c55e", "#84cc16", "#eab308", "#f97316", "#ef4444", "#991b1b", "#7f1d1d", "#450a0a"]).clamp(true);
     const speedScale = d3.scaleLinear().domain([0, currentMaxSpeed]).range([SWEEP_START, SWEEP_END]);
     
-    // Background track with 0.7 opacity
     svg.append("path").datum({startAngle: SWEEP_START, endAngle: SWEEP_END})
         .attr("d", d3.arc().innerRadius(R.speedTrack - 12).outerRadius(R.speedTrack))
         .attr("fill", "var(--track-bg)")
@@ -604,14 +584,11 @@
         }
         for (let v = 0; v <= maxSpeed; v += 5) {
             const angle = speedScale(v);
-            const textRadius = R.speedTrack + 7; // Place numbers tightly outside the track
+            const textRadius = R.speedTrack + 7; 
             const cx = textRadius * Math.sin(angle);
             const cy = -textRadius * Math.cos(angle);
             
-            // Tighter rounded rectangle (12x10) centered under the text
             tickGroup.append("rect").attr("x", cx - 6).attr("y", cy - 5).attr("width", 12).attr("height", 10).attr("rx", 1.5).attr("ry", 1.5).attr("class", "gauge-tick-bubble");
-            
-            // Precise dy="0.3em" for perfect optical cap-height centering
             tickGroup.append("text").attr("x", cx).attr("y", cy).attr("class", "gauge-label").attr("text-anchor", "middle").attr("dy", "0.3em").text(v);
         }
     }
@@ -628,8 +605,6 @@
     }
 
     const pointer = svg.append("g"), vane = pointer.append("path").attr("d", "M 0,127 L 71.5,-105 L 0,-79 L -71.5,-105 Z").attr("opacity", 0.7);
-    
-    // Elevate speed labels so the directional vane doesn't obscure them (compass ticks stay behind)
     tickGroup.raise(); 
 
     const bottomBubbleWrapper = svg.append("g").attr("mask", "url(#bottom-bubble-cutout)"), bottomBubble = bottomBubbleWrapper.append("g");
@@ -638,34 +613,36 @@
     const dirReadout = dirTextGroup.append("text").attr("y", -5).style("font-size", "10px").style("font-weight", "900").attr("fill", "var(--text-primary)").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("---");
     const dirAngle = dirTextGroup.append("text").attr("y", 7).style("font-size", "9px").style("font-weight", "500").attr("fill", "var(--text-primary)").attr("text-anchor", "middle").attr("dominant-baseline", "central").text("---\xB0");
     
-    // Create new opposite bubble for Lull and Gust
     const oppBubbleWrapper = svg.append("g").attr("mask", "url(#bottom-bubble-cutout)"), oppBubble = oppBubbleWrapper.append("g");
     oppBubble.append("circle").attr("cx", 0).attr("cy", 46).attr("r", 18).attr("fill", "var(--bubble-fill)").attr("fill-opacity", "var(--bubble-opacity)");
     
-    // Shift the anchor point 2px radially outward (to perfectly center it in the crescent)
     const oppTextGroup = oppBubble.append("g").attr("transform", "translate(0, 48)");
-    
-    // Balance the text above and below the new center anchor
     oppTextGroup.append("text").attr("y", -4.5).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "6.5px").style("font-weight", "300").attr("fill", "var(--text-secondary)").text("gusting");
     
     const oppRangeText = oppTextGroup.append("text").attr("y", 4.5).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "6.5px").style("font-weight", "300").attr("fill", "var(--text-primary)");
+    
+    // Extracted tspan variables for programmatic toggling during fallback
     const oppLullVal = oppRangeText.append("tspan").text("0");
-    oppRangeText.append("tspan").text(" to ");
+    const oppToText = oppRangeText.append("tspan").text(" to ");
     const oppGustVal = oppRangeText.append("tspan").text("0");
 
     const topBubble = svg.append("g");
     topBubble.append("circle").attr("r", 32).attr("fill", "var(--bubble-fill)").attr("fill-opacity", "var(--bubble-opacity)");
-    
-    // Main wind speed readout (centered and maximized)
     const speedReadout = topBubble.append("text").attr("y", -2).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "46px").style("font-weight", "800").style("letter-spacing", "-1px").attr("fill", "var(--text-primary)").text("0");
-    
     const unitsReadout = topBubble.append("text").attr("y", 24).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "11px").style("font-weight", "300").attr("fill", "var(--text-secondary)").text("kt");
 
     function update(data, isInstantRestore = false) {
-        const l = data.lull || 0, s = data.speed || 0, g = data.gust || 0, d = data.direction || 0;
+        // Detect if Lull data is available (null during fallback state)
+        const hasLull = data.lull !== null && data.lull !== undefined;
+        
+        // If lull is unavailable, we default to speed mathematically so the dial logic doesn't break,
+        // but visually it gets completely hidden below.
+        const l = hasLull ? data.lull : (data.speed || 0);
+        const s = data.speed || 0, g = data.gust || 0, d = data.direction || 0;
+        
         let targetMax = 30; if (g > 40 || s > 40) targetMax = 50; else if (g > 30 || s > 30) targetMax = 40; if (targetMax !== currentMaxSpeed) drawSpeedTrack(targetMax);
         
-        const duration = isInstantRestore ? 0 : 2400; // 0 duration when restoring cache!
+        const duration = isInstantRestore ? 0 : 2400; 
         const t = d3.transition().duration(duration).ease(d3.easeCubicInOut);
         
         speedMaskPath.transition(t).attrTween("d", dat => { 
@@ -679,15 +656,17 @@
             return time => { dat.endAngle = i(time); return d3.arc().innerRadius(R.speedTrack - 14).outerRadius(R.speedTrack + 2)(dat); }; 
         });
         
-        lullMarker.transition(t).attr("transform", `rotate(${(speedScale(l) * 180) / Math.PI})`);
+        // Hide the lull marker completely during fallback
+        lullMarker.transition(t)
+            .attr("transform", `rotate(${(speedScale(l) * 180) / Math.PI})`)
+            .attr("opacity", hasLull ? 1 : 0);
+            
         speedMarker.transition(t).attr("transform", `rotate(${(speedScale(s) * 180) / Math.PI})`);
         gustMarker.transition(t).attr("transform", `rotate(${(speedScale(g) * 180) / Math.PI})`);
         pointer.transition(t).attr("transform", `rotate(${d})`);
         bottomBubble.transition(t).attr("transform", `rotate(${d})`);
         dirTextGroup.transition(t).attr("transform", `translate(0, -50) rotate(${-d})`);
         oppBubble.transition(t).attr("transform", `rotate(${d})`);
-        
-        // Also update the animation translation so it maintains the radial shift while moving
         oppTextGroup.transition(t).attr("transform", `translate(0, 48) rotate(${-d})`);
         
         vane.transition(t).attr("fill", colorScale(s));
@@ -702,23 +681,33 @@
                 this.textContent = Math.round(this._currentS); 
             }; 
         });
-        oppLullVal.transition(t).tween("text", function() { 
-            const startVal = this._currentL !== undefined ? this._currentL : (isInstantRestore ? l : 0);
-            const i = d3.interpolateNumber(startVal, l); 
-            return time => { this._currentL = i(time); this.textContent = Math.round(this._currentL); }; 
-        });
+
+        // Conditionally show/hide lull text values in the bubble
+        oppLullVal.style("display", hasLull ? "inline" : "none");
+        oppToText.style("display", hasLull ? "inline" : "none");
+
+        if (hasLull) {
+            oppLullVal.transition(t).tween("text", function() { 
+                const startVal = this._currentL !== undefined ? this._currentL : (isInstantRestore ? l : 0);
+                const i = d3.interpolateNumber(startVal, l); 
+                return time => { this._currentL = i(time); this.textContent = Math.round(this._currentL); }; 
+            });
+        }
+
         oppGustVal.transition(t).tween("text", function() { 
             const startVal = this._currentG !== undefined ? this._currentG : (isInstantRestore ? g : 0);
             const i = d3.interpolateNumber(startVal, g); 
             return time => { this._currentG = i(time); this.textContent = Math.round(this._currentG); }; 
         });
         
-        // Do not re-save to local storage if we are just instantly restoring FROM it.
-        if (!isInstantRestore) saveToLocalStorage({ obs: { lull: l, speed: s, gust: g, direction: d } });
+        if (!isInstantRestore) saveToLocalStorage({ obs: { lull: data.lull, speed: s, gust: g, direction: d } });
     }
 
     // 6. Data Fetching
     async function fetchWeatherData(isInitialLoad = false) {
+        let primarySuccess = false;
+
+        // Try primary API first
         try {
             let obsData;
             const currentUrl = getObsUrl();
@@ -726,20 +715,20 @@
             if (isInitialLoad && window.obsPrefetch) { 
                 obsData = await window.obsPrefetch; 
                 window.obsPrefetch = null; 
-            } 
-            else {
+            } else {
                 obsData = await fetchWithRetry(currentUrl).catch(() => null); 
             }
 
+            // Verify obs payload is populated and recent
             if (obsData && obsData.obs && Array.isArray(obsData.obs) && obsData.obs.length > 0) {
                 let speedSum = 0, uSum = 0, vSum = 0;
                 let minLull = Infinity, maxGust = -Infinity;
                 let tempSum = 0, pressureSum = 0, uvSum = 0;
                 let count = 0, tempCount = 0, pressureCount = 0, uvCount = 0;
+                let latestObsTime = 0;
 
                 const fields = obsData.obs_fields || obsData.ob_fields;
                 
-                // Extremely resilient data extractor that checks multiple naming variations
                 function extract(o, possibleNames) {
                     if (Array.isArray(o) && fields) {
                         for (let n of possibleNames) {
@@ -755,6 +744,9 @@
                 }
 
                 obsData.obs.forEach(o => {
+                    const obsTime = extract(o, ['time', 'timestamp', 'epoch']);
+                    if (obsTime != null) latestObsTime = Math.max(latestObsTime, obsTime);
+
                     const s = extract(o, ['wind_avg', 'wind_speed', 'wind', 'avg']);
                     const l = extract(o, ['wind_lull', 'lull', 'wind_min']);
                     const g = extract(o, ['wind_gust', 'gust', 'wind_max']);
@@ -766,12 +758,9 @@
                     if (s != null && d != null) {
                         const currentL = l != null ? l : s;
                         const currentG = g != null ? g : s;
-
                         minLull = Math.min(minLull, currentL);
                         maxGust = Math.max(maxGust, currentG);
-
                         speedSum += s;
-                        // Vector sum for calculating average wind direction
                         uSum += s * Math.sin(d * Math.PI / 180);
                         vSum += s * Math.cos(d * Math.PI / 180);
                         count++;
@@ -783,54 +772,115 @@
                 });
 
                 if (count > 0) {
-                    const avgSpeed = speedSum / count;
-                    // Converts the U and V vectors back into degrees (0-359 format)
-                    const avgDir = (Math.atan2(uSum, vSum) * 180 / Math.PI + 360) % 360;
+                    const now = Math.floor(Date.now() / 1000);
+                    if (latestObsTime > 0 && (now - latestObsTime) > 300) {
+                        console.warn(`Primary API data is stale (${now - latestObsTime} seconds old). Triggering fallback...`);
+                        primarySuccess = false;
+                    } else {
+                        primarySuccess = true;
+                        const avgSpeed = speedSum / count;
+                        const avgDir = (Math.atan2(uSum, vSum) * 180 / Math.PI + 360) % 360;
 
-                    if (minLull === Infinity) minLull = avgSpeed;
-                    if (maxGust === -Infinity) maxGust = avgSpeed;
+                        if (minLull === Infinity) minLull = avgSpeed;
+                        if (maxGust === -Infinity) maxGust = avgSpeed;
 
-                    const weatherState = {
-                        lull: minLull * 1.94384, 
-                        speed: avgSpeed * 1.94384, 
-                        gust: maxGust * 1.94384, 
-                        direction: avgDir
-                    };
-                    update(weatherState); // Will use standard 2.4s smooth animation 
-                }
-
-                if (tempCount > 0) {
-                    const avgTempC = tempSum / tempCount;
-                    const avgTempF = (avgTempC * 9/5) + 32;
-                    const tempFEl = document.getElementById('val-temp-f');
-                    if (tempFEl) tempFEl.innerText = `${avgTempF.toFixed(1)}\xB0F`;
-                    const tempCEl = document.getElementById('val-temp-c');
-                    if (tempCEl) tempCEl.innerText = `${avgTempC.toFixed(1)}\xB0C`;
-                    saveToLocalStorage({ tempF: `${avgTempF.toFixed(1)}\xB0F`, tempC: `${avgTempC.toFixed(1)}\xB0C` });
-                }
-                
-                if (pressureCount > 0) {
-                    const avgPress = pressureSum / pressureCount;
-                    const pressEl = document.getElementById('val-pressure');
-                    if (pressEl) pressEl.innerText = avgPress.toFixed(1);
-                    saveToLocalStorage({ pressure: avgPress.toFixed(1) });
-                }
-                
-                if (uvCount > 0) {
-                    const avgUv = uvSum / uvCount;
-                    const uvEl = document.getElementById('val-uv');
-                    if (uvEl) uvEl.innerText = avgUv.toFixed(1);
-                    const marker = document.getElementById('uv-marker');
-                    if(marker) { 
-                        marker.classList.remove('hidden'); 
-                        let uvPercentage = Math.min((avgUv / 11) * 100, 100); 
-                        marker.style.left = `calc(${uvPercentage}% - 3px)`; 
+                        const weatherState = {
+                            lull: minLull * 1.94384, 
+                            speed: avgSpeed * 1.94384, 
+                            gust: maxGust * 1.94384, 
+                            direction: avgDir
+                        };
+                        update(weatherState); 
                     }
-                    saveToLocalStorage({ uv: avgUv.toFixed(1) });
+                }
+
+                if (primarySuccess) {
+                    if (tempCount > 0) {
+                        const avgTempC = tempSum / tempCount;
+                        const avgTempF = (avgTempC * 9/5) + 32;
+                        const tempFEl = document.getElementById('val-temp-f');
+                        if (tempFEl) tempFEl.innerText = `${avgTempF.toFixed(1)}\xB0F`;
+                        const tempCEl = document.getElementById('val-temp-c');
+                        if (tempCEl) tempCEl.innerText = `${avgTempC.toFixed(1)}\xB0C`;
+                        saveToLocalStorage({ tempF: `${avgTempF.toFixed(1)}\xB0F`, tempC: `${avgTempC.toFixed(1)}\xB0C` });
+                    }
+                    
+                    if (pressureCount > 0) {
+                        const avgPress = pressureSum / pressureCount;
+                        const pressEl = document.getElementById('val-pressure');
+                        if (pressEl) pressEl.innerText = avgPress.toFixed(1);
+                        saveToLocalStorage({ pressure: avgPress.toFixed(1) });
+                    }
+                    
+                    if (uvCount > 0) {
+                        const avgUv = uvSum / uvCount;
+                        const uvEl = document.getElementById('val-uv');
+                        if (uvEl) uvEl.innerText = avgUv.toFixed(1);
+                        const marker = document.getElementById('uv-marker');
+                        if(marker) { 
+                            marker.classList.remove('hidden'); 
+                            marker.style.left = `calc(${Math.min((avgUv / 11) * 100, 100)}% - 3px)`; 
+                        }
+                        saveToLocalStorage({ uv: avgUv.toFixed(1) });
+                    }
                 }
             }
-        } catch (e) { console.error("Obs error:", e); }
+        } catch (e) { 
+            console.error("Tempest API error:", e); 
+        }
 
+        // TRIGGER FALLBACK Logic if Tempest failed or payload array is empty
+        if (!primarySuccess) {
+            console.warn("Primary API delayed or unavailable. Sourcing from weewx.json fallback...");
+            try {
+                const fallbackData = await fetchWithRetry(WEEWX_FALLBACK_URL);
+                if (fallbackData && fallbackData.current) {
+                    const curr = fallbackData.current;
+                    
+                    // Explicitly pass `null` to disable Lull UI features
+                    const weatherState = {
+                        lull: null, 
+                        speed: parseFloat(curr.wind_speed) || 0,
+                        gust: parseFloat(curr.wind_gust) || 0,
+                        direction: parseFloat(curr.wind_direction) || 0
+                    };
+                    update(weatherState);
+
+                    // Opportunistic updates for side panels if they exist in standard weewx json formats
+                    if (curr.outTemp !== undefined) {
+                        const tempF = parseFloat(curr.outTemp);
+                        const tempC = (tempF - 32) * 5/9;
+                        const tempFEl = document.getElementById('val-temp-f');
+                        if (tempFEl) tempFEl.innerText = `${tempF.toFixed(1)}\xB0F`;
+                        const tempCEl = document.getElementById('val-temp-c');
+                        if (tempCEl) tempCEl.innerText = `${tempC.toFixed(1)}\xB0C`;
+                        saveToLocalStorage({ tempF: `${tempF.toFixed(1)}\xB0F`, tempC: `${tempC.toFixed(1)}\xB0C` });
+                    }
+                    if (curr.barometer !== undefined) {
+                        let pressMb = parseFloat(curr.barometer);
+                        if (pressMb < 50) pressMb = pressMb * 33.8639; // Detects inHg & Converts to mb
+                        const pressEl = document.getElementById('val-pressure');
+                        if (pressEl) pressEl.innerText = pressMb.toFixed(1);
+                        saveToLocalStorage({ pressure: pressMb.toFixed(1) });
+                    }
+                    if (curr.UV !== undefined) {
+                        const uv = parseFloat(curr.UV);
+                        const uvEl = document.getElementById('val-uv');
+                        if (uvEl) uvEl.innerText = uv.toFixed(1);
+                        const marker = document.getElementById('uv-marker');
+                        if (marker) {
+                            marker.classList.remove('hidden');
+                            marker.style.left = `calc(${Math.min((uv / 11) * 100, 100)}% - 3px)`;
+                        }
+                        saveToLocalStorage({ uv: uv.toFixed(1) });
+                    }
+                }
+            } catch (fallbackErr) {
+                console.error("Fallback API failed:", fallbackErr);
+            }
+        }
+
+        // Run forecast explicitly after observations
         if (isInitialLoad) {
             try {
                 let fcstData;
@@ -854,7 +904,6 @@
     // 7. Initialize
     syncTheme();
     
-    // Watch for theme changes dynamically (class changes on HTML tag)
     const themeObserver = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
             if (mutation.attributeName === 'class') {
@@ -863,30 +912,37 @@
         });
     });
     
-    // Observe current document
     themeObserver.observe(document.documentElement, { attributes: true });
     
-    // Try to observe parent document if embedded
     try {
         if (window.self !== window.top) {
             themeObserver.observe(window.parent.document.documentElement, { attributes: true });
         }
-    } catch (e) { /* Ignore cross-origin errors */ }
+    } catch (e) { }
 
-    // Watch OS preference changes
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', syncTheme);
     
-    // Attempt to load from cache
     const hasCachedData = loadFromLocalStorage();
     
-    // ONLY init with zeros if there's no cache. Otherwise, loading from cache already painted the UI.
     if (!hasCachedData) {
         update({ lull: 0, speed: 0, gust: 0, direction: 0 }, true); 
     }
 
-    // Always run fresh data update (which will smoothly animate from cache to real-time value)
+    // 1. Run immediately on page load
     fetchWeatherData(true); 
-    setInterval(() => fetchWeatherData(false), 60000);
+    
+    // 2. Sync future updates exactly to the top of the system clock's minute (plus a 8-second delay)
+    function scheduleNextMinuteUpdate() {
+        const now = new Date();
+        const msUntilNextUpdate = 60000 - (now.getSeconds() * 1000 + now.getMilliseconds()) + 8000;
+        
+        setTimeout(() => {
+            fetchWeatherData(false);
+            scheduleNextMinuteUpdate(); 
+        }, msUntilNextUpdate);
+    }
+    
+    scheduleNextMinuteUpdate();
 
     const mapToggle = document.getElementById('map-mode-toggle');
     if (mapToggle) {
