@@ -1,5 +1,5 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>z
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://d3js.org/d3.v7.min.js"></script>
  
 <!-- Import the Inter font so it always renders correctly on any website -->
@@ -938,13 +938,17 @@
                 const curr = (fallbackData && fallbackData.current) ? fallbackData.current : fallbackData;
 
                 if (curr) {
-                    // Ultra-robust time parser (handles epoch seconds, epoch ms, and standard ISO strings)
+                    // Ultra-robust time parser (handles epoch seconds, epoch ms, standard ISO strings, and nested .value objects)
                     let fallbackTimeMs = Date.now();
-                    const tVal = curr.dateTime || curr.datetime || curr.time || curr.timestamp || fallbackData.dateTime;
-                    if (tVal) {
-                        const parsed = Number(tVal);
+                    let tRaw = curr.dateTime || curr.datetime || curr.time || curr.timestamp || fallbackData.dateTime;
+                    if (tRaw && typeof tRaw === 'object' && 'value' in tRaw) {
+                        tRaw = tRaw.value;
+                    }
+                    
+                    if (tRaw) {
+                        const parsed = Number(tRaw);
                         if (isNaN(parsed)) {
-                            fallbackTimeMs = new Date(tVal).getTime();
+                            fallbackTimeMs = new Date(tRaw).getTime();
                         } else {
                             // If it's a 10-digit epoch (seconds), multiply by 1000 for JS (milliseconds)
                             fallbackTimeMs = parsed > 10000000000 ? parsed : parsed * 1000;
@@ -953,11 +957,16 @@
                     
                     updateStatusPill(fallbackTimeMs);
 
-                    // 3. Robust extractor for various standard WeeWX naming conventions
+                    // 3. Robust extractor for various standard WeeWX naming conventions and nested .value objects
                     const getVal = (keys) => {
                         for (let k of keys) {
                             if (curr[k] !== undefined && curr[k] !== null) {
-                                const val = parseFloat(curr[k]);
+                                let rawVal = curr[k];
+                                // Dig into nested 'value' object if that's how it's formatted
+                                if (typeof rawVal === 'object' && rawVal !== null && 'value' in rawVal) {
+                                    rawVal = rawVal.value;
+                                }
+                                const val = parseFloat(rawVal);
                                 if (!isNaN(val)) return val;
                             }
                         }
@@ -967,14 +976,14 @@
                     // Explicitly pass `null` to disable Lull UI features
                     const weatherState = {
                         lull: null, 
-                        speed: getVal(['wind_speed', 'windSpeed', 'wind_avg']) || 0,
-                        gust: getVal(['wind_gust', 'windGust', 'wind_max']) || 0,
-                        direction: getVal(['wind_direction', 'windDirection', 'windDir', 'wind_dir']) || 0
+                        speed: getVal(['wind speed', 'wind_speed', 'windSpeed', 'wind_avg']) || 0,
+                        gust: getVal(['wind gust', 'wind_gust', 'windGust', 'wind_max']) || 0,
+                        direction: getVal(['wind direction', 'wind_direction', 'windDirection', 'windDir', 'wind_dir']) || 0
                     };
                     update(weatherState);
 
                     // Opportunistic updates for side panels if they exist in the JSON
-                    const temp = getVal(['outTemp', 'out_temp', 'temperature', 'temp']);
+                    const temp = getVal(['outTemp', 'out temp', 'out_temp', 'temperature', 'temp']);
                     if (temp !== null) {
                         const tempF = temp;
                         const tempC = (tempF - 32) * 5/9;
@@ -994,7 +1003,7 @@
                         saveToLocalStorage({ pressure: pressMb.toFixed(1) });
                     }
                     
-                    const uv = getVal(['UV', 'uv', 'uv_index', 'uvIndex']);
+                    const uv = getVal(['UV', 'uv', 'uv index', 'uv_index', 'uvIndex']);
                     if (uv !== null) {
                         const uvEl = document.getElementById('val-uv');
                         if (uvEl) uvEl.innerText = uv.toFixed(1);
