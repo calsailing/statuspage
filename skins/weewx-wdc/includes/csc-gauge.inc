@@ -1,5 +1,5 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>z
 <script src="https://d3js.org/d3.v7.min.js"></script>
  
 <!-- Import the Inter font so it always renders correctly on any website -->
@@ -281,7 +281,6 @@
     }
 
     /* Dark Mode Hooks - Assuming 'dark' class on html */
-    html.dark .wf-update-time { color: #e5e7eb; }
     html.dark .wf-status-pill.online { background-color: rgba(30, 142, 62, 0.2); color: #81c995; }
     html.dark .online .wf-dot { background-color: #81c995; }
     html.dark .wf-status-pill.delayed { background-color: rgba(249, 171, 0, 0.2); color: #fde293; }
@@ -425,12 +424,17 @@
     };
 
     // 3. Fetch Helper
-    const fetchWithRetry = async (url, maxRetries = 3) => {
+    const fetchWithRetry = async (url, options = {}, maxRetries = 3) => {
+        // Handle backward compatibility if the 2nd argument passed was maxRetries
+        if (typeof options === 'number') {
+            maxRetries = options;
+            options = {};
+        }
         for (let i = 0; i < maxRetries; i++) {
             try {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 5000);
-                const response = await fetch(url, { signal: controller.signal });
+                const response = await fetch(url, { ...options, signal: controller.signal });
                 clearTimeout(timeoutId);
                 if (response.ok) return await response.json();
                 if (response.status === 429) {
@@ -920,26 +924,59 @@
         if (!primarySuccess) {
             console.warn("Primary API delayed or unavailable. Sourcing from weewx.json fallback...");
             try {
-                const fallbackData = await fetchWithRetry(WEEWX_FALLBACK_URL);
-                if (fallbackData && fallbackData.current) {
-                    const curr = fallbackData.current;
+                // 1. Add cache bypass via HTTP headers rather than mutating the URL
+                let fallbackData;
+                try {
+                    fallbackData = await fetchWithRetry(WEEWX_FALLBACK_URL, { cache: 'no-store' });
+                } catch (directErr) {
+                    // Fallback to proxy if CORS/Network error occurs (e.g. testing in a sandbox environment)
+                    console.warn("Direct fetch failed (likely CORS). Attempting proxy bypass...", directErr);
+                    fallbackData = await fetchWithRetry(`https://api.allorigins.win/raw?url=${encodeURIComponent(WEEWX_FALLBACK_URL)}`, { cache: 'no-store' });
+                }
+                
+                // 2. Be resilient to slight JSON nesting differences (nested 'current' vs flat structure)
+                const curr = (fallbackData && fallbackData.current) ? fallbackData.current : fallbackData;
+
+                if (curr) {
+                    // Ultra-robust time parser (handles epoch seconds, epoch ms, and standard ISO strings)
+                    let fallbackTimeMs = Date.now();
+                    const tVal = curr.dateTime || curr.datetime || curr.time || curr.timestamp || fallbackData.dateTime;
+                    if (tVal) {
+                        const parsed = Number(tVal);
+                        if (isNaN(parsed)) {
+                            fallbackTimeMs = new Date(tVal).getTime();
+                        } else {
+                            // If it's a 10-digit epoch (seconds), multiply by 1000 for JS (milliseconds)
+                            fallbackTimeMs = parsed > 10000000000 ? parsed : parsed * 1000;
+                        }
+                    }
                     
-                    // Update the UI pill with the fallback timestamp (or Date.now if missing)
-                    const fallbackTimeMs = curr.dateTime ? (parseFloat(curr.dateTime) * 1000) : Date.now();
                     updateStatusPill(fallbackTimeMs);
+
+                    // 3. Robust extractor for various standard WeeWX naming conventions
+                    const getVal = (keys) => {
+                        for (let k of keys) {
+                            if (curr[k] !== undefined && curr[k] !== null) {
+                                const val = parseFloat(curr[k]);
+                                if (!isNaN(val)) return val;
+                            }
+                        }
+                        return null;
+                    };
 
                     // Explicitly pass `null` to disable Lull UI features
                     const weatherState = {
                         lull: null, 
-                        speed: parseFloat(curr.wind_speed) || 0,
-                        gust: parseFloat(curr.wind_gust) || 0,
-                        direction: parseFloat(curr.wind_direction) || 0
+                        speed: getVal(['wind_speed', 'windSpeed', 'wind_avg']) || 0,
+                        gust: getVal(['wind_gust', 'windGust', 'wind_max']) || 0,
+                        direction: getVal(['wind_direction', 'windDirection', 'windDir', 'wind_dir']) || 0
                     };
                     update(weatherState);
 
-                    // Opportunistic updates for side panels if they exist in standard weewx json formats
-                    if (curr.outTemp !== undefined) {
-                        const tempF = parseFloat(curr.outTemp);
+                    // Opportunistic updates for side panels if they exist in the JSON
+                    const temp = getVal(['outTemp', 'out_temp', 'temperature', 'temp']);
+                    if (temp !== null) {
+                        const tempF = temp;
                         const tempC = (tempF - 32) * 5/9;
                         const tempFEl = document.getElementById('val-temp-f');
                         if (tempFEl) tempFEl.innerText = `${tempF.toFixed(1)}\xB0F`;
@@ -947,15 +984,18 @@
                         if (tempCEl) tempCEl.innerText = `${tempC.toFixed(1)}\xB0C`;
                         saveToLocalStorage({ tempF: `${tempF.toFixed(1)}\xB0F`, tempC: `${tempC.toFixed(1)}\xB0C` });
                     }
-                    if (curr.barometer !== undefined) {
-                        let pressMb = parseFloat(curr.barometer);
+                    
+                    const baro = getVal(['barometer', 'pressure', 'baro']);
+                    if (baro !== null) {
+                        let pressMb = baro;
                         if (pressMb < 50) pressMb = pressMb * 33.8639; // Detects inHg & Converts to mb
                         const pressEl = document.getElementById('val-pressure');
                         if (pressEl) pressEl.innerText = pressMb.toFixed(1);
                         saveToLocalStorage({ pressure: pressMb.toFixed(1) });
                     }
-                    if (curr.UV !== undefined) {
-                        const uv = parseFloat(curr.UV);
+                    
+                    const uv = getVal(['UV', 'uv', 'uv_index', 'uvIndex']);
+                    if (uv !== null) {
                         const uvEl = document.getElementById('val-uv');
                         if (uvEl) uvEl.innerText = uv.toFixed(1);
                         const marker = document.getElementById('uv-marker');
@@ -966,13 +1006,11 @@
                         saveToLocalStorage({ uv: uv.toFixed(1) });
                     }
                 } else {
-                    // Fallback JSON format was invalid
-                    updateStatusPill(null);
+                    updateStatusPill(null); // Force Offline state if JSON format is completely unrecognized
                 }
             } catch (fallbackErr) {
                 console.error("Fallback API failed:", fallbackErr);
-                // Both API and Fallback failed
-                updateStatusPill(null);
+                updateStatusPill(null); // Force Offline state if fallback network error (e.g., CORS/Offline)
             }
         }
 
