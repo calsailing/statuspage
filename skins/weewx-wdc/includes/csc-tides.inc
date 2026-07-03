@@ -1,6 +1,9 @@
 <div class="bx--tile tile-radar-forecast">
    
-
+    <!-- Script dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"
+            xintegrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i"
+            crossorigin="anonymous"></script>
     <style>
         /* --- SCOPED CSS RESET --- */
         #tide-chart-widget-container * {
@@ -1373,8 +1376,8 @@
                         }
                     });
                 }
-                // Mix of green and yellow (lime green) for maximum visibility
-                const eventColors = ['#82c315'];
+                // Bright green for maximum visibility
+                const eventColors = ['#00c853'];
                 const eventSegmentsToDraw = [];
                 // Mix in Club Events to display in both the table and on the tide line
                 if (clubEvents && clubEvents.length > 0) {
@@ -1600,7 +1603,7 @@
                     const svgIcon = g.append("svg")
                         .attr("x", -7).attr("y", -7)
                         .attr("width", 14).attr("height", 14)
-                        .attr("viewBox", "0 0 24 24")
+                        .attr("viewBox", "0 0 24 24" || "0 0 24 24")
                         .attr("fill", "none")
                         .attr("stroke", strokeColor)
                         .attr("stroke-width", "2")
@@ -1804,7 +1807,7 @@
                           high: `<svg class="icon-sm icon-high" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>`,
                           low: `<svg class="icon-sm icon-low" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>`,
                           sunset: `<svg class="icon-sm icon-sunset" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 18a5 5 0 00-10 0M12 2v7m-5.66 2.34l1.42 1.42M1 18h2m18 0h2M18.36 11.64l1.42-1.42M23 22H1m15-17l-4 4-4-4"/></svg>`,
-                          club_event: `<svg class="icon-sm" style="color: #82c315;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>`
+                          club_event: `<svg class="icon-sm" style="color: #00c853;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>`
                      };
                      
                      let foundNextTableEvent = false;
