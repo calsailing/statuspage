@@ -1,6 +1,6 @@
 <div class="bx--tile tile-radar-forecast">
    
-    
+
     <style>
         /* --- SCOPED CSS RESET --- */
         #tide-chart-widget-container * {
@@ -387,6 +387,11 @@
             word-wrap: break-word;
             white-space: normal;
         }
+        @media (min-width: 640px) {
+            #tide-chart-tooltip {
+                max-width: 400px; /* twice as large on desktop */
+            }
+        }
         #tide-chart-tooltip p {
             margin: 0;
             padding: 0;
@@ -583,7 +588,7 @@
 
             // --- ENVIRONMENT CONFIGURATION ---
             // Set to true to load from the live environment (www.cal-sailing.org), or false to use the test environment (test.cal-sailing.org)
-            const USE_LIVE_ENVIRONMENT = start; 
+            const USE_LIVE_ENVIRONMENT = true; 
             const CAL_SAILING_DOMAIN = USE_LIVE_ENVIRONMENT ? "www.cal-sailing.org" : "test.cal-sailing.org";
 
             // ALWAYS initialize core dates to Pacific Time to ensure out-of-state visitors see precise local Berkeley predictions.
