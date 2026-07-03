@@ -1,6 +1,9 @@
 <div class="bx--tile tile-radar-forecast">
    
-
+    <!-- Script dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"
+            xintegrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i"
+            crossorigin="anonymous"></script>
     <style>
         /* --- SCOPED CSS RESET --- */
         #tide-chart-widget-container * {
@@ -383,6 +386,9 @@
             gap: 0.15rem;
             text-align: center;
             min-width: 70px;
+            max-width: 200px;
+            word-wrap: break-word;
+            white-space: normal;
         }
         #tide-chart-tooltip p {
             margin: 0;
@@ -408,6 +414,8 @@
             font-size: 0.85rem;
             font-weight: 700;
             color: var(--color-tooltip-text);
+            word-wrap: break-word;
+            white-space: normal;
         }
         #tide-chart-widget-container .axis path,
         #tide-chart-widget-container .axis line { stroke: var(--color-axis-stroke); }
@@ -548,11 +556,11 @@
             const ENABLE_NOAA_PREDICTIONS = true; // Primary tide predictions from NOAA
             const ENABLE_OBSERVED_TIDES   = true; // Observed tide anomalies from Richmond NOAA station
             const ENABLE_CLUB_STATUS      = true; // Cal Sailing Club status API (opens, docks, restrictions, closures)
-            const ENABLE_CLUB_EVENTS      = false; // Scheduled club calendar events from DP Calendar API
+            const ENABLE_CLUB_EVENTS      = true; // Scheduled club calendar events from DP Calendar API
 
             // --- ENVIRONMENT CONFIGURATION ---
             // Set to true to load from the live environment (www.cal-sailing.org), or false to use the test environment (test.cal-sailing.org)
-            const USE_LIVE_ENVIRONMENT = false; 
+            const USE_LIVE_ENVIRONMENT = true; 
             const CAL_SAILING_DOMAIN = USE_LIVE_ENVIRONMENT ? "www.cal-sailing.org" : "test.cal-sailing.org";
 
             // ALWAYS initialize core dates to Pacific Time to ensure out-of-state visitors see precise local Berkeley predictions.
@@ -1569,12 +1577,23 @@
                         .attr("stroke-linejoin", "round");
                         
                     if (d.type !== 'club_event_end') {
-                        svgIcon.append("circle")
-                            .attr("cx", 12)
-                            .attr("cy", 12)
-                            .attr("r", 9)
-                            .attr("fill", "var(--color-icon-bg)")
-                            .attr("stroke", "none");
+                        if (d.type === 'club_event_start') {
+                            svgIcon.append("rect")
+                                .attr("x", 4)
+                                .attr("y", 6)
+                                .attr("width", 16)
+                                .attr("height", 14)
+                                .attr("rx", 1.5)
+                                .attr("fill", "var(--color-icon-bg)")
+                                .attr("stroke", "none");
+                        } else {
+                            svgIcon.append("circle")
+                                .attr("cx", 12)
+                                .attr("cy", 12)
+                                .attr("r", 9)
+                                .attr("fill", "var(--color-icon-bg)")
+                                .attr("stroke", "none");
+                        }
                     }
                         
                     if (d.type === 'open') {
@@ -1738,10 +1757,10 @@
                 dayEvents.push({ time: sunsetTime, text: "Sunset", type: 'sunset' });
                 
                 dayEvents.sort((a, b) => a.time - b.time);
-                // Dedupe on a stable time|type key so original objects (with real Date fields) are preserved
+                // Dedupe on a stable time|type|text key so original objects are preserved and simultaneous events of different titles aren't swallowed
                 const uniqueEventsMap = new Map();
                 for (const e of dayEvents) {
-                    const key = `${e.time instanceof Date ? e.time.getTime() : new Date(e.time).getTime()}|${e.type}`;
+                    const key = `${e.time instanceof Date ? e.time.getTime() : new Date(e.time).getTime()}|${e.type}|${e.text}`;
                     if (!uniqueEventsMap.has(key)) uniqueEventsMap.set(key, e);
                 }
                 const uniqueEvents = [...uniqueEventsMap.values()];
