@@ -1,6 +1,6 @@
 <div class="bx--tile tile-radar-forecast">
    
-
+    
     <style>
         /* --- SCOPED CSS RESET --- */
         #tide-chart-widget-container * {
@@ -296,7 +296,7 @@
         
         #tide-chart-widget-container .icon-sm { width: 1rem; height: 1rem; }
         #tide-chart-widget-container .icon-open { color: var(--icon-color-open); }
-        #tide-chart-widget-container .icon-dock { color: var(--icon-color-dock); }
+        #tide-chart-widget-container .icon-dock { color: var(--icon-color-open); }
         #tide-chart-widget-container .icon-high { color: var(--icon-color-high); }
         #tide-chart-widget-container .icon-low { color: var(--icon-color-low); }
         #tide-chart-widget-container .icon-sunset { color: var(--icon-color-sunset); }
@@ -413,6 +413,32 @@
             color: var(--color-tooltip-text);
             word-wrap: break-word;
             white-space: normal;
+        }
+        #tide-chart-tooltip .pill {
+            display: inline-block;
+            font-size: 0.6rem;
+            font-weight: 700;
+            padding: 0.15rem 0.4rem;
+            border-radius: 9999px;
+            text-transform: uppercase;
+            line-height: 1;
+            vertical-align: middle;
+        }
+        #tide-chart-tooltip .pill-start {
+            background-color: #dcfce7;
+            color: #15803d;
+        }
+        .dark #tide-chart-tooltip .pill-start {
+            background-color: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
+        }
+        #tide-chart-tooltip .pill-end {
+            background-color: #ffedd5;
+            color: #ea580c;
+        }
+        .dark #tide-chart-tooltip .pill-end {
+            background-color: rgba(249, 115, 22, 0.2);
+            color: #fb923c;
         }
         #tide-chart-widget-container .axis path,
         #tide-chart-widget-container .axis line { stroke: var(--color-axis-stroke); }
@@ -557,7 +583,7 @@
 
             // --- ENVIRONMENT CONFIGURATION ---
             // Set to true to load from the live environment (www.cal-sailing.org), or false to use the test environment (test.cal-sailing.org)
-            const USE_LIVE_ENVIRONMENT = true; 
+            const USE_LIVE_ENVIRONMENT = start; 
             const CAL_SAILING_DOMAIN = USE_LIVE_ENVIRONMENT ? "www.cal-sailing.org" : "test.cal-sailing.org";
 
             // ALWAYS initialize core dates to Pacific Time to ensure out-of-state visitors see precise local Berkeley predictions.
@@ -1449,7 +1475,7 @@
                                     title: e.title,
                                     yHeight: endHeight,
                                     color: eventColor,
-                                    isAffected: isAffected
+                                    isAffected: isAffected && (endHeight < DANGEROUS_LOW_TIDE)
                                 });
                             }
                         }
@@ -1515,9 +1541,31 @@
                 // --- SHARED TOOLTIP RENDERING LOGIC ---
                 function showSpecialIconTooltip(d) {
                     isHoveringOnEvent = true; 
-                    let titleText = d.titles ? d.titles.map(t => escapeHtml(t)).join("<br/>") : escapeHtml(d.title || (d.type === 'open' ? 'Club Opens' : 'Dock Time'));
+                    
+                    let htmlContent = "";
+                    if (d.titles) {
+                        htmlContent = d.titles.map(t => {
+                            let pillHtml = "";
+                            if (t.type === 'club_event_start') {
+                                pillHtml = `<span class="pill pill-start">Start</span>`;
+                            } else if (t.type === 'club_event_end') {
+                                pillHtml = `<span class="pill pill-end">End</span>`;
+                            }
+                            return `<div style="margin-bottom: 0.25rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">${pillHtml}<span>${escapeHtml(t.text)}</span></div>`;
+                        }).join("");
+                    } else {
+                        let pillHtml = "";
+                        if (d.type === 'club_event_start') {
+                            pillHtml = `<span class="pill pill-start">Start</span>`;
+                        } else if (d.type === 'club_event_end') {
+                            pillHtml = `<span class="pill pill-end">End</span>`;
+                        }
+                        let labelText = d.title || (d.type === 'open' ? 'Club Opens' : 'Dock Time');
+                        htmlContent = `<div style="display: flex; align-items: center; justify-content: center; gap: 0.25rem;">${pillHtml}<span>${escapeHtml(labelText)}</span></div>`;
+                    }
+
                     tooltip.select("#tooltip-time").text(`${d3.timeFormat("%H:%M")(d.time)}`); 
-                    tooltip.select("#tooltip-height").html(titleText); 
+                    tooltip.select("#tooltip-height").html(htmlContent); 
                     
                     if (d.isAffected) {
                         tooltip.select("#tooltip-warning")
@@ -1582,11 +1630,11 @@
                     textGroup.append("tspan").attr("x", 0).attr("y", textY1).text(tStr).style("font-size", "0.65rem");
                     textGroup.append("tspan").attr("x", 0).attr("y", textY2).text(hStr).style("font-weight", "bold");
                 });
-                // --- Open and Dock Icons on Tideline ---
-                // Group special icons that occur at the exact same time to prevent stacked hunder-overlay blockages
+                // --- Grouped Special Icons ---
                 const groupedIconsMap = new Map();
                 specialIcons.forEach(icon => {
                     const timeKey = icon.time.getTime();
+                    const labelText = icon.title || (icon.type === 'open' ? 'Club Opens' : (icon.type === 'dock' ? 'Dock Time' : 'Untitled Event'));
                     if (!groupedIconsMap.has(timeKey)) {
                         groupedIconsMap.set(timeKey, {
                             time: icon.time,
@@ -1594,13 +1642,12 @@
                             yHeight: icon.yHeight,
                             color: icon.color,
                             isAffected: icon.isAffected,
-                            titles: [icon.title || (icon.type === 'open' ? 'Club Opens' : (icon.type === 'dock' ? 'Dock Time' : 'Untitled Event'))]
+                            titles: [{ text: labelText, type: icon.type }]
                         });
                     } else {
                         const existing = groupedIconsMap.get(timeKey);
-                        const titleToAdd = icon.title || (icon.type === 'open' ? 'Club Opens' : (icon.type === 'dock' ? 'Dock Time' : 'Untitled Event'));
-                        if (!existing.titles.includes(titleToAdd)) {
-                            existing.titles.push(titleToAdd);
+                        if (!existing.titles.some(t => t.text === labelText && t.type === icon.type)) {
+                            existing.titles.push({ text: labelText, type: icon.type });
                         }
                         if (icon.isAffected) {
                             existing.isAffected = true;
