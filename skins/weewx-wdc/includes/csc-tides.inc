@@ -1403,7 +1403,7 @@
                                     <svg class="icon-sm" style="color: var(--color-text-danger); display: block;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                                     </svg>
-                                    <span class="tooltip-content">Due to low tide, this event may be shortened, replaced with a land-based activity, or cancelled. Check announcements.</span>
+                                    <span class="tooltip-content">Low tide impact possible. Check announcements for schedule changes.</span>
                                 </span>`;
                             }
                             
@@ -1522,7 +1522,7 @@
                     if (d.isAffected) {
                         tooltip.select("#tooltip-warning")
                                .style("display", "block")
-                               .text("Due to low tide, this event may be shortened, replaced with a land-based activity, or cancelled. Check announcements.");
+                               .text("Low tide impact possible. Check announcements for schedule changes.");
                     } else {
                         tooltip.select("#tooltip-warning").style("display", "none");
                     }
@@ -1578,6 +1578,7 @@
                     const textY1 = 20;
                     const textY2 = 34;
                     const textGroup = d3.select(this).append("text").attr("class", "event-label").attr("text-anchor", "middle");
+                    textGroup.append("text").attr("class", "event-label").attr("text-anchor", "middle");
                     textGroup.append("tspan").attr("x", 0).attr("y", textY1).text(tStr).style("font-size", "0.65rem");
                     textGroup.append("tspan").attr("x", 0).attr("y", textY2).text(hStr).style("font-weight", "bold");
                 });
