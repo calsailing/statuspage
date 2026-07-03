@@ -1,9 +1,6 @@
 <div class="bx--tile tile-radar-forecast">
    
-    <!-- Script dependencies -->
-    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"
-            xintegrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i"
-            crossorigin="anonymous"></script>
+
     <style>
         /* --- SCOPED CSS RESET --- */
         #tide-chart-widget-container * {
@@ -1515,6 +1512,46 @@
                     slideGroup.append("path").datum(berkeleyObserved).attr("fill", "none").attr("stroke", "var(--color-observed-line)").attr("stroke-width", 1).style("opacity", 0.9).attr("d", observedLineGenerator);
                 }
                 
+                // --- SHARED TOOLTIP RENDERING LOGIC ---
+                function showSpecialIconTooltip(d) {
+                    isHoveringOnEvent = true; 
+                    let titleText = d.titles ? d.titles.map(t => escapeHtml(t)).join("<br/>") : escapeHtml(d.title || (d.type === 'open' ? 'Club Opens' : 'Dock Time'));
+                    tooltip.select("#tooltip-time").text(`${d3.timeFormat("%H:%M")(d.time)}`); 
+                    tooltip.select("#tooltip-height").html(titleText); 
+                    
+                    if (d.isAffected) {
+                        tooltip.select("#tooltip-warning")
+                               .style("display", "block")
+                               .text("Due to low tide, this event may be shortened, replaced with a land-based activity, or cancelled. Check announcements.");
+                    } else {
+                        tooltip.select("#tooltip-warning").style("display", "none");
+                    }
+                    const tooltipNode = tooltip.node();
+                    const tooltipRect = tooltipNode.getBoundingClientRect();
+                    const containerRect = chartContainer.node().getBoundingClientRect();
+                    const snappedX = margin.left + xScale(d.time);
+                    let leftPos = snappedX - (tooltipRect.width / 2);
+                    leftPos = Math.max(10, Math.min(leftPos, containerRect.width - tooltipRect.width - 10));
+                    tooltip.style("opacity", 1).style("left", `${leftPos}px`).style("top", `10px`); 
+                }
+
+                function showTideEventTooltip(d) {
+                    isHoveringOnEvent = true; 
+                    tooltip.select("#tooltip-time").text(`${d.type} Tide: ${d3.timeFormat("%H:%M")(d.time)}`); 
+                    tooltip.select("#tooltip-height").text(`${d.height.toFixed(1)}\u2032`); 
+                    
+                    // Explicitly hide warning for high/low tide hover
+                    tooltip.select("#tooltip-warning").style("display", "none");
+                    
+                    const tooltipNode = tooltip.node();
+                    const tooltipRect = tooltipNode.getBoundingClientRect();
+                    const containerRect = chartContainer.node().getBoundingClientRect();
+                    const snappedX = margin.left + xScale(d.time);
+                    let leftPos = snappedX - (tooltipRect.width / 2);
+                    leftPos = Math.max(10, Math.min(leftPos, containerRect.width - tooltipRect.width - 10));
+                    tooltip.style("opacity", 1).style("left", `${leftPos}px`).style("top", `10px`); 
+                }
+
                 // --- Tide Event Markers (High / Low) ---
                 // Override the pointer-events so these markers remain individually hoverable
                 const eventsGroup = slideGroup.selectAll(".event").data(tideEvents).enter().append("g").attr("class", "event").attr("transform", d => `translate(${xScale(d.time)},${yScale(d.height)})`).style("pointer-events", "all").style("cursor", "pointer");
@@ -1603,7 +1640,7 @@
                     const svgIcon = g.append("svg")
                         .attr("x", -7).attr("y", -7)
                         .attr("width", 14).attr("height", 14)
-                        .attr("viewBox", "0 0 24 24" || "0 0 24 24")
+                        .attr("viewBox", "0 0 24 24")
                         .attr("fill", "none")
                         .attr("stroke", strokeColor)
                         .attr("stroke-width", "2")
@@ -1643,31 +1680,36 @@
                         svgIcon.append("circle").attr("cx", 12).attr("cy", 12).attr("r", 6).attr("fill", strokeColor).attr("stroke", "none");
                     }
                 });
-                // Add tooltips to the tide line icons
-                specialIconGroup.on("mouseover", (event, d) => { 
-                    isHoveringOnEvent = true; 
-                    let titleText = d.titles ? d.titles.map(t => escapeHtml(t)).join("<br/>") : escapeHtml(d.title || (d.type === 'open' ? 'Club Opens' : 'Dock Time'));
-                    tooltip.select("#tooltip-time").text(`${d3.timeFormat("%H:%M")(d.time)}`); 
-                    tooltip.select("#tooltip-height").html(titleText); 
-                    
-                    if (d.isAffected) {
-                        tooltip.select("#tooltip-warning")
-                               .style("display", "block")
-                               .text("Due to low tide, this event may be shortened, replaced with a land-based activity, or cancelled. Check announcements.");
-                    } else {
-                        tooltip.select("#tooltip-warning").style("display", "none");
-                    }
-                    const tooltipNode = tooltip.node();
-                    const tooltipRect = tooltipNode.getBoundingClientRect();
-                    const containerRect = chartContainer.node().getBoundingClientRect();
-                    const snappedX = margin.left + xScale(d.time);
-                    let leftPos = snappedX - (tooltipRect.width / 2);
-                    leftPos = Math.max(10, Math.min(leftPos, containerRect.width - tooltipRect.width - 10));
-                    tooltip.style("opacity", 1).style("left", `${leftPos}px`).style("top", `10px`); 
-                }).on("mouseout", () => { 
-                    isHoveringOnEvent = false; 
-                    tooltip.style("opacity", 0); 
-                });
+                // Add tooltips to the tide line icons with mobile Touch start triggers
+                specialIconGroup
+                    .on("mouseover", (event, d) => { 
+                        showSpecialIconTooltip(d);
+                    })
+                    .on("mouseout", () => { 
+                        isHoveringOnEvent = false; 
+                        tooltip.style("opacity", 0); 
+                    })
+                    .on("touchstart", (event, d) => {
+                        event.preventDefault();
+                        event.stopPropagation(); // Prevent bubbling up to .hover-overlay
+                        showSpecialIconTooltip(d);
+                    });
+
+                // Add tooltips to high/low tide markers with Touch support
+                eventsGroup
+                    .on("mouseover", (event, d) => { 
+                        showTideEventTooltip(d);
+                    })
+                    .on("mouseout", () => { 
+                        isHoveringOnEvent = false; 
+                        tooltip.style("opacity", 0); 
+                    })
+                    .on("touchstart", (event, d) => {
+                        event.preventDefault();
+                        event.stopPropagation(); // Prevent bubbling
+                        showTideEventTooltip(d);
+                    });
+
                 // --- Top Labels for Open / Dock Times ---
                 const topBoxes = [];
                 topLabelsData.forEach(label => {
@@ -1758,30 +1800,23 @@
                     .on("mouseover", () => { if (!isHoveringOnEvent) { hoverGroup.style("display", null); tooltip.style("opacity", 1); }})
                     .on("mouseout", () => { hoverGroup.style("display", "none"); if (!isHoveringOnEvent) tooltip.style("opacity", 0); })
                     .on("mousemove", handleInteractionMove)
-                    .on("touchstart", (e) => { e.preventDefault(); if (!isHoveringOnEvent) { hoverGroup.style("display", null); tooltip.style("opacity", 1); }}, { passive: false })
+                    .on("touchstart", (e) => { 
+                        e.preventDefault(); 
+                        isHoveringOnEvent = false; // Touching the blank area of the graph immediately cancels event-focus
+                        hoverGroup.style("display", null); 
+                        tooltip.style("opacity", 1); 
+                        handleInteractionMove(e); // Snap regular tracker instantly to current coordinates
+                    }, { passive: false })
                     .on("touchmove", handleInteractionMove, { passive: false })
-                    .on("touchend", () => { hoverGroup.style("display", "none"); if (!isHoveringOnEvent) tooltip.style("opacity", 0);})
-                    .on("touchcancel", () => { hoverGroup.style("display", "none"); if (!isHoveringOnEvent) tooltip.style("opacity", 0);});
+                    .on("touchend", () => { 
+                        hoverGroup.style("display", "none"); 
+                        if (!isHoveringOnEvent) tooltip.style("opacity", 0);
+                    })
+                    .on("touchcancel", () => { 
+                        hoverGroup.style("display", "none"); 
+                        if (!isHoveringOnEvent) tooltip.style("opacity", 0);
+                    });
                 
-                eventsGroup.on("mouseover", (event, d) => { 
-                    isHoveringOnEvent = true; 
-                    tooltip.select("#tooltip-time").text(`${d.type} Tide: ${d3.timeFormat("%H:%M")(d.time)}`); 
-                    tooltip.select("#tooltip-height").text(`${d.height.toFixed(1)}\u2032`); 
-                    
-                    // Explicitly hide warning for high/low tide hover
-                    tooltip.select("#tooltip-warning").style("display", "none");
-                    
-                    const tooltipNode = tooltip.node();
-                    const tooltipRect = tooltipNode.getBoundingClientRect();
-                    const containerRect = chartContainer.node().getBoundingClientRect();
-                    const snappedX = margin.left + xScale(d.time);
-                    let leftPos = snappedX - (tooltipRect.width / 2);
-                    leftPos = Math.max(10, Math.min(leftPos, containerRect.width - tooltipRect.width - 10));
-                    tooltip.style("opacity", 1).style("left", `${leftPos}px`).style("top", `10px`); 
-                }).on("mouseout", () => { 
-                    isHoveringOnEvent = false; 
-                    tooltip.style("opacity", 0); 
-                });
                 // Update text below the chart
                 tideEvents.forEach(event => {
                     if (event.time >= sunriseTime && event.time <= sunsetTime) {
@@ -2229,6 +2264,20 @@
                     drawChart(currentDate, 0);
                 }
             }, 60000);
+
+            // --- TAP-AWAY DISMISSAL SYSTEM ---
+            // Listens for clicks/touches outside of active tooltip zones to reset state instantly
+            const dismissAllTooltips = (e) => {
+                const container = document.getElementById('tide-chart-widget-container');
+                if (container && !container.contains(e.target)) {
+                    isHoveringOnEvent = false;
+                    d3.select("#tide-chart-tooltip").style("opacity", 0);
+                    d3.selectAll(".hover-group").style("display", "none");
+                }
+            };
+            document.addEventListener('touchstart', dismissAllTooltips, { passive: true });
+            document.addEventListener('click', dismissAllTooltips, { passive: true });
+
             drawChart(currentDate, 0);
         });
         /* #end raw */
