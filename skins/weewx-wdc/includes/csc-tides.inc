@@ -1,9 +1,6 @@
 <div class="bx--tile tile-radar-forecast">
    
-    <!-- Script dependencies -->
-    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"
-            xintegrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i"
-            crossorigin="anonymous"></script>
+
     <style>
         /* --- SCOPED CSS RESET --- */
         #tide-chart-widget-container * {
@@ -540,7 +537,7 @@
             <div id="tide-chart-tooltip" style="display: none;" aria-hidden="true">
                 <p id="tooltip-time"></p>
                 <p id="tooltip-height"></p>
-                <p id="tooltip-warning" style="display: none; font-size: 0.65rem; color: var(--color-text-danger); margin-top: 0.25rem; max-width: 140px; white-space: normal; line-height: 1.2;"></p>
+                <p id="tooltip-warning" style="display: none; font-size: 0.65rem; color: var(--color-text-danger); margin-top: 0.25rem; width: 100%; white-space: normal; line-height: 1.2;"></p>
             </div>
         </div>
         
@@ -1544,13 +1541,46 @@
                     textGroup.append("tspan").attr("x", 0).attr("y", textY2).text(hStr).style("font-weight", "bold");
                 });
                 // --- Open and Dock Icons on Tideline ---
+                // Group special icons that occur at the exact same time to prevent stacked hunder-overlay blockages
+                const groupedIconsMap = new Map();
+                specialIcons.forEach(icon => {
+                    const timeKey = icon.time.getTime();
+                    if (!groupedIconsMap.has(timeKey)) {
+                        groupedIconsMap.set(timeKey, {
+                            time: icon.time,
+                            type: icon.type,
+                            yHeight: icon.yHeight,
+                            color: icon.color,
+                            isAffected: icon.isAffected,
+                            titles: [icon.title || (icon.type === 'open' ? 'Club Opens' : (icon.type === 'dock' ? 'Dock Time' : 'Untitled Event'))]
+                        });
+                    } else {
+                        const existing = groupedIconsMap.get(timeKey);
+                        const titleToAdd = icon.title || (icon.type === 'open' ? 'Club Opens' : (icon.type === 'dock' ? 'Dock Time' : 'Untitled Event'));
+                        if (!existing.titles.includes(titleToAdd)) {
+                            existing.titles.push(titleToAdd);
+                        }
+                        if (icon.isAffected) {
+                            existing.isAffected = true;
+                        }
+                        const typePriority = { 'open': 4, 'dock': 3, 'club_event_start': 2, 'club_event_end': 1 };
+                        if ((typePriority[icon.type] || 0) > (typePriority[existing.type] || 0)) {
+                            existing.type = icon.type;
+                            existing.color = icon.color;
+                            existing.yHeight = icon.yHeight;
+                        }
+                    }
+                });
+                
+                const finalSpecialIcons = Array.from(groupedIconsMap.values());
+
                 // Ensure club open/dock icons are rendered in front of event icons
-                specialIcons.sort((a, b) => {
+                finalSpecialIcons.sort((a, b) => {
                     const getPriority = (type) => (type === 'open' || type === 'dock' ? 1 : 0);
                     return getPriority(a.type) - getPriority(b.type);
                 });
                 const specialIconGroup = slideGroup.selectAll(".special-icon")
-                    .data(specialIcons)
+                    .data(finalSpecialIcons)
                     .enter()
                     .append("g")
                     .attr("class", "special-icon")
@@ -1612,9 +1642,9 @@
                 // Add tooltips to the tide line icons
                 specialIconGroup.on("mouseover", (event, d) => { 
                     isHoveringOnEvent = true; 
-                    let titleText = d.title || (d.type === 'open' ? 'Club Opens' : 'Dock Time');
+                    let titleText = d.titles ? d.titles.map(t => escapeHtml(t)).join("<br/>") : escapeHtml(d.title || (d.type === 'open' ? 'Club Opens' : 'Dock Time'));
                     tooltip.select("#tooltip-time").text(`${d3.timeFormat("%H:%M")(d.time)}`); 
-                    tooltip.select("#tooltip-height").text(titleText); 
+                    tooltip.select("#tooltip-height").html(titleText); 
                     
                     if (d.isAffected) {
                         tooltip.select("#tooltip-warning")
