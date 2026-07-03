@@ -427,37 +427,49 @@
         #tide-chart-widget-container .aspect-wrapper { padding-top: 66.67%; position: relative; width: 100%; }
         @media (min-width: 640px) { #tide-chart-widget-container .aspect-wrapper { padding-top: 50%; } }
         
-        /* --- FRESH LOADING EFFECT --- */
+        /* --- WATER WAVE FILLING ANIMATION --- */
         #tide-chart-widget-container .liquid-loader {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 1rem;
+            gap: 1.25rem;
             height: 100%;
             flex-direction: column;
         }
-        #tide-chart-widget-container .liquid-loader-drops {
-            display: flex;
-            gap: 8px;
-        }
-        #tide-chart-widget-container .liquid-loader .drop {
-            width: 12px;
-            height: 12px;
-            background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+        #tide-chart-widget-container .wave-container {
+            position: relative;
+            width: 64px;
+            height: 64px;
+            background-color: var(--color-chart-night);
+            border: 2px solid var(--color-chart-tide-line);
             border-radius: 50%;
-            animation: liquid-bounce 1.4s infinite ease-in-out both;
-            box-shadow: 0 2px 6px rgba(14, 165, 233, 0.4);
+            overflow: hidden;
+            transform: translateZ(0); /* Webkit/Safari circular clipping mask guard */
         }
-        .dark #tide-chart-widget-container .liquid-loader .drop {
-            box-shadow: 0 2px 6px rgba(14, 165, 233, 0.1);
+        #tide-chart-widget-container .wave,
+        #tide-chart-widget-container .wave-behind {
+            position: absolute;
+            width: 128px;
+            height: 128px;
+            background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+            border-radius: 43%;
+            left: -32px;
+            bottom: -128px; /* Start completely empty (0% filled) */
+            transition: bottom 0.6s cubic-bezier(0.4, 0, 0.2, 1); /* Animate height smoothly on change */
+            animation: wave-spin 6s infinite linear;
+            transform-origin: 50% 50%;
+            opacity: 0.85;
         }
-        #tide-chart-widget-container .liquid-loader .drop:nth-child(1) { animation-delay: -0.32s; }
-        #tide-chart-widget-container .liquid-loader .drop:nth-child(2) { animation-delay: -0.16s; }
-        #tide-chart-widget-container .liquid-loader .drop:nth-child(3) { animation-delay: 0s; }
-        
-        @keyframes liquid-bounce {
-            0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
-            40% { transform: scale(1); opacity: 1; }
+        #tide-chart-widget-container .wave-behind {
+            background: var(--color-chart-tide-line);
+            opacity: 0.45;
+            animation: wave-spin 10s infinite linear;
+            border-radius: 40%;
+            bottom: -124px; /* Start at 0% with depth offset */
+        }
+        @keyframes wave-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
         #tide-chart-widget-container .liquid-loader-text {
             color: var(--color-text-tertiary);
@@ -531,6 +543,18 @@
     <script>
         /* #raw */
         document.addEventListener('DOMContentLoaded', () => {
+            // --- SOURCE CONFIGURATION FLAGS ---
+            // Set these to true or false to enable/disable specific data source integrations
+            const ENABLE_NOAA_PREDICTIONS = true; // Primary tide predictions from NOAA
+            const ENABLE_OBSERVED_TIDES   = true; // Observed tide anomalies from Richmond NOAA station
+            const ENABLE_CLUB_STATUS      = true; // Cal Sailing Club status API (opens, docks, restrictions, closures)
+            const ENABLE_CLUB_EVENTS      = false; // Scheduled club calendar events from DP Calendar API
+
+            // --- ENVIRONMENT CONFIGURATION ---
+            // Set to true to load from the live environment (www.cal-sailing.org), or false to use the test environment (test.cal-sailing.org)
+            const USE_LIVE_ENVIRONMENT = false; 
+            const CAL_SAILING_DOMAIN = USE_LIVE_ENVIRONMENT ? "www.cal-sailing.org" : "test.cal-sailing.org";
+
             // ALWAYS initialize core dates to Pacific Time to ensure out-of-state visitors see precise local Berkeley predictions.
             // Uses Intl.formatToParts to read the wall-clock fields in America/Los_Angeles directly, avoiding the
             // fragile toLocaleString -> Date re-parse round-trip that could drift by an hour near DST boundaries.
@@ -571,7 +595,7 @@
                 if (!raw) return '#';
                 if (raw.startsWith('/')) return raw; // site-relative path
                 try {
-                    const parsed = new URL(raw, 'https://www.cal-sailing.org');
+                    const parsed = new URL(raw, `https://${CAL_SAILING_DOMAIN}`);
                     if (parsed.protocol === 'http:' || parsed.protocol === 'https:') return parsed.href;
                 } catch (e) { /* fall through */ }
                 return '#';
@@ -777,6 +801,9 @@
                 ]).catch(() => {}); // catch silently to ensure background API failures never disrupt runtime
             }
             async function fetchTideData(date) {
+                if (!ENABLE_NOAA_PREDICTIONS) {
+                    return [];
+                }
                 const cacheKey = getLocalCacheKey(date);
                 if (tideDataCache[cacheKey]) {
                     return tideDataCache[cacheKey];
@@ -825,6 +852,9 @@
                 return extremes;
             }
             async function fetchClubEvents(date) {
+                if (!ENABLE_CLUB_EVENTS) {
+                    return [];
+                }
                 const cacheKey = getLocalCacheKey(date);
                 if (clubEventsCache[cacheKey]) {
                     return clubEventsCache[cacheKey];
@@ -840,7 +870,7 @@
                 const n_mm = String(nextDate.getMonth() + 1).padStart(2, '0');
                 const n_dd = String(nextDate.getDate()).padStart(2, '0');
                 const endDateStr = encodeURIComponent(`${n_yyyy}-${n_mm}-${n_dd}T00:00:00`);
-                const targetUrl = `https://www.cal-sailing.org/index.php?option=com_dpcalendar&view=events&format=raw&limit=0&Itemid=1402&filter%5Bcalendars%5D%5B%5D=61&filter%5Bcalendars%5D%5B%5D=sq-1&filter%5Bcalendars%5D%5B%5D=sq-2&filter%5Bcalendars%5D%5B%5D=sq-3&filter%5Bcalendars%5D%5B%5D=sq-4&list%5Bstart-date%5D=${startDateStr}&list%5Bend-date%5D=${endDateStr}&filter%5Bsearch%5D=&filter%5Blocation%5D=&filter%5Bradius%5D=20&filter%5Blength-type%5D=m&filter%5Bstate%5D=&filter%5Bcreated_by%5D=&Itemid=1402&filter%5Bcalendars%5D%5B%5D=-2`;
+                const targetUrl = `https://${CAL_SAILING_DOMAIN}/index.php?option=com_dpcalendar&view=events&format=raw&limit=0&Itemid=1402&filter%5Bcalendars%5D%5B%5D=61&filter%5Bcalendars%5D%5B%5D=sq-1&filter%5Bcalendars%5D%5B%5D=sq-2&filter%5Bcalendars%5D%5B%5D=sq-3&filter%5Bcalendars%5D%5B%5D=sq-4&list%5Bstart-date%5D=${startDateStr}&list%5Bend-date%5D=${endDateStr}&filter%5Bsearch%5D=&filter%5Blocation%5D=&filter%5Bradius%5D=20&filter%5Blength-type%5D=m&filter%5Bstate%5D=&filter%5Bcreated_by%5D=&Itemid=1402&filter%5Bcalendars%5D%5B%5D=-2`;
                 try {
                     let jsonString = null;
                     try {
@@ -876,7 +906,7 @@
                         // Safe URL formatting
                         let eventUrl = e.url || '';
                         if (eventUrl && !eventUrl.startsWith('http')) {
-                            eventUrl = 'https://www.cal-sailing.org' + (eventUrl.startsWith('/') ? eventUrl : '/' + eventUrl);
+                            eventUrl = `https://${CAL_SAILING_DOMAIN}` + (eventUrl.startsWith('/') ? eventUrl : '/' + eventUrl);
                         }
                         return {
                             title: e.title || 'Untitled Event',
@@ -894,13 +924,24 @@
                 }
             }
             async function fetchClubStatus(date) {
+                if (!ENABLE_CLUB_STATUS) {
+                    return { 
+                        isClosed: false, 
+                        openTime: null, 
+                        dockTime: null, 
+                        midDayDockTime: null, 
+                        midDayOpenTime: null, 
+                        alertMessage: '', 
+                        sunsetTime: null 
+                    };
+                }
                 const cacheKey = getLocalCacheKey(date);
                 if (clubStatusCache[cacheKey]) {
                     return clubStatusCache[cacheKey];
                 }
                 
                 const yyyymmdd = date.getFullYear() + '-' + ('0' + (date.getMonth() + 1)).slice(-2) + '-' + ('0' + date.getDate()).slice(-2);
-                const targetUrl = `https://www.cal-sailing.org/index.php?option=com_csctides&view=gettidedatalist&task=gettidedatalist&tmpl=component&output=json&tidedate=${yyyymmdd}`;
+                const targetUrl = `https://${CAL_SAILING_DOMAIN}/index.php?option=com_csctides&view=gettidedatalist&task=gettidedatalist&tmpl=component&output=json&tidedate=${yyyymmdd}`;
                 const result = await withRetry(async () => {
                         let rawText = null;
                         try {
@@ -967,6 +1008,9 @@
                 return result || { isClosed: true, alertMessage: 'Could not load club status', sunsetTime: null };
             }
             async function fetchObservedTideData(date, forceRefresh = false) {
+                if (!ENABLE_OBSERVED_TIDES) {
+                    return [];
+                }
                 // PERFORMANCE OPTIMIZATION: Do not hit observed tide endpoint if selected date is in the future.
                 // Observed tide data is non-existent in the future, which previously caused a 10s timeout delay.
                 const nowPT = getPTNow();
@@ -1027,10 +1071,9 @@
                         chartContainer.html(""); 
                         const loadingHTML = `
                             <div class='liquid-loader'>
-                                <div class='liquid-loader-drops'>
-                                    <div class='drop'></div>
-                                    <div class='drop'></div>
-                                    <div class='drop'></div>
+                                <div class='wave-container'>
+                                    <div class='wave'></div>
+                                    <div class='wave-behind'></div>
                                 </div>
                                 <div class='liquid-loader-text'>Loading Tides</div>
                             </div>
@@ -1045,11 +1088,40 @@
                         clubScheduleStatusEl.innerHTML = '';
                         eventsList.innerHTML = '';
                     }
+
+                    // --- PROGRESSIVE LOADING SYSTEM ---
+                    // Fills up the liquid loader by 25% (a quarter) each time a promise completes
+                    let loadedCount = 0;
+                    const trackProgress = async (promise) => {
+                        try {
+                            const result = await promise;
+                            loadedCount++;
+                            const progress = loadedCount / 4;
+                            const bottomMain = -128 + (progress * 128);
+                            const bottomBehind = -124 + (progress * 128);
+                            const waveMain = document.querySelector('#tide-chart-widget-container .wave');
+                            const waveBehind = document.querySelector('#tide-chart-widget-container .wave-behind');
+                            if (waveMain) waveMain.style.bottom = `${bottomMain}px`;
+                            if (waveBehind) waveBehind.style.bottom = `${bottomBehind}px`;
+                            return result;
+                        } catch (err) {
+                            loadedCount++;
+                            const progress = loadedCount / 4;
+                            const bottomMain = -128 + (progress * 128);
+                            const bottomBehind = -124 + (progress * 128);
+                            const waveMain = document.querySelector('#tide-chart-widget-container .wave');
+                            const waveBehind = document.querySelector('#tide-chart-widget-container .wave-behind');
+                            if (waveMain) waveMain.style.bottom = `${bottomMain}px`;
+                            if (waveBehind) waveBehind.style.bottom = `${bottomBehind}px`;
+                            throw err;
+                        }
+                    };
+
                     const [currentTides, clubStatus, observedAnomalies, clubEvents] = await Promise.all([
-                        fetchTideData(renderDate), 
-                        fetchClubStatus(renderDate), 
-                        fetchObservedTideData(renderDate),
-                        fetchClubEvents(renderDate)
+                        trackProgress(fetchTideData(renderDate)), 
+                        trackProgress(fetchClubStatus(renderDate)), 
+                        trackProgress(fetchObservedTideData(renderDate)),
+                        trackProgress(fetchClubEvents(renderDate))
                     ]);
                     
                     // RACE CONDITION DISCARD GUARD:
@@ -1677,6 +1749,7 @@
                 if (uniqueEvents.length > 0) {
                      const eventIcons = {
                           open: `<svg class="icon-sm icon-open" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
+                          text: ``, // Placeholder for matching
                           dock: `<svg class="icon-sm icon-dock" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
                           high: `<svg class="icon-sm icon-high" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>`,
                           low: `<svg class="icon-sm icon-low" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>`,
@@ -1840,8 +1913,8 @@
                     clearInterval(countdownInterval);
                     countdownInterval = null;
                 }
-                const nowForUI = getPTNow();
-                const isCurrentDay = renderDate.toDateString() === nowForUI.toDateString();
+                const BasketCaseNow = getPTNow();
+                const isCurrentDay = renderDate.toDateString() === BasketCaseNow.toDateString();
                 
                 // Smoothly animate the appearance/disappearance of the status boxes
                 if (isCurrentDay) {
