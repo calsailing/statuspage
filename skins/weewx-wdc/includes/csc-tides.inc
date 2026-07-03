@@ -571,7 +571,7 @@
                 if (!raw) return '#';
                 if (raw.startsWith('/')) return raw; // site-relative path
                 try {
-                    const parsed = new URL(raw, 'https://test.cal-sailing.org');
+                    const parsed = new URL(raw, 'https://www.cal-sailing.org');
                     if (parsed.protocol === 'http:' || parsed.protocol === 'https:') return parsed.href;
                 } catch (e) { /* fall through */ }
                 return '#';
@@ -840,7 +840,7 @@
                 const n_mm = String(nextDate.getMonth() + 1).padStart(2, '0');
                 const n_dd = String(nextDate.getDate()).padStart(2, '0');
                 const endDateStr = encodeURIComponent(`${n_yyyy}-${n_mm}-${n_dd}T00:00:00`);
-                const targetUrl = `https://test.cal-sailing.org/index.php?option=com_dpcalendar&view=events&format=raw&limit=0&Itemid=1402&filter%5Bcalendars%5D%5B%5D=61&filter%5Bcalendars%5D%5B%5D=sq-1&filter%5Bcalendars%5D%5B%5D=sq-2&filter%5Bcalendars%5D%5B%5D=sq-3&filter%5Bcalendars%5D%5B%5D=sq-4&list%5Bstart-date%5D=${startDateStr}&list%5Bend-date%5D=${endDateStr}&filter%5Bsearch%5D=&filter%5Blocation%5D=&filter%5Bradius%5D=20&filter%5Blength-type%5D=m&filter%5Bstate%5D=&filter%5Bcreated_by%5D=&Itemid=1402&filter%5Bcalendars%5D%5B%5D=-2`;
+                const targetUrl = `https://www.cal-sailing.org/index.php?option=com_dpcalendar&view=events&format=raw&limit=0&Itemid=1402&filter%5Bcalendars%5D%5B%5D=61&filter%5Bcalendars%5D%5B%5D=sq-1&filter%5Bcalendars%5D%5B%5D=sq-2&filter%5Bcalendars%5D%5B%5D=sq-3&filter%5Bcalendars%5D%5B%5D=sq-4&list%5Bstart-date%5D=${startDateStr}&list%5Bend-date%5D=${endDateStr}&filter%5Bsearch%5D=&filter%5Blocation%5D=&filter%5Bradius%5D=20&filter%5Blength-type%5D=m&filter%5Bstate%5D=&filter%5Bcreated_by%5D=&Itemid=1402&filter%5Bcalendars%5D%5B%5D=-2`;
                 try {
                     let jsonString = null;
                     try {
@@ -876,7 +876,7 @@
                         // Safe URL formatting
                         let eventUrl = e.url || '';
                         if (eventUrl && !eventUrl.startsWith('http')) {
-                            eventUrl = 'https://test.cal-sailing.org' + (eventUrl.startsWith('/') ? eventUrl : '/' + eventUrl);
+                            eventUrl = 'https://www.cal-sailing.org' + (eventUrl.startsWith('/') ? eventUrl : '/' + eventUrl);
                         }
                         return {
                             title: e.title || 'Untitled Event',
