@@ -285,7 +285,7 @@
         #tide-chart-widget-container #events-list td { padding-top: 0.25rem; padding-bottom: 0.25rem; vertical-align: middle; }
         #tide-chart-widget-container #events-list td:first-child { width: 1.5rem; text-align: center; }
         #tide-chart-widget-container #events-list td:first-child svg { display: block; margin: 0 auto; }
-        #tide-chart-widget-container #events-list td:nth-child(2) { padding-right: 1rem; }
+        #tide-chart-widget-container #events-list td:nth-child(2) { padding-left: 0.75rem; padding-right: 1rem; }
         #tide-chart-widget-container #events-list td:last-child { text-align: right; }
         #tide-chart-widget-container #events-list strong { font-weight: 500; color: var(--color-text-primary); }
         
@@ -569,6 +569,7 @@
                 hour: "numeric", minute: "numeric", second: "numeric",
                 hour12: false
             });
+            // Returns a timezone-adjusted Pacific Time Date object
             function getPTNow() {
                 const parts = {};
                 for (const p of _ptFormatter.formatToParts(new Date())) {
@@ -1372,8 +1373,8 @@
                         }
                     });
                 }
-                // Palette of light blue variations
-                const eventColors = ['#38bdf8', '#0ea5e9', '#60a5fa', '#7dd3fc', '#3b82f6', '#22d3ee'];
+                // Mix of green and yellow (lime green) for maximum visibility
+                const eventColors = ['#82c315'];
                 const eventSegmentsToDraw = [];
                 // Mix in Club Events to display in both the table and on the tide line
                 if (clubEvents && clubEvents.length > 0) {
@@ -1803,7 +1804,7 @@
                           high: `<svg class="icon-sm icon-high" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>`,
                           low: `<svg class="icon-sm icon-low" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>`,
                           sunset: `<svg class="icon-sm icon-sunset" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 18a5 5 0 00-10 0M12 2v7m-5.66 2.34l1.42 1.42M1 18h2m18 0h2M18.36 11.64l1.42-1.42M23 22H1m15-17l-4 4-4-4"/></svg>`,
-                          club_event: `<svg class="icon-sm" style="color: var(--color-observed-line);" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>`
+                          club_event: `<svg class="icon-sm" style="color: #82c315;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>`
                      };
                      
                      let foundNextTableEvent = false;
