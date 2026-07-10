@@ -1,3 +1,4 @@
+
 <div class="bx--tile tile-radar-forecast">
    
 
@@ -922,8 +923,8 @@
                         jsonString = JSON.stringify({
                             data: {
                                 events: [
-                                    { title: "Intro to Sailing (Preview Mock)", start: mockStart1.toISOString(), end: mockEnd1.toISOString(), url: "/lessons" },
-                                    { title: "Open House (Preview Mock)", start: mockStart2.toISOString(), end: mockEnd2.toISOString(), url: "/openhouse" }
+                                    { title: "Intro to Sailing (Preview Mock)", start: mockStart1.toISOString(), end: mockEnd1.toISOString(), url: "/lessons", classNames: ["dp-event-calendar-sq-1"] },
+                                    { title: "Open House (Preview Mock)", start: mockStart2.toISOString(), end: mockEnd2.toISOString(), url: "/openhouse", classNames: ["dp-event-calendar-sq-2"] }
                                 ]
                             }
                         });
@@ -949,7 +950,8 @@
                             title: e.title || 'Untitled Event',
                             start: new Date(e.start),
                             end: new Date(e.end),
-                            url: eventUrl
+                            url: eventUrl,
+                            classNames: Array.isArray(e.classNames) ? e.classNames : (typeof e.classNames === 'string' ? [e.classNames] : [])
                         };
                     });
                     
@@ -1148,8 +1150,7 @@
                             const bottomBehind = -124 + (progress * 128);
                             const waveMain = document.querySelector('#tide-chart-widget-container .wave');
                             const waveBehind = document.querySelector('#tide-chart-widget-container .wave-behind');
-                            if (waveMain) waveMain.style.bottom = `${bottomMain}px`;
-                            if (waveBehind) waveBehind.style.bottom = `${bottomBehind}px`;
+                            if (waveMain) waveBehind.style.bottom = `${bottomBehind}px`;
                             throw err;
                         }
                     };
@@ -1414,7 +1415,10 @@
                         const eEnd = new Date(Math.min(e.end.getTime(), endOfDay.getTime()));
                         
                         let isAffected = false;
-                        if (eStart < eEnd) {
+                        const hasSkipWarningClass = Array.isArray(e.classNames) && 
+                            (e.classNames.includes('dp-event-calendar-sq-2') || e.classNames.includes('dp-event-calendar-sq-3'));
+                        
+                        if (eStart < eEnd && !hasSkipWarningClass) {
                             let minHeight = Math.min(getTideHeightAtTime(chartData, eStart), getTideHeightAtTime(chartData, eEnd));
                             chartData.forEach(d => {
                                 if (d.time > eStart && d.time < eEnd && d.height < minHeight) {
