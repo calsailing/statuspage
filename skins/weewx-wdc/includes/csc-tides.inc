@@ -1,7 +1,6 @@
 
 <div class="bx--tile tile-radar-forecast">
    
-
     <style>
         /* --- SCOPED CSS RESET --- */
         #tide-chart-widget-container * {
@@ -134,6 +133,7 @@
             --color-on-flag: #000000;
             --color-on-danger: #ffffff;
         }
+        
         /* --- CUSTOM CSS STYLES --- */
         #tide-chart-widget-container .widget-top-container {
             padding: 0 1rem;
@@ -520,6 +520,109 @@
             0%, 100% { opacity: 0.4; }
             50% { opacity: 1; }
         }
+
+        /* --- LESSONS CARD STYLES --- */
+        #tide-chart-widget-container .lessons-card {
+            background-color: var(--color-box-bg);
+            border: 1px solid var(--color-box-border);
+            box-shadow: var(--shadow-sm);
+            border-left: 4px solid #0284c7;
+            padding: 0.75rem 1rem;
+            margin-top: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            border-radius: 4px;
+        }
+        .dark #tide-chart-widget-container .lessons-card {
+            border-left-color: #38bdf8;
+        }
+        #tide-chart-widget-container .lessons-card-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(2, 132, 199, 0.1);
+            color: #0284c7;
+            border-radius: 50%;
+            width: 46px;
+            height: 46px;
+            flex-shrink: 0;
+        }
+        .dark #tide-chart-widget-container .lessons-card-icon {
+            background-color: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+        }
+        #tide-chart-widget-container .lessons-card-content {
+            flex-grow: 1;
+        }
+        #tide-chart-widget-container .lessons-card-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--color-text-primary);
+            margin-bottom: 0.35rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+        }
+        #tide-chart-widget-container .lessons-card-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+        }
+        #tide-chart-widget-container .lessons-stat {
+            background-color: var(--color-box-bg-subtle);
+            border: 1px solid var(--color-box-border);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            text-align: center;
+            transition: all 0.2s ease-in-out;
+        }
+        #tide-chart-widget-container .lessons-stat-val {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--color-text-primary);
+            line-height: 1.2;
+        }
+        #tide-chart-widget-container .lessons-stat-lbl {
+            font-size: 0.55rem;
+            color: var(--color-text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        #tide-chart-widget-container .lessons-badge {
+            display: inline-block;
+            font-size: 0.6rem;
+            font-weight: 700;
+            padding: 0.1rem 0.4rem;
+            border-radius: 9999px;
+            text-transform: uppercase;
+            line-height: 1.2;
+        }
+        #tide-chart-widget-container .lessons-badge-active {
+            background-color: rgba(34, 197, 94, 0.15);
+            color: #22c55e;
+        }
+        #tide-chart-widget-container .lessons-badge-inactive {
+            background-color: rgba(107, 114, 128, 0.15);
+            color: var(--color-text-secondary);
+        }
+
+        /* --- CONDITIONAL ALERT STYLES --- */
+        #tide-chart-widget-container .lessons-stat.stat-danger {
+            background-color: rgba(239, 68, 68, 0.12) !important;
+            border-color: rgba(239, 68, 68, 0.35) !important;
+        }
+        #tide-chart-widget-container .lessons-stat.stat-danger .lessons-stat-val {
+            color: #ef4444 !important;
+        }
+        .dark #tide-chart-widget-container .lessons-stat.stat-danger {
+            background-color: rgba(239, 68, 68, 0.22) !important;
+            border-color: rgba(239, 68, 68, 0.5) !important;
+        }
+        .dark #tide-chart-widget-container .lessons-stat.stat-danger .lessons-stat-val {
+            color: #fca5a5 !important;
+        }
     </style>
     <div id="tide-chart-widget-container">
         <div class="widget-top-container">
@@ -561,6 +664,9 @@
                     <div id="club-schedule-status" class="status-value"></div>
                 </div>
             </div>
+
+            <!-- Lessons real-time status card -->
+            <div id="lessons-status-box" style="display: none;"></div>
         </div>
         <div class="aspect-wrapper">
             <div id="chart-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></div>
@@ -709,6 +815,10 @@
             let isHoveringOnEvent = false;
             let currentClubStatus = null;
             let svg, xScale, yScale, chartDataForUpdate;
+
+            // --- Lessons Real-time Control Variables ---
+            let lessonsInterval = null;
+
             // --- THEME REACTIVITY ---
             let resizeTimeout;
             // Resolved-palette cache. getComputedStyle is expensive, so we read the CSS custom
@@ -1405,10 +1515,10 @@
                         }
                     });
                 }
-                // Bright green for maximum visibility
+                
+                // Mix in Club Events to display in both the table and on the tide line
                 const eventColors = ['#00c853'];
                 const eventSegmentsToDraw = [];
-                // Mix in Club Events to display in both the table and on the tide line
                 if (clubEvents && clubEvents.length > 0) {
                     clubEvents.forEach((e, i) => {
                         const eStart = new Date(Math.max(e.start.getTime(), startOfDay.getTime()));
@@ -1592,6 +1702,7 @@
                     tooltip.style("opacity", 1).style("left", `${leftPos}px`).style("top", `10px`); 
                 }
 
+                // Add tooltips to high/low tide markers with Touch support
                 function showTideEventTooltip(d) {
                     isHoveringOnEvent = true; 
                     tooltip.select("#tooltip-time").text(`${d.type} Tide: ${d3.timeFormat("%H:%M")(d.time)}`); 
@@ -2077,6 +2188,9 @@
                         }
                     }, 400); // 400ms matches the CSS transition duration
                 }
+
+                // Smoothly toggle real-time lessons info container
+                updateLessonsUI();
                 
                 // Reflected the updated Circular Icons logic in the Legend UI
                 document.getElementById('legend').innerHTML = `
@@ -2274,6 +2388,114 @@
                 clubStatusBanner.style.display = 'none';
                 clubStatusBanner.className = 'status-banner';
             }
+
+            function checkLessonsActive() {
+                const now = getPTNow();
+                // Polling at any time, every day, so long as the currently displayed date matches today
+                return currentDate.toDateString() === now.toDateString();
+            }
+
+            async function updateLessonsUI() {
+                const showBox = checkLessonsActive();
+                const lessonsBox = document.getElementById('lessons-status-box');
+                if (!lessonsBox) return;
+
+                if (showBox) {
+                    const isLiveEnvironment = window.location.hostname === "status.cal-sailing.org" || window.location.hostname === "www.cal-sailing.org";
+                    let data = null;
+
+                    if (!isLiveEnvironment) {
+                        // Fallback directly to mock data if loaded outside live servers so the card is visible in sandbox
+                        data = {
+                            active_lessons: true,
+                            instructors: 3,
+                            students_in_lesson: 8,
+                            students_waiting: 2
+                        };
+                    } else {
+                        try {
+                            const url = "https://signout.cal-sailing.org/api/lessons/status";
+                            const rawText = await fetchTextWithProxyFallback(url);
+                            const jsonString = rawText.replace(/<pre.*?>|<\/pre>/g, '');
+                            data = JSON.parse(jsonString);
+                        } catch (e) {
+                            console.warn("Could not retrieve active dinghy lessons status:", e.message);
+                            // Default back to offline/inactive placeholder data
+                            data = { active_lessons: false, instructors: 0, students_in_lesson: 0, students_waiting: 0 };
+                        }
+                    }
+
+                    // Strict check: if active_lessons is false, do not display the lessons box!
+                    if (data && data.active_lessons === true) {
+                        const badgeClass = 'lessons-badge-active';
+                        const badgeText = 'In Progress';
+                        
+                        // Apply conditional danger alert states
+                        const instructorAlertClass = data.instructors === 1 ? 'stat-danger' : '';
+                        const waitingAlertClass = data.students_waiting > 10 ? 'stat-danger' : '';
+                        
+                        lessonsBox.innerHTML = `
+                            <div class="lessons-card">
+                                <div class="lessons-card-icon">
+                                    <svg viewBox="0 0 64 64" width="34" height="34" fill="currentColor">
+                                        <!-- Classic Sailing Dinghy Hull -->
+                                        <path d="M12,42 L10,47 C18,50 44,50 52,44 C53,42 51,41 49,42 Z" />
+                                        <!-- Rudder & Tiller -->
+                                        <path d="M10,47 L6,53" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                                        <!-- Mast -->
+                                        <line x1="32" y1="8" x2="32" y2="43" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+                                        <!-- Boom -->
+                                        <line x1="32" y1="40" x2="14" y2="40" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                                        <!-- Curved Main Sail -->
+                                        <path d="M32,10 C27,22 19,32 15,39 L32,39 Z" opacity="0.8" />
+                                        <!-- Triangular Jib Sail -->
+                                        <path d="M33,18 C38,26 43,34 46,39 L33,39 Z" opacity="0.95" />
+                                        <!-- Gentle Water ripples -->
+                                        <path d="M4,50 Q16,48 28,51 T52,49" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                                    </svg>
+                                </div>
+                                <div class="lessons-card-content">
+                                    <div class="lessons-card-title">
+                                        <span style="font-size:0.75rem; color:var(--color-text-secondary); text-transform:uppercase; letter-spacing:0.05em;">Dinghy Lessons Status</span>
+                                        <span class="lessons-badge ${badgeClass}">${badgeText}</span>
+                                    </div>
+                                    <div class="lessons-card-grid">
+                                        <div class="lessons-stat ${instructorAlertClass}">
+                                            <div class="lessons-stat-val">${data.instructors}</div>
+                                            <div class="lessons-stat-lbl">Instructors</div>
+                                        </div>
+                                        <div class="lessons-stat">
+                                            <div class="lessons-stat-val">${data.students_in_lesson}</div>
+                                            <div class="lessons-stat-lbl">In Lesson</div>
+                                        </div>
+                                        <div class="lessons-stat ${waitingAlertClass}">
+                                            <div class="lessons-stat-val">${data.students_waiting}</div>
+                                            <div class="lessons-stat-lbl">Waiting</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        lessonsBox.style.display = 'block';
+                    } else {
+                        lessonsBox.style.display = 'none';
+                        lessonsBox.innerHTML = '';
+                    }
+                } else {
+                    lessonsBox.style.display = 'none';
+                    lessonsBox.innerHTML = '';
+                }
+            }
+
+            function startLessonsPolling() {
+                updateLessonsUI();
+                if (lessonsInterval) clearInterval(lessonsInterval);
+                lessonsInterval = setInterval(() => {
+                    updateLessonsUI();
+                }, 60000); // Trigger check loops precisely once every minute
+            }
+
+            // --- EVENT BINDINGS FOR INTERACTION CONTROLS ---
             document.getElementById('prev-day').addEventListener('click', () => {
                 if (isRendering) return;
                 currentDate.setDate(currentDate.getDate() - 1);
@@ -2335,6 +2557,7 @@
             document.addEventListener('touchstart', dismissAllTooltips, { passive: true });
             document.addEventListener('click', dismissAllTooltips, { passive: true });
 
+            startLessonsPolling();
             drawChart(currentDate, 0);
         });
         /* #end raw */
