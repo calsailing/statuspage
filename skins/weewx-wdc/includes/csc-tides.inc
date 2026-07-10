@@ -297,7 +297,7 @@
         
         #tide-chart-widget-container .icon-sm { width: 1rem; height: 1rem; }
         #tide-chart-widget-container .icon-open { color: var(--icon-color-open); }
-        #tide-chart-widget-container .icon-dock { color: var(--icon-color-open); }
+        #tide-chart-widget-container .icon-dock { color: var(--icon-color-dock); }
         #tide-chart-widget-container .icon-high { color: var(--icon-color-high); }
         #tide-chart-widget-container .icon-low { color: var(--icon-color-low); }
         #tide-chart-widget-container .icon-sunset { color: var(--icon-color-sunset); }
@@ -1202,6 +1202,7 @@
                     return observedPoints;
                 }, { label: 'observed data', fallback: [] });
             }
+            
             async function drawChart(renderDate, direction = 0) {
                 // Increment render transaction counter to prevent race condition issues on rapid clicks
                 const currentRenderId = ++activeRenderId;
@@ -1386,7 +1387,47 @@
                 const allHeights = chartData.map(d => d.height).concat(berkeleyObserved.map(d => d.height));
                 const minTide = Math.min(...allHeights);
                 const maxTide = Math.max(...allHeights);
-                yScale = d3.scaleLinear().domain([minTide - 2, maxTide + 1]).range([height, 0]);
+                
+                let upperPadding = 1;
+                let needsExtraSpace = false;
+                
+                if (clubStatus && !clubStatus.isClosed) {
+                    const scheduleTimes = [
+                        clubStatus.openTime,
+                        clubStatus.dockTime,
+                        clubStatus.midDayDockTime,
+                        clubStatus.midDayOpenTime
+                    ].filter(t => t && t >= startOfDay && t <= endOfDay && t !== 'sunset');
+                    
+                    const heightsToCheck = scheduleTimes.map(t => getTideHeightAtTime(chartData, t));
+                    
+                    // If a club transition height is within 1.2 feet of the max tide
+                    for (const h of heightsToCheck) {
+                        if (maxTide - h < 1.2) {
+                            needsExtraSpace = true;
+                            break;
+                        }
+                    }
+                    
+                    // Alternatively, check if transitions occur close in time (within 1.5 hours) of any High Tide
+                    const highTideTimes = tideEvents.filter(e => e.type === 'High').map(e => e.time);
+                    for (const sTime of scheduleTimes) {
+                        for (const hTime of highTideTimes) {
+                            const diffHours = Math.abs(sTime.getTime() - hTime.getTime()) / 3600000;
+                            if (diffHours < 1.5) {
+                                needsExtraSpace = true;
+                                break;
+                            }
+                        }
+                        if (needsExtraSpace) break;
+                    }
+                }
+                
+                if (needsExtraSpace) {
+                    upperPadding = 3; // Adds 2 additional feet above the high tide line
+                }
+                
+                yScale = d3.scaleLinear().domain([minTide - 2, maxTide + upperPadding]).range([height, 0]);
                 
                 // Kill any previous axis transitions to prevent bouncing
                 svg.select(".x-axis-group").interrupt();
@@ -2193,27 +2234,10 @@
                 // Smoothly toggle real-time lessons info container
                 updateLessonsUI();
                 
-                // Reflected the updated Circular Icons logic in the Legend UI
                 document.getElementById('legend').innerHTML = `
-                    <div><div style="width: 0.75rem; height: 0.75rem; background-color: var(--color-chart-open-overlay);"></div><span>Club Open</span></div>
+                    <div><div style="width: 0.75rem; height: 0.75rem; background-color: var(--color-chart-open-overlay);"></div><span>Open</span></div>
                     <div><div style="width: 1rem; height: 1px; background-color: var(--color-observed-line); opacity: 0.9;"></div><span>Observed tide</span></div>
-                    <div>
-                        <svg style="width:0.875rem;height:0.875rem;color:var(--icon-color-open);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="9" fill="var(--color-icon-bg)" stroke="none"></circle>
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <span>Open Time</span>
-                    </div>
-                    <div>
-                        <svg style="width:0.875rem;height:0.875rem;color:var(--icon-color-dock);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="9" fill="var(--color-icon-bg)" stroke="none"></circle>
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <span>Dock Time</span>
-                    </div>
-                    <div><div style="width: 0.75rem; height: 0.75rem; border-radius: 9999px; background-color: var(--color-now-indicator);"></div><span>Now</span></div>
-                    <div><div style="width: 0.75rem; height: 0.75rem; background-color: var(--color-chart-danger-area);"></div><span>Club Closed &lt; 1.5\u2032</span></div>`;
+                    <div><div style="width: 0.75rem; height: 0.75rem; background-color: var(--color-chart-danger-area);"></div><span>Closed: Tide &lt; 1.5\u2032</span></div>`;
             }
             async function updateNextTideEvent() {
                  try {
@@ -2459,7 +2483,7 @@
                                 </div>
                                 <div class="lessons-card-content">
                                     <div class="lessons-card-title">
-                                        <span style="font-size:0.75rem; color:var(--color-text-secondary); text-transform:uppercase; letter-spacing:0.05em;">Dinghy Lessons</span>
+                                        <span style="font-size:0.75rem; color:var(--color-text-secondary); text-transform:uppercase; letter-spacing:0.05em;">Dinghy Lessons Status</span>
                                         <span class="lessons-badge ${badgeClass}">${badgeText}</span>
                                     </div>
                                     <div class="lessons-card-grid">
