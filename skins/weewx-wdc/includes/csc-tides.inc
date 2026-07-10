@@ -2459,7 +2459,7 @@
                                 </div>
                                 <div class="lessons-card-content">
                                     <div class="lessons-card-title">
-                                        <span style="font-size:0.75rem; color:var(--color-text-secondary); text-transform:uppercase; letter-spacing:0.05em;">Dinghy Lessons Status</span>
+                                        <span style="font-size:0.75rem; color:var(--color-text-secondary); text-transform:uppercase; letter-spacing:0.05em;">Dinghy Lessons</span>
                                         <span class="lessons-badge ${badgeClass}">${badgeText}</span>
                                     </div>
                                     <div class="lessons-card-grid">
