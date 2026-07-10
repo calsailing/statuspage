@@ -692,6 +692,7 @@
             const ENABLE_OBSERVED_TIDES   = true; // Observed tide anomalies from Richmond NOAA station
             const ENABLE_CLUB_STATUS      = true; // Cal Sailing Club status API (opens, docks, restrictions, closures)
             const ENABLE_CLUB_EVENTS      = true; // Scheduled club calendar events from DP Calendar API
+            const ENABLE_DINGHY_LESSONS   = true; // Real-time dinghy lessons status API (active lessons, instructors, waiting)
 
             // --- ENVIRONMENT CONFIGURATION ---
             // Set to true to load from the live environment (www.cal-sailing.org), or false to use the test environment (test.cal-sailing.org)
@@ -2390,6 +2391,8 @@
             }
 
             function checkLessonsActive() {
+                // If dinghy lessons configuration is set to false, don't execute or activate the lessons card
+                if (!ENABLE_DINGHY_LESSONS) return false;
                 const now = getPTNow();
                 // Polling at any time, every day, so long as the currently displayed date matches today
                 return currentDate.toDateString() === now.toDateString();
