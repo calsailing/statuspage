@@ -554,6 +554,7 @@
         }
         #tide-chart-widget-container .lessons-card-content {
             flex-grow: 1;
+            min-width: 0; /* Critical: Prevent inner grids/flex elements from overflowing layout */
         }
         #tide-chart-widget-container .lessons-card-title {
             font-size: 0.85rem;
@@ -598,6 +599,8 @@
             border-radius: 9999px;
             text-transform: uppercase;
             line-height: 1.2;
+            white-space: nowrap; /* Prevents "In Progress" badge from breaking into lines */
+            flex-shrink: 0;
         }
         #tide-chart-widget-container .lessons-badge-active {
             background-color: rgba(34, 197, 94, 0.15);
@@ -622,6 +625,38 @@
         }
         .dark #tide-chart-widget-container .lessons-stat.stat-danger .lessons-stat-val {
             color: #fca5a5 !important;
+        }
+
+        /* --- MOBILE LAYOUT OVERRIDES --- */
+        @media (max-width: 480px) {
+            #tide-chart-widget-container .lessons-card {
+                padding: 0.6rem 0.75rem;
+                gap: 0.75rem;
+            }
+            #tide-chart-widget-container .lessons-card-icon {
+                width: 38px;
+                height: 38px;
+            }
+            #tide-chart-widget-container .lessons-card-icon svg {
+                width: 26px;
+                height: 26px;
+            }
+            #tide-chart-widget-container .lessons-card-title {
+                font-size: 0.8rem;
+            }
+            #tide-chart-widget-container .lessons-card-grid {
+                gap: 0.35rem;
+            }
+            #tide-chart-widget-container .lessons-stat {
+                padding: 0.2rem 0.25rem;
+            }
+            #tide-chart-widget-container .lessons-stat-val {
+                font-size: 0.85rem;
+            }
+            #tide-chart-widget-container .lessons-stat-lbl {
+                font-size: 0.5rem;
+                letter-spacing: 0.02em;
+            }
         }
     </style>
     <div id="tide-chart-widget-container">
@@ -1202,7 +1237,6 @@
                     return observedPoints;
                 }, { label: 'observed data', fallback: [] });
             }
-            
             async function drawChart(renderDate, direction = 0) {
                 // Increment render transaction counter to prevent race condition issues on rapid clicks
                 const currentRenderId = ++activeRenderId;
@@ -2483,7 +2517,7 @@
                                 </div>
                                 <div class="lessons-card-content">
                                     <div class="lessons-card-title">
-                                        <span style="font-size:0.75rem; color:var(--color-text-secondary); text-transform:uppercase; letter-spacing:0.05em;">Dinghy Lessons Status</span>
+                                        <span style="font-size:0.75rem; color:var(--color-text-secondary); text-transform:uppercase; letter-spacing:0.05em;">Dinghy Lessons</span>
                                         <span class="lessons-badge ${badgeClass}">${badgeText}</span>
                                     </div>
                                     <div class="lessons-card-grid">
