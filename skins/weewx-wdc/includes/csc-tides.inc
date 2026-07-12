@@ -2465,13 +2465,17 @@
                     const isLiveEnvironment = window.location.hostname === "status.cal-sailing.org" || window.location.hostname === "www.cal-sailing.org";
                     let data = null;
 
+                    // Read ?debug=true query parameter from URL
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const isDebugParam = urlParams.get('debug') === 'true';
+
                     if (!isLiveEnvironment) {
                         // Fallback directly to mock data if loaded outside live servers so the card is visible in sandbox
                         data = {
-                            active_lessons: true,
-                            instructors: 3,
-                            students_in_lesson: 8,
-                            students_waiting: 2
+                            active_lessons: isDebugParam ? false : true, // If debug=true in test env, mock as inactive to preview that state
+                            instructors: isDebugParam ? 1 : 3,           // Instructor warning trigger test state
+                            students_in_lesson: isDebugParam ? 3 : 8,
+                            students_waiting: isDebugParam ? 12 : 2      // Student waiting alert trigger test state
                         };
                     } else {
                         try {
@@ -2486,10 +2490,10 @@
                         }
                     }
 
-                    // Strict check: if active_lessons is false, do not display the lessons box!
-                    if (data && data.active_lessons === true) {
-                        const badgeClass = 'lessons-badge-active';
-                        const badgeText = 'In Progress';
+                    // Display the lessons box if active_lessons is true, OR if debug=true URL parameter is parsed!
+                    if (data && (data.active_lessons === true || isDebugParam)) {
+                        const badgeClass = data.active_lessons ? 'lessons-badge-active' : 'lessons-badge-inactive';
+                        const badgeText = data.active_lessons ? 'In Progress' : 'No Active Lessons';
                         
                         // Apply conditional danger alert states
                         const instructorAlertClass = data.instructors === 1 ? 'stat-danger' : '';
