@@ -56,8 +56,9 @@
               <h1><a href="" style="text-decoration: none">Today's Conditions</a></h1> 
 <h2>
   <span style="vertical-align: middle;">$current.dateTime.format("%d-%b-%Y") </span> 
-  <span class="wf-update-time" id="wf-time"></span> 
-  <div class="wf-status-pill" id="wf-pill" style="display: none;"></div>
+<!-- We pre-populate the loading structures and set inline-flex instead of display: none -->
+    <span class="wf-update-time" id="wf-time">--:--</span>   <div class="wf-status-pill loading" id="wf-pill" style="display: inline-flex;"><div class="wf-dot"></div>Loading</div>
+
 </h2>
 
 
