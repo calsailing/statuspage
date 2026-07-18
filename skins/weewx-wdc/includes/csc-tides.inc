@@ -2077,11 +2077,16 @@
 
             function checkLessonsActive() {
                 if (!ENABLE_DINGHY_LESSONS) return false;
+                
+                // Read ?debug=true query parameter from URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const isDebugParam = urlParams.get('debug') === 'true';
+                if (isDebugParam) return true;
+
                 const now = getPTNow();
                 return currentDate.toDateString() === now.toDateString();
             }
 
-            // --- STREAMING_CHUNK: Safely rendering Dinghy Lessons card UI offline ---
             async function updateLessonsUI() {
                 const showBox = checkLessonsActive();
                 const lessonsBox = document.getElementById('lessons-status-box');
@@ -2091,12 +2096,17 @@
                     const isLiveEnvironment = window.location.hostname === "status.cal-sailing.org" || window.location.hostname === "www.cal-sailing.org";
                     let data = null;
 
+                    // Read ?debug=true query parameter from URL
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const isDebugParam = urlParams.get('debug') === 'true';
+
                     if (!isLiveEnvironment) {
+                        // Fallback directly to mock data if loaded outside live servers
                         data = {
-                            active_lessons: true,
-                            instructors: 3,
-                            students_in_lesson: 8,
-                            students_waiting: 2
+                            active_lessons: isDebugParam ? false : true, // If debug=true in test env, mock as inactive to preview that state
+                            instructors: isDebugParam ? 1 : 3,           // Instructor warning trigger test state
+                            students_in_lesson: isDebugParam ? 3 : 8,
+                            students_waiting: isDebugParam ? 12 : 2      // Student waiting alert trigger test state
                         };
                     } else {
                         try {
@@ -2110,10 +2120,12 @@
                         }
                     }
 
-                    if (data && data.active_lessons === true) {
-                        const badgeClass = 'lessons-badge-active';
-                        const badgeText = 'In Progress';
+                    // Display the lessons box if active_lessons is true, OR if debug=true URL parameter is parsed!
+                    if (data && (data.active_lessons === true || isDebugParam)) {
+                        const badgeClass = data.active_lessons ? 'lessons-badge-active' : 'lessons-badge-inactive';
+                        const badgeText = data.active_lessons ? 'In Progress' : 'No Active Lessons';
                         
+                        // Apply conditional danger alert states
                         const instructorAlertClass = data.instructors === 1 ? 'stat-danger' : '';
                         const waitingAlertClass = data.students_waiting > 10 ? 'stat-danger' : '';
                         
@@ -2121,12 +2133,19 @@
                             <div class="lessons-card">
                                 <div class="lessons-card-icon">
                                     <svg viewBox="0 0 64 64" width="34" height="34" fill="currentColor">
+                                        <!-- Classic Sailing Dinghy Hull -->
                                         <path d="M12,42 L10,47 C18,50 44,50 52,44 C53,42 51,41 49,42 Z" />
+                                        <!-- Rudder & Tiller -->
                                         <path d="M10,47 L6,53" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                                        <!-- Mast -->
                                         <line x1="32" y1="8" x2="32" y2="43" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+                                        <!-- Boom -->
                                         <line x1="32" y1="40" x2="14" y2="40" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                                        <!-- Curved Main Sail -->
                                         <path d="M32,10 C27,22 19,32 15,39 L32,39 Z" opacity="0.8" />
+                                        <!-- Triangular Jib Sail -->
                                         <path d="M33,18 C38,26 43,34 46,39 L33,39 Z" opacity="0.95" />
+                                        <!-- Gentle Water ripples -->
                                         <path d="M4,50 Q16,48 28,51 T52,49" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                                     </svg>
                                 </div>
