@@ -280,7 +280,24 @@
         100% { box-shadow: 0 0 0 0 rgba(30, 142, 62, 0); }
     }
 
+    /* --- Loading State Styles --- */
+    .wf-status-pill.loading {
+        background-color: #f1f5f9;
+        color: #64748b;
+    }
+    .loading .wf-dot {
+        background-color: #64748b;
+        animation: wf-pulse-gray 1.5s infinite;
+    }
+    @keyframes wf-pulse-gray {
+        0% { box-shadow: 0 0 0 0 rgba(100, 116, 139, 0.4); }
+        70% { box-shadow: 0 0 0 4px rgba(100, 116, 139, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(100, 116, 139, 0); }
+    }
+
     /* Dark Mode Hooks - Assuming 'dark' class on html */
+    html.dark .wf-status-pill.loading { background-color: rgba(100, 116, 139, 0.2); color: #94a3b8; }
+    html.dark .loading .wf-dot { background-color: #94a3b8; }
     html.dark .wf-status-pill.online { background-color: rgba(30, 142, 62, 0.2); color: #81c995; }
     html.dark .online .wf-dot { background-color: #81c995; }
     html.dark .wf-status-pill.delayed { background-color: rgba(249, 171, 0, 0.2); color: #fde293; }
@@ -288,6 +305,7 @@
     html.dark .wf-status-pill.offline { background-color: rgba(217, 48, 37, 0.2); color: #f28b82; }
     html.dark .offline .wf-dot { background-color: #f28b82; }
 </style>
+
 
 <div id="isolated-weather-widget">
     <div class="iw-main-row">
@@ -1045,6 +1063,17 @@
     }
 
     // 7. Initialize
+    const initPill = document.getElementById('wf-pill');
+    const initTime = document.getElementById('wf-time');
+    if (initPill) {
+        initPill.style.display = 'inline-flex';
+        initPill.className = 'wf-status-pill loading';
+        initPill.innerHTML = '<div class="wf-dot"></div>Loading';
+    }
+    if (initTime) {
+        initTime.textContent = '--:--';
+    }
+
     syncTheme();
     
     const themeObserver = new MutationObserver((mutations) => {
