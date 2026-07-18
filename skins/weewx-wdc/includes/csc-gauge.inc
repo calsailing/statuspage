@@ -252,10 +252,14 @@
         font-weight: normal;
         vertical-align: middle;
         margin-left: 8px;
+        display: inline-block;
+        min-width: 38px; /* Reserves exact horizontal space for the clock digits */
+        text-align: center;
     }
     .wf-status-pill {
         display: inline-flex;
         align-items: center;
+        justify-content: center; /* Centers contents inside the pill */
         gap: 6px;
         font-size: 13px;
         font-weight: 500;
@@ -264,6 +268,7 @@
         font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
         vertical-align: middle;
         margin-left: 8px;
+        min-width: 92px; /* Reserves exact horizontal space to prevent jumping on state switch */
     }
     .wf-status-pill.online { background-color: #e6f4ea; color: #1e8e3e; }
     .wf-status-pill.delayed { background-color: #fef7e0; color: #b06000; }
@@ -280,7 +285,7 @@
         100% { box-shadow: 0 0 0 0 rgba(30, 142, 62, 0); }
     }
 
-    /* --- Loading State Styles --- */
+    /* --- New: Loading State Styles & Keyframes --- */
     .wf-status-pill.loading {
         background-color: #f1f5f9;
         color: #64748b;
