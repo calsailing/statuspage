@@ -1,4 +1,3 @@
-
 <div class="bx--tile tile-radar-forecast">
    
     <style>
@@ -837,6 +836,7 @@
             let lastRealDateString = getPTNow().toDateString();
             let isRendering = false; // Lock to prevent race conditions during rapid clicking
             let activeRenderId = 0;   // Unique ID to track concurrent rendering chains
+            let lessonsInterval = null; // Fix: Declared lessonsInterval globally inside DOMContentLoaded scope
             
             // --- Caching Stores ---
             const tideDataCache = {};
@@ -851,9 +851,6 @@
             let isHoveringOnEvent = false;
             let currentClubStatus = null;
             let svg, xScale, yScale, chartDataForUpdate;
-
-            // --- Lessons Real-time Control Variables ---
-            let lessonsInterval = null;
 
             // --- THEME REACTIVITY ---
             let resizeTimeout;
@@ -985,7 +982,6 @@
                 ]).catch(() => {}); // catch silently to ensure background API failures never disrupt runtime
             }
             
-            // --- STREAMING_CHUNK: Hardening data fetch operations with safe offline recovery ---
             async function fetchTideData(date) {
                 if (!ENABLE_NOAA_PREDICTIONS) {
                     return [];
@@ -1008,7 +1004,7 @@
                     const formattedData = data.predictions.map(p => ({ time: parseNOAADate(p.t), height: parseFloat(p.v) })).filter(p => p.time !== null && !isNaN(p.height));
                     tideDataCache[cacheKey] = formattedData;
                     return formattedData;
-                }, { label: 'tide data', fallback: [] }); // Soft fallback of empty array to prevent code crashes
+                }, { label: 'tide data', fallback: [] }); // Fallback on empty array to prevent code crashes
             }
             
             function findTideExtremes(tideData) {
@@ -1037,6 +1033,7 @@
                 }
                 return extremes;
             }
+            
             async function fetchClubEvents(date) {
                 if (!ENABLE_CLUB_EVENTS) {
                     return [];
@@ -1062,7 +1059,6 @@
                     try {
                         jsonString = await fetchTextWithProxyFallback(targetUrl);
                     } catch (proxyError) {
-                        // Safe Sandbox mockup generator
                         const mockStart1 = new Date(date); mockStart1.setHours(10, 0, 0, 0);
                         const mockEnd1 = new Date(date); mockEnd1.setHours(12, 0, 0, 0);
                         const mockStart2 = new Date(date); mockStart2.setHours(13, 0, 0, 0);
@@ -1106,6 +1102,7 @@
                     return [];
                 }
             }
+            
             async function fetchClubStatus(date) {
                 if (!ENABLE_CLUB_STATUS) {
                     return { 
@@ -1124,7 +1121,7 @@
                 }
                 
                 const yyyymmdd = date.getFullYear() + '-' + ('0' + (date.getMonth() + 1)).slice(-2) + '-' + ('0' + date.getDate()).slice(-2);
-                const targetUrl = `https://${CAL_SAILING_DOMAIN}/index.php?option=com_csctides&view=gettidedatalist&task=gettidedatalist&tmpl=component&output=json&tidedate=${yyyymmdd}`;
+                const targetUrl = `https://www.cal-sailing.org/index.php?option=com_csctides&view=gettidedatalist&task=gettidedatalist&tmpl=component&output=json&tidedate=${yyyymmdd}`;
                 const result = await withRetry(async () => {
                         let rawText = null;
                         try {
@@ -1187,7 +1184,6 @@
                         return result;
                 }, { label: 'club status', fallback: null });
                 
-                // Return gracefully instead of bricking the card if club schedule server fails
                 return result || { 
                     isClosed: false, 
                     openTime: null, 
@@ -1198,6 +1194,7 @@
                     sunsetTime: null 
                 };
             }
+            
             async function fetchObservedTideData(date, forceRefresh = false) {
                 if (!ENABLE_OBSERVED_TIDES) {
                     return [];
@@ -1241,7 +1238,6 @@
                 }, { label: 'observed data', fallback: [] });
             }
 
-            // --- STREAMING_CHUNK: Managing the main progressive chart renderer and Y scale offsets ---
             async function drawChart(renderDate, direction = 0) {
                 const currentRenderId = ++activeRenderId;
                 
@@ -1250,6 +1246,10 @@
                 
                 const navButtons = document.querySelectorAll('.nav-button, #date-picker');
                 navButtons.forEach(btn => btn.disabled = true);
+                
+                // Declare scoping variables globally in the drawChart loop to avoid ReferenceErrors outside blocks
+                let slidesContainer = null;
+                let slideGroup = null;
                 
                 try {
                     tooltip.style("opacity", 0); 
@@ -1277,28 +1277,11 @@
                         eventsList.innerHTML = '';
                     }
 
-                    let loadedCount = 0;
                     const trackProgress = async (promise) => {
                         try {
                             const result = await promise;
-                            loadedCount++;
-                            const progress = loadedCount / 4;
-                            const bottomMain = -128 + (progress * 128);
-                            const bottomBehind = -124 + (progress * 128);
-                            const waveMain = document.querySelector('#tide-chart-widget-container .wave');
-                            const waveBehind = document.querySelector('#tide-chart-widget-container .wave-behind');
-                            if (waveMain) waveMain.style.bottom = `${bottomMain}px`;
-                            if (waveBehind) waveBehind.style.bottom = `${bottomBehind}px`;
                             return result;
                         } catch (err) {
-                            loadedCount++;
-                            const progress = loadedCount / 4;
-                            const bottomMain = -128 + (progress * 128);
-                            const bottomBehind = -124 + (progress * 128);
-                            const waveMain = document.querySelector('#tide-chart-widget-container .wave');
-                            const waveBehind = document.querySelector('#tide-chart-widget-container .wave-behind');
-                            if (waveMain) waveMain.style.bottom = `${bottomMain}px`;
-                            if (waveBehind) waveBehind.style.bottom = `${bottomBehind}px`;
                             return null; // Return null on error to ensure Promise.all does not drop entirely
                         }
                     };
@@ -1317,9 +1300,7 @@
                     
                     const tideDataUnavailable = !currentTides || currentTides.length === 0;
                     
-                    // --- STREAMING_CHUNK: Drawing graph layouts and handling offline warnings ---
                     if (tideDataUnavailable) {
-                        // Render NOAA Offline Warning in graph area instead of bricking entire application
                         chartContainer.html(`
                             <div class="noaa-offline-warning" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 1.5rem; text-align: center; color: var(--color-text-danger);">
                                 <svg style="width: 2.5rem; height: 2.5rem; margin-bottom: 0.5rem; color: var(--color-text-danger);" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1395,7 +1376,8 @@
                 if (currentClubStatus.midDayDockTime === 'sunset') currentClubStatus.midDayDockTime = sunsetTime;
                 if (currentClubStatus.openTime === 'sunset') currentClubStatus.openTime = sunsetTime;
 
-                // --- STREAMING_CHUNK: Setup SVG container skeleton if NOAA data is available ---
+                let curve, areaGenerator, lineGenerator, redAreaGenerator, redSegments = [];
+                
                 if (!tideDataUnavailable) {
                     if (isFirstLoad || direction === 0) {
                         chartContainer.html(""); 
@@ -1491,6 +1473,30 @@
                     yAxis.tickValues(uniqueRoundedTicks).tickFormat(d => `${d}`);
                     svg.select(".y-axis-group").transition(t).call(yAxis);
                     svg.select(".y-axis-label").attr("y", height + 15);
+                    
+                    curve = d3.curveMonotoneX;
+                    areaGenerator = (y0) => d3.area().x(d => xScale(d.time)).y0(y0).y1(d => yScale(d.height)).curve(curve);
+                    lineGenerator = d3.line().x(d => xScale(d.time)).y(d => yScale(d.height)).curve(curve);
+                    
+                    redAreaGenerator = d3.area().x(d => xScale(d.time)).y0(yScale(DANGEROUS_LOW_TIDE)).y1(d => yScale(d.height)).curve(curve);
+                    let currentSegment = [];
+                    for (let i = 0; i < chartData.length; i++) {
+                        const d = chartData[i], prev = i > 0 ? chartData[i - 1] : null;
+                        const isBelow = d.height < DANGEROUS_LOW_TIDE, wasBelow = prev ? prev.height < DANGEROUS_LOW_TIDE : false;
+                        if (prev && isBelow !== wasBelow) {
+                            const t0 = prev.time.getTime(), t1 = d.time.getTime(), h0 = prev.height, h1 = d.height;
+                            const intersectionTime = new Date(t0 + (t1 - t0) * (DANGEROUS_LOW_TIDE - h0) / (h1 - h0));
+                            const intersectionPoint = { time: intersectionTime, height: DANGEROUS_LOW_TIDE };
+                            if (isBelow) currentSegment.push(intersectionPoint);
+                            else { currentSegment.push(intersectionPoint); if (currentSegment.length > 1) redSegments.push(currentSegment); currentSegment = []; }
+                        }
+                        if (isBelow) currentSegment.push(d);
+                    }
+                    const lastDataPoint = chartData.length > 0 ? chartData[chartData.length - 1] : null;
+                    if (lastDataPoint && lastDataPoint.height < DANGEROUS_LOW_TIDE && currentSegment.length > 0) {
+                        if (lastDataPoint.time < endOfDay) currentSegment.push({ time: endOfDay, height: lastDataPoint.height });
+                    }
+                    if (currentSegment.length > 1) redSegments.push(currentSegment);
                 }
                 
                 const dayEvents = [];
@@ -1528,9 +1534,8 @@
                     }, 400); 
                 }
                 
-                // --- STREAMING_CHUNK: Splicing in Open/Dock boundaries dynamically ---
+                const openPeriods = [];
                 if (!currentClubStatus.isClosed) {
-                    const openPeriods = [];
                     if (currentClubStatus.midDayDockTime && currentClubStatus.midDayOpenTime) {
                         if (currentClubStatus.openTime && currentClubStatus.midDayDockTime > currentClubStatus.openTime) openPeriods.push({ start: currentClubStatus.openTime, end: currentClubStatus.midDayDockTime, type: 'morning' });
                         if (currentClubStatus.midDayOpenTime && currentClubStatus.dockTime > currentClubStatus.midDayOpenTime) openPeriods.push({ start: currentClubStatus.midDayOpenTime, end: currentClubStatus.dockTime, type: 'afternoon' });
@@ -1557,7 +1562,6 @@
                     });
                 }
                 
-                // Mix in Club Events to display in schedule table
                 if (clubEvents && clubEvents.length > 0) {
                     clubEvents.forEach((e, i) => {
                         const eStart = new Date(Math.max(e.start.getTime(), startOfDay.getTime()));
@@ -1599,7 +1603,6 @@
                     });
                 }
                 
-                // --- STREAMING_CHUNK: Plot D3 SVG Paths if NOAA service is active ---
                 if (!tideDataUnavailable) {
                     const eventPoints = [chartData[0], ...tideEvents, chartData[chartData.length - 1]].filter(Boolean).sort((a, b) => a.time - b.time).filter((d, i, arr) => !d || i === 0 || d.time.getTime() !== arr[i-1].time.getTime());
                     const segments = [];
@@ -1613,7 +1616,14 @@
                         if (lastDataPoint.time < endOfDay) lastSegment.data.push({ time: endOfDay, height: lastDataPoint.height });
                     }
                     
-                    // Render Sunrise/Sunset Day Overlays
+                    slidesContainer = svg.select(".slides-container");
+                    slideGroup = slidesContainer.append("g").attr("class", "slide-group");
+                    
+                    if (direction !== 0) {
+                        slideGroup.attr("transform", `translate(${direction > 0 ? width : -width}, 0)`);
+                    }
+                    const overlap = 1;
+                    
                     slideGroup.append("rect").attr("x", xScale(startOfDay)).attr("width", Math.max(0, (xScale(sunriseTime) - xScale(startOfDay)) + overlap)).attr("height", height).attr("fill", nightColor);
                     slideGroup.append("rect").attr("x", xScale(sunriseTime)).attr("width", Math.max(0, (xScale(sunsetTime) - xScale(sunriseTime)) + overlap)).attr("height", height).attr("fill", dayColor);
                     slideGroup.append("rect").attr("x", xScale(sunsetTime)).attr("width", Math.max(0, xScale(endOfDay) - xScale(sunsetTime))).attr("height", height).attr("fill", nightColor);
@@ -1660,7 +1670,6 @@
                         slideGroup.append("path").datum(berkeleyObserved).attr("fill", "none").attr("stroke", "var(--color-observed-line)").attr("stroke-width", 1).style("opacity", 0.9).attr("d", observedLineGenerator);
                     }
                     
-                    // Add tooltips to high/low tide markers with Touch support
                     const eventsGroup = slideGroup.selectAll(".event").data(tideEvents).enter().append("g").attr("class", "event").attr("transform", d => `translate(${xScale(d.time)},${yScale(d.height)})`).style("pointer-events", "all").style("cursor", "pointer");
                     eventsGroup.each(function(d) {
                         const g = d3.select(this);
@@ -1684,7 +1693,6 @@
                         .on("touchstart", (event, d) => { event.preventDefault(); event.stopPropagation(); showTideEventTooltip(d); });
                 }
                 
-                // --- STREAMING_CHUNK: Build Daylight Events list (Tides, Sunset, Events) ---
                 if (!tideDataUnavailable) {
                     tideEvents.forEach(event => {
                         if (event.time >= sunriseTime && event.time <= sunsetTime) {
@@ -1703,7 +1711,6 @@
                 const uniqueEvents = [...uniqueEventsMap.values()];
                 uniqueEvents.sort((a,b) => new Date(a.time) - new Date(b.time));
                 
-                // Build HTML Table - guaranteed to draw even when NOAA is offline!
                 if (uniqueEvents.length > 0) {
                      const eventIcons = {
                           open: `<svg class="icon-sm icon-open" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
@@ -1737,7 +1744,7 @@
                 
                 updateUI(renderDate);
                 
-                if (!tideDataUnavailable) {
+                if (!tideDataUnavailable && slidesContainer && slideGroup) {
                     if (direction !== 0) {
                         const oldSlideGroup = slidesContainer.select(".slide-group.active");
                         oldSlideGroup.interrupt();
@@ -1777,7 +1784,6 @@
                 }
             }
             
-            // --- STREAMING_CHUNK: Managing dynamic updates, countdowns, and observed tides ---
             function updateNowIndicator(renderDate, targetSlideGroup = null) {
                 const activeSlide = targetSlideGroup || (svg ? svg.select(".slide-group.active") : null);
                 if (!activeSlide || activeSlide.empty() || !xScale || !yScale || !chartDataForUpdate) return;
@@ -1856,6 +1862,7 @@
                     }
                 }
             }
+            
             function updateUI(renderDate) {
                 const isMobile = window.innerWidth < 640;
                 const dateFormatOptions = { weekday: 'long', month: 'long', day: 'numeric' };
@@ -1894,12 +1901,10 @@
                     <div><div style="width: 0.75rem; height: 0.75rem; background-color: var(--color-chart-danger-area);"></div><span>Closed: Tide &lt; 1.5\u2032</span></div>`;
             }
             
-            // --- STREAMING_CHUNK: Safe schedule countdown updater even when NOAA tides go offline ---
             async function updateNextTideEvent() {
                  try {
                     const now = getPTNow();
                     
-                    // Concurrent fetch wrapped in error catches so failure does not drop other components
                     const [prevTides, currentTides, nextTides, nextNextTides] = await Promise.all([ 
                         fetchTideData(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)), 
                         fetchTideData(now), 
@@ -1954,7 +1959,6 @@
                         }
                     }
 
-                    // --- STREAMING_CHUNK: Handle schedule box rendering (fully works even if tides are offline) ---
                     if (currentDate.toDateString() === now.toDateString()) {
                         let scheduleColorState = 'neutral';
                         let hasScheduleData = true;
@@ -2059,6 +2063,7 @@
                     nextTideDisplay.innerHTML = "-";
                 }
             }
+            
             function clearHeaderInfo() {
                 dateDisplay.textContent = '';
                 currentTideStatus.innerHTML = '';
@@ -2190,7 +2195,6 @@
                 }, 60000); 
             }
 
-            // --- EVENT BINDINGS FOR INTERACTION CONTROLS ---
             document.getElementById('prev-day').addEventListener('click', () => {
                 if (isRendering) return;
                 currentDate.setDate(currentDate.getDate() - 1);
