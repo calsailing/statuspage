@@ -1,3 +1,4 @@
+
 <div class="bx--tile tile-radar-forecast">
    
     <style>
@@ -836,7 +837,6 @@
             let lastRealDateString = getPTNow().toDateString();
             let isRendering = false; // Lock to prevent race conditions during rapid clicking
             let activeRenderId = 0;   // Unique ID to track concurrent rendering chains
-            let lessonsInterval = null; // Fix: Declared lessonsInterval globally inside DOMContentLoaded scope
             
             // --- Caching Stores ---
             const tideDataCache = {};
@@ -851,6 +851,9 @@
             let isHoveringOnEvent = false;
             let currentClubStatus = null;
             let svg, xScale, yScale, chartDataForUpdate;
+
+            // --- Lessons Real-time Control Variables ---
+            let lessonsInterval = null;
 
             // --- THEME REACTIVITY ---
             let resizeTimeout;
@@ -981,7 +984,6 @@
                     fetchClubEvents(nextDay)
                 ]).catch(() => {}); // catch silently to ensure background API failures never disrupt runtime
             }
-            
             async function fetchTideData(date) {
                 if (!ENABLE_NOAA_PREDICTIONS) {
                     return [];
@@ -1004,7 +1006,7 @@
                     const formattedData = data.predictions.map(p => ({ time: parseNOAADate(p.t), height: parseFloat(p.v) })).filter(p => p.time !== null && !isNaN(p.height));
                     tideDataCache[cacheKey] = formattedData;
                     return formattedData;
-                }, { label: 'tide data', fallback: [] }); // Fallback on empty array to prevent code crashes
+                }, { label: 'tide data', fallback: null });
             }
             
             function findTideExtremes(tideData) {
@@ -1033,7 +1035,6 @@
                 }
                 return extremes;
             }
-            
             async function fetchClubEvents(date) {
                 if (!ENABLE_CLUB_EVENTS) {
                     return [];
@@ -1057,8 +1058,10 @@
                 try {
                     let jsonString = null;
                     try {
+                        // Fallback 1: allorigins JSON wrapped proxy (handled inside the helper)
                         jsonString = await fetchTextWithProxyFallback(targetUrl);
                     } catch (proxyError) {
+                        // Fallback 2: Generate Dummy Data for Preview Sandbox
                         const mockStart1 = new Date(date); mockStart1.setHours(10, 0, 0, 0);
                         const mockEnd1 = new Date(date); mockEnd1.setHours(12, 0, 0, 0);
                         const mockStart2 = new Date(date); mockStart2.setHours(13, 0, 0, 0);
@@ -1073,15 +1076,18 @@
                         });
                     }
                     
+                    // Strip out <pre> tags exactly like the other Joomla API call
                     jsonString = jsonString.replace(/<pre.*?>|<\/pre>/g, '');
                     const json = JSON.parse(jsonString);
                     
+                    // More robust data extraction (Handles object or array responses)
                     let rawEvents = [];
                     if (json.data && Array.isArray(json.data.events)) rawEvents = json.data.events;
                     else if (json.data && Array.isArray(json.data)) rawEvents = json.data;
                     else if (Array.isArray(json)) rawEvents = json;
                     
                     const events = rawEvents.map(e => {
+                        // Safe URL formatting
                         let eventUrl = e.url || '';
                         if (eventUrl && !eventUrl.startsWith('http')) {
                             eventUrl = `https://${CAL_SAILING_DOMAIN}` + (eventUrl.startsWith('/') ? eventUrl : '/' + eventUrl);
@@ -1102,7 +1108,6 @@
                     return [];
                 }
             }
-            
             async function fetchClubStatus(date) {
                 if (!ENABLE_CLUB_STATUS) {
                     return { 
@@ -1121,12 +1126,14 @@
                 }
                 
                 const yyyymmdd = date.getFullYear() + '-' + ('0' + (date.getMonth() + 1)).slice(-2) + '-' + ('0' + date.getDate()).slice(-2);
-                const targetUrl = `https://www.cal-sailing.org/index.php?option=com_csctides&view=gettidedatalist&task=gettidedatalist&tmpl=component&output=json&tidedate=${yyyymmdd}`;
+                const targetUrl = `https://${CAL_SAILING_DOMAIN}/index.php?option=com_csctides&view=gettidedatalist&task=gettidedatalist&tmpl=component&output=json&tidedate=${yyyymmdd}`;
                 const result = await withRetry(async () => {
                         let rawText = null;
                         try {
+                            // Fallback 1: allorigins JSON wrapped proxy (handled inside the helper)
                             rawText = await fetchTextWithProxyFallback(targetUrl);
                         } catch (proxyError) {
+                            // Fallback 2: Generate Dummy Data for Preview Sandbox
                             rawText = JSON.stringify({
                                 data: { clubclosed: false, opentime: "1:00 PM", docktime: "sunset", sunsettime: "sunset", restriction: "", middayclosetext: "null" }
                             });
@@ -1134,11 +1141,11 @@
                         const jsonString = rawText.replace(/<pre.*?>|<\/pre>/g, '');
                         const responseData = JSON.parse(jsonString);
                         const clubData = responseData.data;
-                        if (!clubData) throw new Error("Malformed club status JSON.");
+                        if (!clubData) throw new Error("Malformed club status JSON: 'data' property is missing.");
                         const parseClubTime = (timeStr, baseDate) => {
                             if (!timeStr) return null;
                             timeStr = timeStr.toLowerCase().trim();
-                            if (timeStr === 'sunset') return 'sunset';
+                            if (timeStr === 'sunset') return 'sunset'; // Prevent string from corrupting D3 scale
                             const d = new Date(baseDate.getTime());
                             if (timeStr === 'noon') { d.setHours(12, 0, 0, 0); return d; }
                             const pm = timeStr.includes('pm');
@@ -1183,22 +1190,14 @@
                         clubStatusCache[cacheKey] = result;
                         return result;
                 }, { label: 'club status', fallback: null });
-                
-                return result || { 
-                    isClosed: false, 
-                    openTime: null, 
-                    dockTime: null, 
-                    midDayDockTime: null, 
-                    midDayOpenTime: null, 
-                    alertMessage: 'Club schedule unavailable (API offline)', 
-                    sunsetTime: null 
-                };
+                return result || { isClosed: true, alertMessage: 'Could not load club status', sunsetTime: null };
             }
-            
             async function fetchObservedTideData(date, forceRefresh = false) {
                 if (!ENABLE_OBSERVED_TIDES) {
                     return [];
                 }
+                // PERFORMANCE OPTIMIZATION: Do not hit observed tide endpoint if selected date is in the future.
+                // Observed tide data is non-existent in the future, which previously caused a 10s timeout delay.
                 const nowPT = getPTNow();
                 const startOfToday = d3.timeDay.floor(nowPT);
                 if (d3.timeDay.floor(date) > startOfToday) {
@@ -1216,6 +1215,7 @@
                     if (!obsRes.ok) throw new Error(`NOAA Richmond Obs API failed`);
                     const predData = await predRes.json();
                     const obsData = await obsRes.json();
+                    // Gracefully fail without permanently poisoning the historical cache
                     if (obsData.error || !obsData.data) {
                         return [];
                     }
@@ -1237,24 +1237,21 @@
                     return observedPoints;
                 }, { label: 'observed data', fallback: [] });
             }
-
             async function drawChart(renderDate, direction = 0) {
+                // Increment render transaction counter to prevent race condition issues on rapid clicks
                 const currentRenderId = ++activeRenderId;
                 
-                if (isRendering) return; 
+                if (isRendering) return; // Prevent concurrent renders if user clicks rapidly
                 isRendering = true;
                 
                 const navButtons = document.querySelectorAll('.nav-button, #date-picker');
                 navButtons.forEach(btn => btn.disabled = true);
                 
-                // Declare scoping variables globally in the drawChart loop to avoid ReferenceErrors outside blocks
-                let slidesContainer = null;
-                let slideGroup = null;
-                
                 try {
                     tooltip.style("opacity", 0); 
                     const isFirstLoad = !chartContainer.select("svg").node();
                     
+                    // Show loading screen only if it's the very first time the widget spins up
                     if (isFirstLoad) {
                         chartContainer.html(""); 
                         const loadingHTML = `
@@ -1277,12 +1274,30 @@
                         eventsList.innerHTML = '';
                     }
 
+                    // --- PROGRESSIVE LOADING SYSTEM ---
+                    // Fills up the liquid loader by 25% (a quarter) each time a promise completes
+                    let loadedCount = 0;
                     const trackProgress = async (promise) => {
                         try {
                             const result = await promise;
+                            loadedCount++;
+                            const progress = loadedCount / 4;
+                            const bottomMain = -128 + (progress * 128);
+                            const bottomBehind = -124 + (progress * 128);
+                            const waveMain = document.querySelector('#tide-chart-widget-container .wave');
+                            const waveBehind = document.querySelector('#tide-chart-widget-container .wave-behind');
+                            if (waveMain) waveMain.style.bottom = `${bottomMain}px`;
+                            if (waveBehind) waveBehind.style.bottom = `${bottomBehind}px`;
                             return result;
                         } catch (err) {
-                            return null; // Return null on error to ensure Promise.all does not drop entirely
+                            loadedCount++;
+                            const progress = loadedCount / 4;
+                            const bottomMain = -128 + (progress * 128);
+                            const bottomBehind = -124 + (progress * 128);
+                            const waveMain = document.querySelector('#tide-chart-widget-container .wave');
+                            const waveBehind = document.querySelector('#tide-chart-widget-container .wave-behind');
+                            if (waveMain) waveBehind.style.bottom = `${bottomBehind}px`;
+                            throw err;
                         }
                     };
 
@@ -1293,50 +1308,46 @@
                         trackProgress(fetchClubEvents(renderDate))
                     ]);
                     
+                    // RACE CONDITION DISCARD GUARD:
+                    // If a user has clicked to another day before these API promises resolved, discard outcomes
                     if (currentRenderId !== activeRenderId) {
                         return;
                     }
+                    // Trigger non-blocking background preloading for the NEXT day
                     preloadNextDay(renderDate);
                     
-                    const tideDataUnavailable = !currentTides || currentTides.length === 0;
-                    
-                    if (tideDataUnavailable) {
-                        chartContainer.html(`
-                            <div class="noaa-offline-warning" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 1.5rem; text-align: center; color: var(--color-text-danger);">
-                                <svg style="width: 2.5rem; height: 2.5rem; margin-bottom: 0.5rem; color: var(--color-text-danger);" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                                </svg>
-                                <p style="font-weight: 600; font-size: 0.9rem; margin-bottom: 0.25rem;">Tide Graph Offline</p>
-                                <p style="font-size: 0.75rem; color: var(--color-text-secondary); max-width: 280px; line-height: 1.3;">NOAA prediction services are currently offline or unreachable.</p>
-                            </div>
-                        `);
+                    if (!currentTides || currentTides.length === 0) {
+                        const message = !currentTides ? "Could not load tide data." : "No tide data available for this date.";
+                        chartContainer.html(`<div style="color: var(--color-text-danger); padding: 1rem; display: flex; align-items: center; justify-content: center; height: 100%;">${message}</div>`);
+                        clearHeaderInfo();
+                        isRendering = false;
+                        navButtons.forEach(btn => btn.disabled = false);
+                        return;
                     }
-
-                    const chartData = currentTides || [];
+                    
+                    const chartData = currentTides;
                     chartDataForUpdate = chartData;
                     const startOfDay = d3.timeDay.floor(renderDate);
                     const endOfDay = d3.timeDay.ceil(renderDate);
                     const prevDay = new Date(renderDate); prevDay.setDate(prevDay.getDate() - 1);
                     const nextDay = new Date(renderDate); nextDay.setDate(nextDay.getDate() + 1);
                     
-                    let tideEvents = [];
-                    if (!tideDataUnavailable) {
-                        const [prevTides, nextTides] = await Promise.all([ fetchTideData(prevDay), fetchTideData(nextDay) ]);
-                        const allTidesData = [...(prevTides || []), ...chartData, ...(nextTides || [])];
-                        const allExtremes = findTideExtremes(allTidesData);
-                        tideEvents = allExtremes.filter(event => event.time >= startOfDay && event.time < endOfDay);
-                    }
+                    // Fallbacks to empty arrays [] guarantee that map spreads don't crash if adjacent data failed to fetch
+                    const [prevTides, nextTides] = await Promise.all([ fetchTideData(prevDay), fetchTideData(nextDay) ]);
+                    const allTidesData = [...(prevTides || []), ...currentTides, ...(nextTides || [])];
+                    const allExtremes = findTideExtremes(allTidesData);
+                    const tideEvents = allExtremes.filter(event => event.time >= startOfDay && event.time < endOfDay);
                 
                 const berkeleyObserved = [];
-                if (!tideDataUnavailable && observedAnomalies) {
-                    observedAnomalies.forEach(obs => {
-                        const predHeight = getTideHeightAtTime(chartData, obs.time);
-                        if (predHeight !== undefined) {
-                            berkeleyObserved.push({ time: obs.time, height: predHeight + obs.anomaly, anomaly: obs.anomaly });
-                        }
-                    });
-                }
-                currentClubStatus = clubStatus || { isClosed: false, openTime: null, dockTime: null, midDayDockTime: null, midDayOpenTime: null, alertMessage: '', sunsetTime: null };
+                // HARDENING FIX: Use smooth interpolation to calculate predictions at Richmond's observed times
+                // instead of strict timestamp matching, guaranteeing alignment under minor clock discrepancies.
+                observedAnomalies.forEach(obs => {
+                    const predHeight = getTideHeightAtTime(chartData, obs.time);
+                    if (predHeight !== undefined) {
+                        berkeleyObserved.push({ time: obs.time, height: predHeight + obs.anomaly, anomaly: obs.anomaly });
+                    }
+                });
+                currentClubStatus = clubStatus;
                 const widgetContainer = document.querySelector('#tide-chart-widget-container');
                 if (!widgetContainer) {
                     isRendering = false;
@@ -1362,156 +1373,176 @@
                 
                 const margin = { top: isMobile ? 25 : 20, right: isMobile ? 0 : 20, bottom: isMobile ? 24 : 40, left: isMobile ? 32 : 45 };
                 
+                // QA FIX: Protect against negative dimensions rendering fatal DOM exceptions if window scales out of bounds
                 const width = Math.max(0, containerRect.width - margin.left - margin.right);
                 const height = Math.max(0, containerRect.height - margin.top - margin.bottom);
                 
-                const { sunrise: calculatedSunrise, sunset: calculatedSunset } = calculateSunriseSunset(renderDate, LOCATION_LAT, LOCATION_LNG);
-                const sunriseTime = calculatedSunrise; 
-                
-                let sunsetTime = currentClubStatus.sunsetTime;
-                if (!sunsetTime || sunsetTime === 'sunset') {
-                    sunsetTime = calculatedSunset;
+                // --- SVG SKELETON SETUP (Only runs on initial load OR browser resize) ---
+                if (isFirstLoad || direction === 0) {
+                    chartContainer.html(""); // Safely clear only when data is finished processing to avoid flashing
+                    
+                    svg = chartContainer.append("svg").attr("width", containerRect.width).attr("height", containerRect.height)
+                        .append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+                        
+                    svg.append("defs").append("clipPath").attr("id", "chart-clip")
+                       .append("rect").attr("width", width).attr("height", height);
+                       
+                    svg.append("g").attr("class", "axis x-axis x-axis-group").attr("transform", `translate(0,${height})`);
+                    svg.append("g").attr("class", "axis y-axis y-axis-group");
+                    
+                    svg.select(".y-axis-group").append("text")
+                        .attr("class", "y-axis-label")
+                        .attr("x", -9).attr("y", height + 15)
+                        .attr("text-anchor", "end").text("\u2032");
+                        
+                    const chartWindow = svg.append("g").attr("class", "chart-window").attr("clip-path", "url(#chart-clip)");
+                    
+                    // Invisible overlay to catch all pointer events across the whole chart window
+                    chartWindow.append("rect").attr("class", "hover-overlay").attr("fill", "none").attr("pointer-events", "all");
+                    
+                    // Set pointer-events to none so backgrounds don't block the hover overlay beneath them
+                    chartWindow.append("g").attr("class", "slides-container").style("pointer-events", "none");
+                    
+                    // Ensure the follow-cursor group also doesn't block events
+                    const hoverGroup = chartWindow.append("g").attr("class", "hover-group").style("display", "none").style("pointer-events", "none");
+                    hoverGroup.append("line").attr("class", "hover-line").attr("stroke-width", 1).attr("y1", 0);
+                    hoverGroup.append("circle").attr("class", "hover-circle").attr("r", 5).attr("stroke-width", 1.5);
                 }
-                if (currentClubStatus.dockTime === 'sunset') currentClubStatus.dockTime = sunsetTime;
-                if (currentClubStatus.midDayDockTime === 'sunset') currentClubStatus.midDayDockTime = sunsetTime;
-                if (currentClubStatus.openTime === 'sunset') currentClubStatus.openTime = sunsetTime;
-
-                let curve, areaGenerator, lineGenerator, redAreaGenerator, redSegments = [];
                 
-                if (!tideDataUnavailable) {
-                    if (isFirstLoad || direction === 0) {
-                        chartContainer.html(""); 
-                        
-                        svg = chartContainer.append("svg").attr("width", containerRect.width).attr("height", containerRect.height)
-                            .append("g").attr("transform", `translate(${margin.left},${margin.top})`);
-                            
-                        svg.append("defs").append("clipPath").attr("id", "chart-clip")
-                           .append("rect").attr("width", width).attr("height", height);
-                           
-                        svg.append("g").attr("class", "axis x-axis x-axis-group").attr("transform", `translate(0,${height})`);
-                        svg.append("g").attr("class", "axis y-axis y-axis-group");
-                        
-                        svg.select(".y-axis-group").append("text")
-                            .attr("class", "y-axis-label")
-                            .attr("x", -9).attr("y", height + 15)
-                            .attr("text-anchor", "end").text("\u2032");
-                            
-                        const chartWindow = svg.append("g").attr("class", "chart-window").attr("clip-path", "url(#chart-clip)");
-                        
-                        chartWindow.append("rect").attr("class", "hover-overlay").attr("fill", "none").attr("pointer-events", "all");
-                        chartWindow.append("g").attr("class", "slides-container").style("pointer-events", "none");
-                        
-                        const hoverGroup = chartWindow.append("g").attr("class", "hover-group").style("display", "none").style("pointer-events", "none");
-                        hoverGroup.append("line").attr("class", "hover-line").attr("stroke-width", 1).attr("y1", 0);
-                        hoverGroup.append("circle").attr("class", "hover-circle").attr("r", 5).attr("stroke-width", 1.5);
+                svg.select(".hover-overlay").attr("width", width).attr("height", height);
+                svg.select("#chart-clip rect").attr("width", width).attr("height", height);
+                
+                const hoverGroup = svg.select(".hover-group");
+                hoverGroup.select(".hover-line").attr("stroke", hoverLineColor).attr("y2", height);
+                hoverGroup.select(".hover-circle").attr("fill", hoverCircleFill).attr("stroke", hoverCircleStroke);
+                
+                xScale = d3.scaleTime().domain([startOfDay, endOfDay]).range([0, width]);
+                
+                const allHeights = chartData.map(d => d.height).concat(berkeleyObserved.map(d => d.height));
+                const minTide = Math.min(...allHeights);
+                const maxTide = Math.max(...allHeights);
+                
+                let upperPadding = 1;
+                let needsExtraSpace = false;
+                
+                if (clubStatus && !clubStatus.isClosed) {
+                    const scheduleTimes = [
+                        clubStatus.openTime,
+                        clubStatus.dockTime,
+                        clubStatus.midDayDockTime,
+                        clubStatus.midDayOpenTime
+                    ].filter(t => t && t >= startOfDay && t <= endOfDay && t !== 'sunset');
+                    
+                    const heightsToCheck = scheduleTimes.map(t => getTideHeightAtTime(chartData, t));
+                    
+                    // If a club transition height is within 1.2 feet of the max tide
+                    for (const h of heightsToCheck) {
+                        if (maxTide - h < 1.2) {
+                            needsExtraSpace = true;
+                            break;
+                        }
                     }
                     
-                    svg.select(".hover-overlay").attr("width", width).attr("height", height);
-                    svg.select("#chart-clip rect").attr("width", width).attr("height", height);
-                    
-                    const hoverGroup = svg.select(".hover-group");
-                    hoverGroup.select(".hover-line").attr("stroke", hoverLineColor).attr("y2", height);
-                    hoverGroup.select(".hover-circle").attr("fill", hoverCircleFill).attr("stroke", hoverCircleStroke);
-                    
-                    xScale = d3.scaleTime().domain([startOfDay, endOfDay]).range([0, width]);
-                    
-                    const allHeights = chartData.map(d => d.height).concat(berkeleyObserved.map(d => d.height));
-                    const minTide = Math.min(...allHeights);
-                    const maxTide = Math.max(...allHeights);
-                    
-                    let upperPadding = 1;
-                    let needsExtraSpace = false;
-                    
-                    if (currentClubStatus && !currentClubStatus.isClosed) {
-                        const scheduleTimes = [
-                            currentClubStatus.openTime,
-                            currentClubStatus.dockTime,
-                            currentClubStatus.midDayDockTime,
-                            currentClubStatus.midDayOpenTime
-                        ].filter(t => t && t >= startOfDay && t <= endOfDay && t !== 'sunset');
-                        
-                        const heightsToCheck = scheduleTimes.map(t => getTideHeightAtTime(chartData, t));
-                        
-                        for (const h of heightsToCheck) {
-                            if (maxTide - h < 1.2) {
+                    // Alternatively, check if transitions occur close in time (within 1.5 hours) of any High Tide
+                    const highTideTimes = tideEvents.filter(e => e.type === 'High').map(e => e.time);
+                    for (const sTime of scheduleTimes) {
+                        for (const hTime of highTideTimes) {
+                            const diffHours = Math.abs(sTime.getTime() - hTime.getTime()) / 3600000;
+                            if (diffHours < 1.5) {
                                 needsExtraSpace = true;
                                 break;
                             }
                         }
-                        
-                        const highTideTimes = tideEvents.filter(e => e.type === 'High').map(e => e.time);
-                        for (const sTime of scheduleTimes) {
-                            for (const hTime of highTideTimes) {
-                                const diffHours = Math.abs(sTime.getTime() - hTime.getTime()) / 3600000;
-                                if (diffHours < 1.5) {
-                                    needsExtraSpace = true;
-                                    break;
-                                }
-                            }
-                            if (needsExtraSpace) break;
-                        }
+                        if (needsExtraSpace) break;
                     }
-                    
-                    if (needsExtraSpace) {
-                        upperPadding = 3; 
-                    }
-                    
-                    yScale = d3.scaleLinear().domain([minTide - 2, maxTide + upperPadding]).range([height, 0]);
-                    
-                    svg.select(".x-axis-group").interrupt();
-                    svg.select(".y-axis-group").interrupt();
-                    const t = d3.transition().duration(400).ease(d3.easeCubicInOut);
-                    
-                    const xAxis = d3.axisBottom(xScale).ticks(d3.timeHour.every(6)).tickFormat(d => {
-                        const timeStr = d3.timeFormat("%H:%M")(d);
-                        return timeStr === "00:00" ? "" : timeStr;
-                    });
-                    svg.select(".x-axis-group").transition(t).call(xAxis);
-                    
-                    const yAxis = d3.axisLeft(yScale);
-                    const ticks = yScale.ticks(), uniqueRoundedTicks = [...new Set(ticks.map(tick => Math.round(tick)))];
-                    yAxis.tickValues(uniqueRoundedTicks).tickFormat(d => `${d}`);
-                    svg.select(".y-axis-group").transition(t).call(yAxis);
-                    svg.select(".y-axis-label").attr("y", height + 15);
-                    
-                    curve = d3.curveMonotoneX;
-                    areaGenerator = (y0) => d3.area().x(d => xScale(d.time)).y0(y0).y1(d => yScale(d.height)).curve(curve);
-                    lineGenerator = d3.line().x(d => xScale(d.time)).y(d => yScale(d.height)).curve(curve);
-                    
-                    redAreaGenerator = d3.area().x(d => xScale(d.time)).y0(yScale(DANGEROUS_LOW_TIDE)).y1(d => yScale(d.height)).curve(curve);
-                    let currentSegment = [];
-                    for (let i = 0; i < chartData.length; i++) {
-                        const d = chartData[i], prev = i > 0 ? chartData[i - 1] : null;
-                        const isBelow = d.height < DANGEROUS_LOW_TIDE, wasBelow = prev ? prev.height < DANGEROUS_LOW_TIDE : false;
-                        if (prev && isBelow !== wasBelow) {
-                            const t0 = prev.time.getTime(), t1 = d.time.getTime(), h0 = prev.height, h1 = d.height;
-                            const intersectionTime = new Date(t0 + (t1 - t0) * (DANGEROUS_LOW_TIDE - h0) / (h1 - h0));
-                            const intersectionPoint = { time: intersectionTime, height: DANGEROUS_LOW_TIDE };
-                            if (isBelow) currentSegment.push(intersectionPoint);
-                            else { currentSegment.push(intersectionPoint); if (currentSegment.length > 1) redSegments.push(currentSegment); currentSegment = []; }
-                        }
-                        if (isBelow) currentSegment.push(d);
-                    }
-                    const lastDataPoint = chartData.length > 0 ? chartData[chartData.length - 1] : null;
-                    if (lastDataPoint && lastDataPoint.height < DANGEROUS_LOW_TIDE && currentSegment.length > 0) {
-                        if (lastDataPoint.time < endOfDay) currentSegment.push({ time: endOfDay, height: lastDataPoint.height });
-                    }
-                    if (currentSegment.length > 1) redSegments.push(currentSegment);
                 }
                 
-                const dayEvents = [];
-                const specialIcons = []; 
-                const topLabelsData = []; 
+                if (needsExtraSpace) {
+                    upperPadding = 3; // Adds 2 additional feet above the high tide line
+                }
                 
+                yScale = d3.scaleLinear().domain([minTide - 2, maxTide + upperPadding]).range([height, 0]);
+                
+                // Kill any previous axis transitions to prevent bouncing
+                svg.select(".x-axis-group").interrupt();
+                svg.select(".y-axis-group").interrupt();
+                // Smoothly transition static axes
+                const t = d3.transition().duration(400).ease(d3.easeCubicInOut);
+                
+                const xAxis = d3.axisBottom(xScale).ticks(d3.timeHour.every(6)).tickFormat(d => {
+                    const timeStr = d3.timeFormat("%H:%M")(d);
+                    return timeStr === "00:00" ? "" : timeStr;
+                });
+                svg.select(".x-axis-group").transition(t).call(xAxis);
+                
+                const yAxis = d3.axisLeft(yScale);
+                const ticks = yScale.ticks(), uniqueRoundedTicks = [...new Set(ticks.map(tick => Math.round(tick)))];
+                yAxis.tickValues(uniqueRoundedTicks).tickFormat(d => `${d}`);
+                svg.select(".y-axis-group").transition(t).call(yAxis);
+                svg.select(".y-axis-label").attr("y", height + 15);
+                
+                const curve = d3.curveMonotoneX;
+                const areaGenerator = (y0) => d3.area().x(d => xScale(d.time)).y0(y0).y1(d => yScale(d.height)).curve(curve);
+                const lineGenerator = d3.line().x(d => xScale(d.time)).y(d => yScale(d.height)).curve(curve);
+                
+                const { sunrise: calculatedSunrise, sunset: calculatedSunset } = calculateSunriseSunset(renderDate, LOCATION_LAT, LOCATION_LNG);
+                const sunriseTime = calculatedSunrise; 
+                
+                // Strict safety catch to prevent the word 'sunset' from reaching the numeric xScale
+                let sunsetTime = clubStatus.sunsetTime;
+                if (!sunsetTime || sunsetTime === 'sunset') {
+                    sunsetTime = calculatedSunset;
+                }
+                if (clubStatus.dockTime === 'sunset') clubStatus.dockTime = sunsetTime;
+                if (clubStatus.midDayDockTime === 'sunset') clubStatus.midDayDockTime = sunsetTime;
+                if (clubStatus.openTime === 'sunset') clubStatus.openTime = sunsetTime;
+                // --- GENERATE SLIDE LAYER ---
+                const slidesContainer = svg.select(".slides-container");
+                const slideGroup = slidesContainer.append("g").attr("class", "slide-group");
+                
+                if (direction !== 0) {
+                    slideGroup.attr("transform", `translate(${direction > 0 ? width : -width}, 0)`);
+                }
+                const overlap = 1;
+                // QA FIX: Replaced direct width calculation with clamped Math.max boundaries
+                slideGroup.append("rect").attr("x", xScale(startOfDay)).attr("width", Math.max(0, (xScale(sunriseTime) - xScale(startOfDay)) + overlap)).attr("height", height).attr("fill", nightColor);
+                slideGroup.append("rect").attr("x", xScale(sunriseTime)).attr("width", Math.max(0, (xScale(sunsetTime) - xScale(sunriseTime)) + overlap)).attr("height", height).attr("fill", dayColor);
+                slideGroup.append("rect").attr("x", xScale(sunsetTime)).attr("width", Math.max(0, xScale(endOfDay) - xScale(sunsetTime))).attr("height", height).attr("fill", nightColor);
+                
+                const redAreaGenerator = d3.area().x(d => xScale(d.time)).y0(yScale(DANGEROUS_LOW_TIDE)).y1(d => yScale(d.height)).curve(curve);
+                const redSegments = []; let currentSegment = [];
+                for (let i = 0; i < chartData.length; i++) {
+                    const d = chartData[i], prev = i > 0 ? chartData[i - 1] : null;
+                    const isBelow = d.height < DANGEROUS_LOW_TIDE, wasBelow = prev ? prev.height < DANGEROUS_LOW_TIDE : false;
+                    if (prev && isBelow !== wasBelow) {
+                        const t0 = prev.time.getTime(), t1 = d.time.getTime(), h0 = prev.height, h1 = d.height;
+                        const intersectionTime = new Date(t0 + (t1 - t0) * (DANGEROUS_LOW_TIDE - h0) / (h1 - h0));
+                        const intersectionPoint = { time: intersectionTime, height: DANGEROUS_LOW_TIDE };
+                        if (isBelow) currentSegment.push(intersectionPoint);
+                        else { currentSegment.push(intersectionPoint); if (currentSegment.length > 1) redSegments.push(currentSegment); currentSegment = []; }
+                    }
+                    if (isBelow) currentSegment.push(d);
+                }
+                const lastDataPoint = chartData.length > 0 ? chartData[chartData.length - 1] : null;
+                if (lastDataPoint && lastDataPoint.height < DANGEROUS_LOW_TIDE && currentSegment.length > 0) {
+                    if (lastDataPoint.time < endOfDay) currentSegment.push({ time: endOfDay, height: lastDataPoint.height });
+                }
+                if (currentSegment.length > 1) redSegments.push(currentSegment);
+                
+                const dayEvents = [];
+                const specialIcons = []; // For storing Open/Dock icons on the tideline
+                const topLabelsData = []; // For the top boxes
+                
+                // Update Warning Banner
                 let newBannerClass = '';
                 let bannerHTML = '';
                 
-                if (currentClubStatus.isClosed) {
+                if (clubStatus.isClosed) {
                     newBannerClass = 'banner-red';
-                    bannerHTML = `<svg class="icon-sm" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> <span>${currentClubStatus.alertMessage}</span>`;
-                } else if (currentClubStatus.alertMessage) {
+                    bannerHTML = `<svg class="icon-sm" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> <span>${clubStatus.alertMessage}</span>`;
+                } else if (clubStatus.alertMessage) {
                     newBannerClass = 'banner-yellow';
-                    bannerHTML = `<svg class="icon-sm" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> <span>${currentClubStatus.alertMessage}</span>`;
+                    bannerHTML = `<svg class="icon-sm" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> <span>${clubStatus.alertMessage}</span>`;
                 }
                 
                 if (newBannerClass) {
@@ -1521,7 +1552,7 @@
                     clubStatusBanner.style.display = 'flex';
                     
                     if (!isVisible) {
-                        clubStatusBanner.offsetHeight; 
+                        clubStatusBanner.offsetHeight; // Force reflow
                         clubStatusBanner.classList.add('visible');
                     }
                 } else {
@@ -1531,37 +1562,39 @@
                             clubStatusBanner.style.display = 'none';
                             clubStatusBanner.className = 'status-banner';
                         }
-                    }, 400); 
+                    }, 400); // 400ms matches the CSS transition duration
                 }
                 
-                const openPeriods = [];
-                if (!currentClubStatus.isClosed) {
-                    if (currentClubStatus.midDayDockTime && currentClubStatus.midDayOpenTime) {
-                        if (currentClubStatus.openTime && currentClubStatus.midDayDockTime > currentClubStatus.openTime) openPeriods.push({ start: currentClubStatus.openTime, end: currentClubStatus.midDayDockTime, type: 'morning' });
-                        if (currentClubStatus.midDayOpenTime && currentClubStatus.dockTime > currentClubStatus.midDayOpenTime) openPeriods.push({ start: currentClubStatus.midDayOpenTime, end: currentClubStatus.dockTime, type: 'afternoon' });
+                if (!clubStatus.isClosed) {
+                    const openPeriods = [];
+                    if (clubStatus.midDayDockTime && clubStatus.midDayOpenTime) {
+                        if (clubStatus.openTime && clubStatus.midDayDockTime > clubStatus.openTime) openPeriods.push({ start: clubStatus.openTime, end: clubStatus.midDayDockTime, type: 'morning' });
+                        if (clubStatus.midDayOpenTime && clubStatus.dockTime > clubStatus.midDayOpenTime) openPeriods.push({ start: clubStatus.midDayOpenTime, end: clubStatus.dockTime, type: 'afternoon' });
                     } 
-                    else if (currentClubStatus.openTime && currentClubStatus.dockTime > currentClubStatus.openTime) openPeriods.push({ start: currentClubStatus.openTime, end: currentClubStatus.dockTime, type: 'full_day' });
+                    else if (clubStatus.openTime && clubStatus.dockTime > clubStatus.openTime) openPeriods.push({ start: clubStatus.openTime, end: clubStatus.dockTime, type: 'full_day' });
                     
                     openPeriods.forEach(({start, end, type}) => {
+                        slideGroup.append("rect").attr("x", xScale(start)).attr("width", Math.max(0, xScale(end) - xScale(start))).attr("height", height).attr("fill", openOverlayColor);
                         const openText = type === 'afternoon' ? "Club Re-Opens" : "Club Opens";
                         const dockText = type === 'morning' ? "Mid-Day Dock Time" : "Dock Time (Club Closes)";
                         if (start > startOfDay && start < endOfDay) {
+                            slideGroup.append("line").attr("x1", xScale(start)).attr("x2", xScale(start)).attr("y1", 0).attr("y2", height).attr("stroke", "var(--color-open-line)").attr("stroke-width", 1);
                             dayEvents.push({time: start, text: openText, type: 'open'});
-                            if (!tideDataUnavailable) {
-                                specialIcons.push({ time: start, type: 'open', yHeight: getTideHeightAtTime(chartData, start) });
-                                topLabelsData.push({ time: start, text: 'Open', isOpen: true });
-                            }
+                            specialIcons.push({ time: start, type: 'open', yHeight: getTideHeightAtTime(chartData, start) });
+                            topLabelsData.push({ time: start, text: 'Open', isOpen: true });
                         }
                         if (end > start && end < endOfDay) {
+                             slideGroup.append("line").attr("x1", xScale(end)).attr("x2", xScale(end)).attr("y1", 0).attr("y2", height).attr("stroke", "var(--color-dock-line)").attr("stroke-width", 1);
                              dayEvents.push({time: end, text: dockText, type: 'dock'});
-                             if (!tideDataUnavailable) {
-                                 specialIcons.push({ time: end, type: 'dock', yHeight: getTideHeightAtTime(chartData, end) });
-                                 topLabelsData.push({ time: end, text: 'Dock', isOpen: false });
-                             }
+                             specialIcons.push({ time: end, type: 'dock', yHeight: getTideHeightAtTime(chartData, end) });
+                             topLabelsData.push({ time: end, text: 'Dock', isOpen: false });
                         }
                     });
                 }
                 
+                // Mix in Club Events to display in both the table and on the tide line
+                const eventColors = ['#00c853'];
+                const eventSegmentsToDraw = [];
                 if (clubEvents && clubEvents.length > 0) {
                     clubEvents.forEach((e, i) => {
                         const eStart = new Date(Math.max(e.start.getTime(), startOfDay.getTime()));
@@ -1571,7 +1604,7 @@
                         const hasSkipWarningClass = Array.isArray(e.classNames) && 
                             (e.classNames.includes('dp-event-calendar-sq-2') || e.classNames.includes('dp-event-calendar-sq-3'));
                         
-                        if (!tideDataUnavailable && eStart < eEnd && !hasSkipWarningClass) {
+                        if (eStart < eEnd && !hasSkipWarningClass) {
                             let minHeight = Math.min(getTideHeightAtTime(chartData, eStart), getTideHeightAtTime(chartData, eEnd));
                             chartData.forEach(d => {
                                 if (d.time > eStart && d.time < eEnd && d.height < minHeight) {
@@ -1585,6 +1618,7 @@
                         if (e.start >= startOfDay && e.start <= endOfDay) {
                             let textHtml = `<a href="${sanitizeUrl(e.url)}" target="_blank" rel="noopener noreferrer" style="color: var(--color-observed-line); text-decoration: none;">${escapeHtml(e.title)}</a>`;
                             
+                            // Inject warning icon if event overlaps with low tide
                             if (isAffected) {
                                 textHtml += ` <span class="event-warning-tooltip">
                                     <svg class="icon-sm" style="color: var(--color-text-danger); display: block;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1594,115 +1628,449 @@
                                 </span>`;
                             }
                             
+                            // Add to table
                             dayEvents.push({
                                 time: e.start,
                                 text: textHtml,
                                 type: 'club_event'
                             });
                         }
+                            
+                        // Chart overlay logic
+                        if (eStart < eEnd) {
+                            const startHeight = getTideHeightAtTime(chartData, eStart);
+                            const endHeight = getTideHeightAtTime(chartData, eEnd);
+                            const eventColor = eventColors[i % eventColors.length];
+                            const segmentData = [{time: eStart, height: startHeight}];
+                            chartData.forEach(d => {
+                                if (d.time > eStart && d.time < eEnd) segmentData.push(d);
+                            });
+                            segmentData.push({time: eEnd, height: endHeight});
+                            
+                            eventSegmentsToDraw.push({
+                                data: segmentData,
+                                color: eventColor
+                            });
+                            // Add start icon
+                            if (e.start >= startOfDay && e.start <= endOfDay) {
+                                specialIcons.push({ 
+                                    time: e.start, 
+                                    type: 'club_event_start', 
+                                    title: e.title,
+                                    yHeight: startHeight,
+                                    color: eventColor,
+                                    isAffected: isAffected
+                                });
+                            }
+                            // Add end icon
+                            if (e.end >= startOfDay && e.end <= endOfDay) {
+                                specialIcons.push({ 
+                                    time: e.end, 
+                                    type: 'club_event_end', 
+                                    title: e.title,
+                                    yHeight: endHeight,
+                                    color: eventColor,
+                                    isAffected: isAffected && (endHeight < DANGEROUS_LOW_TIDE)
+                                });
+                            }
+                        }
                     });
                 }
                 
-                if (!tideDataUnavailable) {
-                    const eventPoints = [chartData[0], ...tideEvents, chartData[chartData.length - 1]].filter(Boolean).sort((a, b) => a.time - b.time).filter((d, i, arr) => !d || i === 0 || d.time.getTime() !== arr[i-1].time.getTime());
-                    const segments = [];
-                    for (let i = 0; i < eventPoints.length - 1; i++) {
-                        const startPoint = eventPoints[i], endPoint = eventPoints[i+1];
-                        if (!startPoint || !endPoint) continue;
-                        segments.push({ rising: endPoint.height > startPoint.height, data: chartData.filter(d => d.time >= startPoint.time && d.time <= endPoint.time) });
-                    }
-                    if (segments.length > 0) {
-                        const lastSegment = segments[segments.length - 1], lastDataPoint = chartData[chartData.length - 1];
-                        if (lastDataPoint.time < endOfDay) lastSegment.data.push({ time: endOfDay, height: lastDataPoint.height });
-                    }
+                // QA FIX: Placed safety `.filter(Boolean)` directly prior to `.sort()` so unexpected edge-case API responses cannot poison the sorting function
+                const eventPoints = [chartData[0], ...tideEvents, chartData[chartData.length - 1]].filter(Boolean).sort((a, b) => a.time - b.time).filter((d, i, arr) => !d || i === 0 || d.time.getTime() !== arr[i-1].time.getTime());
+                const segments = [];
+                for (let i = 0; i < eventPoints.length - 1; i++) {
+                    const startPoint = eventPoints[i], endPoint = eventPoints[i+1];
+                    if (!startPoint || !endPoint) continue;
+                    segments.push({ rising: endPoint.height > startPoint.height, data: chartData.filter(d => d.time >= startPoint.time && d.time <= endPoint.time) });
+                }
+                if (segments.length > 0) {
+                    const lastSegment = segments[segments.length - 1], lastDataPoint = chartData[chartData.length - 1];
+                    if (lastDataPoint.time < endOfDay) lastSegment.data.push({ time: endOfDay, height: lastDataPoint.height });
+                }
+                
+                segments.forEach(seg => slideGroup.append("path").datum(seg.data).attr("fill", seg.rising ? risingColor : fallingColor).attr("d", areaGenerator(height)));
+                
+                // Draw red danger areas before the stroke lines so they sit in the background
+                redSegments.forEach(segment => slideGroup.append("path").datum(segment).attr("fill", redAreaColor).attr("d", redAreaGenerator));
+                
+                // --- UNIQUE LINE GRADIENT PER SLIDE FOR DANGER ZONE ---
+                const gradientId = "tide-gradient-" + Math.round(Math.random() * 1000000);
+                const dangerY = yScale(DANGEROUS_LOW_TIDE);
+                const dangerOffset = Math.max(0, Math.min(1, dangerY / height));
+                
+                const localDefs = slideGroup.append("defs");
+                localDefs.append("linearGradient")
+                    .attr("id", gradientId)
+                    .attr("gradientUnits", "userSpaceOnUse")
+                    .attr("x1", 0).attr("y1", 0)
+                    .attr("x2", 0).attr("y2", height)
+                    .selectAll("stop")
+                    .data([
+                        {offset: 0, color: tideLineColor},
+                        {offset: dangerOffset, color: tideLineColor},
+                        {offset: dangerOffset, color: dangerColor},
+                        {offset: 1, color: dangerColor}
+                    ])
+                    .enter().append("stop")
+                    .attr("offset", d => d.offset)
+                    .attr("stop-color", d => d.color);
+                slideGroup.append("path").datum(chartData).attr("fill", "none").attr("stroke", `url(#${gradientId})`).attr("stroke-width", 2).attr("d", lineGenerator);
+                
+                // Draw Club Event Overlay Lines
+                eventSegmentsToDraw.forEach(seg => {
+                    slideGroup.append("path")
+                        .datum(seg.data)
+                        .attr("fill", "none")
+                        .attr("stroke", seg.color)
+                        .attr("stroke-width", 3)
+                        .attr("stroke-linecap", "round")
+                        .attr("d", lineGenerator);
+                });
+                if (berkeleyObserved.length > 0) {
+                    const observedLineGenerator = d3.line().x(d => xScale(d.time)).y(d => yScale(d.height)).curve(curve);
+                    slideGroup.append("path").datum(berkeleyObserved).attr("fill", "none").attr("stroke", "var(--color-observed-line)").attr("stroke-width", 1).style("opacity", 0.9).attr("d", observedLineGenerator);
+                }
+                
+                // --- SHARED TOOLTIP RENDERING LOGIC ---
+                function showSpecialIconTooltip(d) {
+                    isHoveringOnEvent = true; 
                     
-                    slidesContainer = svg.select(".slides-container");
-                    slideGroup = slidesContainer.append("g").attr("class", "slide-group");
-                    
-                    if (direction !== 0) {
-                        slideGroup.attr("transform", `translate(${direction > 0 ? width : -width}, 0)`);
+                    let htmlContent = "";
+                    if (d.titles) {
+                        htmlContent = d.titles.map(t => {
+                            let pillHtml = "";
+                            if (t.type === 'club_event_start') {
+                                pillHtml = `<span class="pill pill-start">Start</span>`;
+                            } else if (t.type === 'club_event_end') {
+                                pillHtml = `<span class="pill pill-end">End</span>`;
+                            }
+                            return `<div style="margin-bottom: 0.25rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">${pillHtml}<span>${escapeHtml(t.text)}</span></div>`;
+                        }).join("");
+                    } else {
+                        let pillHtml = "";
+                        if (d.type === 'club_event_start') {
+                            pillHtml = `<span class="pill pill-start">Start</span>`;
+                        } else if (d.type === 'club_event_end') {
+                            pillHtml = `<span class="pill pill-end">End</span>`;
+                        }
+                        let labelText = d.title || (d.type === 'open' ? 'Club Opens' : 'Dock Time');
+                        htmlContent = `<div style="display: flex; align-items: center; justify-content: center; gap: 0.25rem;">${pillHtml}<span>${escapeHtml(labelText)}</span></div>`;
                     }
-                    const overlap = 1;
-                    
-                    slideGroup.append("rect").attr("x", xScale(startOfDay)).attr("width", Math.max(0, (xScale(sunriseTime) - xScale(startOfDay)) + overlap)).attr("height", height).attr("fill", nightColor);
-                    slideGroup.append("rect").attr("x", xScale(sunriseTime)).attr("width", Math.max(0, (xScale(sunsetTime) - xScale(sunriseTime)) + overlap)).attr("height", height).attr("fill", dayColor);
-                    slideGroup.append("rect").attr("x", xScale(sunsetTime)).attr("width", Math.max(0, xScale(endOfDay) - xScale(sunsetTime))).attr("height", height).attr("fill", nightColor);
 
-                    if (currentClubStatus && !currentClubStatus.isClosed) {
-                        openPeriods.forEach(({start, end}) => {
-                            slideGroup.append("rect").attr("x", xScale(start)).attr("width", Math.max(0, xScale(end) - xScale(start))).attr("height", height).attr("fill", openOverlayColor);
-                            if (start > startOfDay && start < endOfDay) {
-                                slideGroup.append("line").attr("x1", xScale(start)).attr("x2", xScale(start)).attr("y1", 0).attr("y2", height).attr("stroke", "var(--color-open-line)").attr("stroke-width", 1);
-                            }
-                            if (end > start && end < endOfDay) {
-                                 slideGroup.append("line").attr("x1", xScale(end)).attr("x2", xScale(end)).attr("y1", 0).attr("y2", height).attr("stroke", "var(--color-dock-line)").attr("stroke-width", 1);
-                            }
+                    tooltip.select("#tooltip-time").text(`${d3.timeFormat("%H:%M")(d.time)}`); 
+                    tooltip.select("#tooltip-height").html(htmlContent); 
+                    
+                    if (d.isAffected) {
+                        tooltip.select("#tooltip-warning")
+                               .style("display", "block")
+                               .text("Low tide impact possible. Check announcements for schedule changes.");
+                    } else {
+                        tooltip.select("#tooltip-warning").style("display", "none");
+                    }
+                    const tooltipNode = tooltip.node();
+                    const tooltipRect = tooltipNode.getBoundingClientRect();
+                    const containerRect = chartContainer.node().getBoundingClientRect();
+                    const snappedX = margin.left + xScale(d.time);
+                    let leftPos = snappedX - (tooltipRect.width / 2);
+                    leftPos = Math.max(10, Math.min(leftPos, containerRect.width - tooltipRect.width - 10));
+                    tooltip.style("opacity", 1).style("left", `${leftPos}px`).style("top", `10px`); 
+                }
+
+                // Add tooltips to high/low tide markers with Touch support
+                function showTideEventTooltip(d) {
+                    isHoveringOnEvent = true; 
+                    tooltip.select("#tooltip-time").text(`${d.type} Tide: ${d3.timeFormat("%H:%M")(d.time)}`); 
+                    tooltip.select("#tooltip-height").text(`${d.height.toFixed(1)}\u2032`); 
+                    
+                    // Explicitly hide warning for high/low tide hover
+                    tooltip.select("#tooltip-warning").style("display", "none");
+                    
+                    const tooltipNode = tooltip.node();
+                    const tooltipRect = tooltipNode.getBoundingClientRect();
+                    const containerRect = chartContainer.node().getBoundingClientRect();
+                    const snappedX = margin.left + xScale(d.time);
+                    let leftPos = snappedX - (tooltipRect.width / 2);
+                    leftPos = Math.max(10, Math.min(leftPos, containerRect.width - tooltipRect.width - 10));
+                    tooltip.style("opacity", 1).style("left", `${leftPos}px`).style("top", `10px`); 
+                }
+
+                // --- Tide Event Markers (High / Low) ---
+                // Override the pointer-events so these markers remain individually hoverable
+                const eventsGroup = slideGroup.selectAll(".event").data(tideEvents).enter().append("g").attr("class", "event").attr("transform", d => `translate(${xScale(d.time)},${yScale(d.height)})`).style("pointer-events", "all").style("cursor", "pointer");
+                
+                eventsGroup.each(function(d) {
+                    const g = d3.select(this);
+                    
+                    if (d.height < DANGEROUS_LOW_TIDE) {
+                        g.append("circle")
+                         .attr("r", 4.5)
+                         .attr("fill", dangerColor);
+                        g.append("path")
+                         .attr("d", "M-2,-2 L2,2 M-2,2 L2,-2")
+                         .attr("stroke", palette['--color-on-danger'])
+                         .attr("stroke-width", 1.5)
+                         .attr("stroke-linecap", "round");
+                    } else {
+                        g.append("circle")
+                         .attr("r", 3.5)
+                         .attr("fill", tideLineColor);
+                    }
+                    const tStr = d3.timeFormat("%H:%M")(d.time);
+                    const hStr = `${d.height.toFixed(1)}\u2032`;
+                    const textY1 = 20;
+                    const textY2 = 34;
+                    const textGroup = d3.select(this).append("text").attr("class", "event-label").attr("text-anchor", "middle");
+                    textGroup.append("text").attr("class", "event-label").attr("text-anchor", "middle");
+                    textGroup.append("tspan").attr("x", 0).attr("y", textY1).text(tStr).style("font-size", "0.65rem");
+                    textGroup.append("tspan").attr("x", 0).attr("y", textY2).text(hStr).style("font-weight", "bold");
+                });
+                // --- Grouped Special Icons ---
+                const groupedIconsMap = new Map();
+                specialIcons.forEach(icon => {
+                    const timeKey = icon.time.getTime();
+                    const labelText = icon.title || (icon.type === 'open' ? 'Club Opens' : (icon.type === 'dock' ? 'Dock Time' : 'Untitled Event'));
+                    if (!groupedIconsMap.has(timeKey)) {
+                        groupedIconsMap.set(timeKey, {
+                            time: icon.time,
+                            type: icon.type,
+                            yHeight: icon.yHeight,
+                            color: icon.color,
+                            isAffected: icon.isAffected,
+                            titles: [{ text: labelText, type: icon.type }]
                         });
+                    } else {
+                        const existing = groupedIconsMap.get(timeKey);
+                        if (!existing.titles.some(t => t.text === labelText && t.type === icon.type)) {
+                            existing.titles.push({ text: labelText, type: icon.type });
+                        }
+                        if (icon.isAffected) {
+                            existing.isAffected = true;
+                        }
+                        const typePriority = { 'open': 4, 'dock': 3, 'club_event_start': 2, 'club_event_end': 1 };
+                        if ((typePriority[icon.type] || 0) > (typePriority[existing.type] || 0)) {
+                            existing.type = icon.type;
+                            existing.color = icon.color;
+                            existing.yHeight = icon.yHeight;
+                        }
                     }
+                });
+                
+                const finalSpecialIcons = Array.from(groupedIconsMap.values());
 
-                    segments.forEach(seg => slideGroup.append("path").datum(seg.data).attr("fill", seg.rising ? risingColor : fallingColor).attr("d", areaGenerator(height)));
-                    redSegments.forEach(segment => slideGroup.append("path").datum(segment).attr("fill", redAreaColor).attr("d", redAreaGenerator));
+                // Ensure club open/dock icons are rendered in front of event icons
+                finalSpecialIcons.sort((a, b) => {
+                    const getPriority = (type) => (type === 'open' || type === 'dock' ? 1 : 0);
+                    return getPriority(a.type) - getPriority(b.type);
+                });
+                const specialIconGroup = slideGroup.selectAll(".special-icon")
+                    .data(finalSpecialIcons)
+                    .enter()
+                    .append("g")
+                    .attr("class", "special-icon")
+                    .attr("transform", d => `translate(${xScale(d.time)},${yScale(d.yHeight)})`)
+                    .style("pointer-events", "all")
+                    .style("cursor", "pointer");
                     
-                    const gradientId = "tide-gradient-" + Math.round(Math.random() * 1000000);
-                    const dangerY = yScale(DANGEROUS_LOW_TIDE);
-                    const dangerOffset = Math.max(0, Math.min(1, dangerY / height));
-                    
-                    const localDefs = slideGroup.append("defs");
-                    localDefs.append("linearGradient")
-                        .attr("id", gradientId)
-                        .attr("gradientUnits", "userSpaceOnUse")
-                        .attr("x1", 0).attr("y1", 0)
-                        .attr("x2", 0).attr("y2", height)
-                        .selectAll("stop")
-                        .data([
-                            {offset: 0, color: tideLineColor},
-                            {offset: dangerOffset, color: tideLineColor},
-                            {offset: dangerOffset, color: dangerColor},
-                            {offset: 1, color: dangerColor}
-                        ])
-                        .enter().append("stop")
-                        .attr("offset", d => d.offset)
-                        .attr("stop-color", d => d.color);
-                    slideGroup.append("path").datum(chartData).attr("fill", "none").attr("stroke", `url(#${gradientId})`).attr("stroke-width", 2).attr("d", lineGenerator);
-                    
-                    if (berkeleyObserved.length > 0) {
-                        const observedLineGenerator = d3.line().x(d => xScale(d.time)).y(d => yScale(d.height)).curve(curve);
-                        slideGroup.append("path").datum(berkeleyObserved).attr("fill", "none").attr("stroke", "var(--color-observed-line)").attr("stroke-width", 1).style("opacity", 0.9).attr("d", observedLineGenerator);
-                    }
-                    
-                    const eventsGroup = slideGroup.selectAll(".event").data(tideEvents).enter().append("g").attr("class", "event").attr("transform", d => `translate(${xScale(d.time)},${yScale(d.height)})`).style("pointer-events", "all").style("cursor", "pointer");
-                    eventsGroup.each(function(d) {
-                        const g = d3.select(this);
-                        if (d.height < DANGEROUS_LOW_TIDE) {
-                            g.append("circle").attr("r", 4.5).attr("fill", dangerColor);
-                            g.append("path").attr("d", "M-2,-2 L2,2 M-2,2 L2,-2").attr("stroke", palette['--color-on-danger']).attr("stroke-width", 1.5).attr("stroke-linecap", "round");
+                specialIconGroup.each(function(d) {
+                    const g = d3.select(this);
+                        
+                    let strokeColor = "var(--color-observed-line)"; // Default fallback color for club events
+                    if (d.type === 'open') strokeColor = "var(--icon-color-open)";
+                    if (d.type === 'dock') strokeColor = "var(--icon-color-dock)";
+                    if (d.color) strokeColor = d.color;
+                        
+                    const svgIcon = g.append("svg")
+                        .attr("x", -7).attr("y", -7)
+                        .attr("width", 14).attr("height", 14)
+                        .attr("viewBox", "0 0 24 24")
+                        .attr("fill", "none")
+                        .attr("stroke", strokeColor)
+                        .attr("stroke-width", "2")
+                        .attr("stroke-linecap", "round")
+                        .attr("stroke-linejoin", "round");
+                        
+                    if (d.type !== 'club_event_end') {
+                        if (d.type === 'club_event_start') {
+                            svgIcon.append("rect")
+                                .attr("x", 4)
+                                .attr("y", 6)
+                                .attr("width", 16)
+                                .attr("height", 14)
+                                .attr("rx", 1.5)
+                                .attr("fill", "var(--color-icon-bg)")
+                                .attr("stroke", "none");
                         } else {
-                            g.append("circle").attr("r", 3.5).attr("fill", tideLineColor);
+                            svgIcon.append("circle")
+                                .attr("cx", 12)
+                                .attr("cy", 12)
+                                .attr("r", 9)
+                                .attr("fill", "var(--color-icon-bg)")
+                                .attr("stroke", "none");
                         }
-                        const tStr = d3.timeFormat("%H:%M")(d.time);
-                        const hStr = `${d.height.toFixed(1)}\u2032`;
-                        const textY1 = 20; const textY2 = 34;
-                        const textGroup = d3.select(this).append("text").attr("class", "event-label").attr("text-anchor", "middle");
-                        textGroup.append("tspan").attr("x", 0).attr("y", textY1).text(tStr).style("font-size", "0.65rem");
-                        textGroup.append("tspan").attr("x", 0).attr("y", textY2).text(hStr).style("font-weight", "bold");
+                    }
+                        
+                    if (d.type === 'open') {
+                        svgIcon.append("path").attr("d", "M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z");
+                        svgIcon.append("path").attr("d", "M21 12a9 9 0 11-18 0 9 9 0 0118 0z");
+                    } else if (d.type === 'dock') {
+                        svgIcon.append("path").attr("d", "M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z");
+                    } else if (d.type === 'club_event_start') {
+                        // Render a mini calendar icon for club events
+                        svgIcon.append("path").attr("d", "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z");
+                    } else if (d.type === 'club_event_end') {
+                        // Render a smaller solid circle for the end of the event
+                        svgIcon.append("circle").attr("cx", 12).attr("cy", 12).attr("r", 6).attr("fill", strokeColor).attr("stroke", "none");
+                    }
+                });
+                // Add tooltips to the tide line icons with mobile Touch start triggers
+                specialIconGroup
+                    .on("mouseover", (event, d) => { 
+                        showSpecialIconTooltip(d);
+                    })
+                    .on("mouseout", () => { 
+                        isHoveringOnEvent = false; 
+                        tooltip.style("opacity", 0); 
+                    })
+                    .on("touchstart", (event, d) => {
+                        event.preventDefault();
+                        event.stopPropagation(); // Prevent bubbling up to .hover-overlay
+                        showSpecialIconTooltip(d);
                     });
+
+                // Add tooltips to high/low tide markers with Touch support
+                eventsGroup
+                    .on("mouseover", (event, d) => { 
+                        showTideEventTooltip(d);
+                    })
+                    .on("mouseout", () => { 
+                        isHoveringOnEvent = false; 
+                        tooltip.style("opacity", 0); 
+                    })
+                    .on("touchstart", (event, d) => {
+                        event.preventDefault();
+                        event.stopPropagation(); // Prevent bubbling
+                        showTideEventTooltip(d);
+                    });
+
+                // --- Top Labels for Open / Dock Times ---
+                const topBoxes = [];
+                topLabelsData.forEach(label => {
+                    const timeStr = d3.timeFormat("%H:%M")(label.time);
+                    const labelText = `${label.text} ${timeStr}`;
+                    const boxWidth = 66;
+                    const boxHeight = 18;
+                    const xPos = xScale(label.time);
                     
-                    eventsGroup
-                        .on("mouseover", (event, d) => { showTideEventTooltip(d); })
-                        .on("mouseout", () => { isHoveringOnEvent = false; tooltip.style("opacity", 0); })
-                        .on("touchstart", (event, d) => { event.preventDefault(); event.stopPropagation(); showTideEventTooltip(d); });
-                }
-                
-                if (!tideDataUnavailable) {
-                    tideEvents.forEach(event => {
-                        if (event.time >= sunriseTime && event.time <= sunsetTime) {
-                            dayEvents.push({ time: event.time, text: `${event.type} Tide: ${event.height.toFixed(1)}\u2032`, type: event.type.toLowerCase() });
+                    let rectX = label.isOpen ? (xPos - boxWidth + 6) : (xPos - 6);
+                    
+                    if (rectX < 0) rectX = 0;
+                    if (rectX + boxWidth > width) rectX = width - boxWidth;
+                    
+                    let rectY = 4;
+                    let collision = true;
+                    let loopCounter = 0; // Prevent infinite loop in edge case stacking
+                    while(collision && loopCounter < 15) {
+                        collision = false;
+                        for (let b of topBoxes) {
+                            if (rectX < b.x + b.w && rectX + boxWidth > b.x &&
+                                rectY < b.y + b.h && rectY + boxHeight > b.y) {
+                                rectY += boxHeight + 4; 
+                                collision = true;
+                                break;
+                            }
                         }
-                    });
+                        loopCounter++;
+                    }
+                    topBoxes.push({x: rectX, y: rectY, w: boxWidth, h: boxHeight});
+                    const g = slideGroup.append("g").attr("class", "top-time-label");
+                    
+                    g.append("rect")
+                        .attr("x", rectX).attr("y", rectY)
+                        .attr("width", Math.max(0, boxWidth)).attr("height", Math.max(0, boxHeight))
+                        .attr("fill", label.isOpen ? "var(--color-open-line)" : "var(--color-dock-line)")
+                        .attr("stroke", "none");
+                        
+                    g.append("text")
+                        .attr("x", rectX + (boxWidth / 2))
+                        .attr("y", rectY + (boxHeight / 2) + 1)
+                        .attr("text-anchor", "middle").attr("dominant-baseline", "middle")
+                        .attr("font-size", "0.6rem").attr("font-weight", "600")
+                        .attr("fill", palette['--color-on-flag'])
+                        .text(labelText);
+                });
+                updateNowIndicator(renderDate, slideGroup);
+                // --- INTERACTION & HOVER BINDING ---
+                function handleInteractionMove(event) {
+                    event.preventDefault();
+                    if (isHoveringOnEvent) { hoverGroup.style("display", "none"); return; }
+                    hoverGroup.style("display", null);
+                    const pointer = event.touches ? event.touches[0] : event;
+                    if (!pointer) return; 
+                    
+                    // Chart window is translated by margin.left, so mx maps exactly to chart coordinates
+                    const [mx] = d3.pointer(pointer, svg.select(".chart-window").node());
+                    const time = xScale.invert(mx);
+                    
+                    const bisect = d3.bisector(d => d.time).left;
+                    const index = bisect(chartDataForUpdate, time, 1);
+                    const a = chartDataForUpdate[index - 1], b = chartDataForUpdate[index];
+                    let d = !a ? b : !b ? a : (time - a.time > b.time - time) ? b : a;
+                    if (!d) return;
+                    hoverGroup.attr("transform", `translate(${xScale(d.time)}, 0)`);
+                    hoverGroup.select(".hover-circle").attr("cy", yScale(d.height));
+                    
+                    tooltip.select("#tooltip-time").text(d3.timeFormat("%H:%M")(d.time));
+                    tooltip.select("#tooltip-height").text(`${d.height.toFixed(1)}\u2032`);
+                    
+                    // Explicitly hide warning for generic line hover
+                    tooltip.select("#tooltip-warning").style("display", "none");
+                    const tooltipNode = tooltip.node();
+                    const tooltipRect = tooltipNode.getBoundingClientRect();
+                    const containerRect = chartContainer.node().getBoundingClientRect();
+                    
+                    const snappedX = margin.left + xScale(d.time);
+                    let leftPos = snappedX - (tooltipRect.width / 2);
+                    
+                    // Clamp tooltip strictly within the widget bounds
+                    leftPos = Math.max(10, Math.min(leftPos, containerRect.width - tooltipRect.width - 10));
+                    
+                    tooltip.style("left", `${leftPos}px`)
+                           .style("top", `10px`);
                 }
-                dayEvents.push({ time: sunsetTime, text: "Sunset", type: 'sunset' });
-                dayEvents.sort((a, b) => a.time - b.time);
+                // Re-bind hover logic cleanly on every draw to ensure closures hold the newest data scale
+                svg.select(".hover-overlay")
+                    .on("mouseover", () => { if (!isHoveringOnEvent) { hoverGroup.style("display", null); tooltip.style("opacity", 1); }})
+                    .on("mouseout", () => { hoverGroup.style("display", "none"); if (!isHoveringOnEvent) tooltip.style("opacity", 0); })
+                    .on("mousemove", handleInteractionMove)
+                    .on("touchstart", (e) => { 
+                        e.preventDefault(); 
+                        isHoveringOnEvent = false; // Touching the blank area of the graph immediately cancels event-focus
+                        hoverGroup.style("display", null); 
+                        tooltip.style("opacity", 1); 
+                        handleInteractionMove(e); // Snap regular tracker instantly to current coordinates
+                    }, { passive: false })
+                    .on("touchmove", handleInteractionMove, { passive: false })
+                    .on("touchend", () => { 
+                        hoverGroup.style("display", "none"); 
+                        if (!isHoveringOnEvent) tooltip.style("opacity", 0);
+                    })
+                    .on("touchcancel", () => { 
+                        hoverGroup.style("display", "none"); 
+                        if (!isHoveringOnEvent) tooltip.style("opacity", 0);
+                    });
                 
+                // Update text below the chart
+                tideEvents.forEach(event => {
+                    if (event.time >= sunriseTime && event.time <= sunsetTime) {
+                        dayEvents.push({ time: event.time, text: `${event.type} Tide: ${event.height.toFixed(1)}\u2032`, type: event.type.toLowerCase() });
+                    }
+                });
+                dayEvents.push({ time: sunsetTime, text: "Sunset", type: 'sunset' });
+                
+                dayEvents.sort((a, b) => a.time - b.time);
+                // Dedupe on a stable time|type|text key so original objects are preserved and simultaneous events of different titles aren't swallowed
                 const uniqueEventsMap = new Map();
                 for (const e of dayEvents) {
                     const key = `${e.time instanceof Date ? e.time.getTime() : new Date(e.time).getTime()}|${e.type}|${e.text}`;
@@ -1710,10 +2078,10 @@
                 }
                 const uniqueEvents = [...uniqueEventsMap.values()];
                 uniqueEvents.sort((a,b) => new Date(a.time) - new Date(b.time));
-                
                 if (uniqueEvents.length > 0) {
                      const eventIcons = {
                           open: `<svg class="icon-sm icon-open" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
+                          text: ``, // Placeholder for matching
                           dock: `<svg class="icon-sm icon-dock" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
                           high: `<svg class="icon-sm icon-high" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>`,
                           low: `<svg class="icon-sm icon-low" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>`,
@@ -1741,37 +2109,42 @@
                 } else {
                      eventsList.innerHTML = `<p>No scheduled events during daylight hours.</p>`;
                 }
-                
                 updateUI(renderDate);
                 
-                if (!tideDataUnavailable && slidesContainer && slideGroup) {
-                    if (direction !== 0) {
-                        const oldSlideGroup = slidesContainer.select(".slide-group.active");
-                        oldSlideGroup.interrupt();
-                        
-                        svg.select(".hover-overlay").style("pointer-events", "none");
-                        
-                        oldSlideGroup.classed("active", false)
-                            .transition(t)
-                            .attr("transform", `translate(${direction > 0 ? -width : width}, 0)`)
-                            .remove();
-                            
-                        slideGroup.classed("active", true)
-                            .transition(t)
-                            .attr("transform", `translate(0, 0)`)
-                            .on("end", () => {
-                                svg.select(".hover-overlay").style("pointer-events", "all");
-                                isRendering = false;
-                                navButtons.forEach(btn => btn.disabled = false);
-                            });
-                    } else {
-                        slidesContainer.selectAll(".slide-group.active").remove();
-                        slideGroup.classed("active", true).attr("transform", "translate(0,0)");
-                        svg.select(".hover-overlay").style("pointer-events", "all");
-                        isRendering = false;
-                        navButtons.forEach(btn => btn.disabled = false);
+                // --- EXECUTE D3 SLIDE ANIMATION ON THE GRAPH DATA GROUP ---
+                if (direction !== 0) {
+                    const oldSlideGroup = slidesContainer.select(".slide-group.active");
+                    
+                    // Cancel any previous transitions gracefully to prevent jumping
+                    oldSlideGroup.interrupt();
+                    
+                    // Temporarily disable hover interactions during slide to prevent ghost tooltips
+                    if (svg && svg.select(".hover-overlay").node()) {
+                         svg.select(".hover-overlay").style("pointer-events", "none");
                     }
+                    
+                    oldSlideGroup.classed("active", false)
+                        .transition(t)
+                        .attr("transform", `translate(${direction > 0 ? -width : width}, 0)`)
+                        .remove();
+                        
+                    slideGroup.classed("active", true)
+                        .transition(t)
+                        .attr("transform", `translate(0, 0)`)
+                        .on("end", () => {
+                            if (svg && svg.select(".hover-overlay").node()) {
+                                 svg.select(".hover-overlay").style("pointer-events", "all");
+                            }
+                            isRendering = false;
+                            navButtons.forEach(btn => btn.disabled = false);
+                        });
+                        
                 } else {
+                    slidesContainer.selectAll(".slide-group.active").remove();
+                    slideGroup.classed("active", true).attr("transform", "translate(0,0)");
+                    if (svg && svg.select(".hover-overlay").node()) {
+                         svg.select(".hover-overlay").style("pointer-events", "all");
+                    }
                     isRendering = false;
                     navButtons.forEach(btn => btn.disabled = false);
                 }
@@ -1783,7 +2156,6 @@
                     navButtons.forEach(btn => btn.disabled = false);
                 }
             }
-            
             function updateNowIndicator(renderDate, targetSlideGroup = null) {
                 const activeSlide = targetSlideGroup || (svg ? svg.select(".slide-group.active") : null);
                 if (!activeSlide || activeSlide.empty() || !xScale || !yScale || !chartDataForUpdate) return;
@@ -1862,7 +2234,6 @@
                     }
                 }
             }
-            
             function updateUI(renderDate) {
                 const isMobile = window.innerWidth < 640;
                 const dateFormatOptions = { weekday: 'long', month: 'long', day: 'numeric' };
@@ -1877,9 +2248,10 @@
                 const BasketCaseNow = getPTNow();
                 const isCurrentDay = renderDate.toDateString() === BasketCaseNow.toDateString();
                 
+                // Smoothly animate the appearance/disappearance of the status boxes
                 if (isCurrentDay) {
                     statusBoxesContainer.style.display = 'grid';
-                    statusBoxesContainer.offsetHeight; 
+                    statusBoxesContainer.offsetHeight; // Force reflow to ensure CSS transition triggers
                     statusBoxesContainer.classList.add('visible');
                     
                     updateNextTideEvent();
@@ -1890,9 +2262,10 @@
                         if (!statusBoxesContainer.classList.contains('visible')) {
                             statusBoxesContainer.style.display = 'none';
                         }
-                    }, 400); 
+                    }, 400); // 400ms matches the CSS transition duration
                 }
 
+                // Smoothly toggle real-time lessons info container
                 updateLessonsUI();
                 
                 document.getElementById('legend').innerHTML = `
@@ -1900,69 +2273,56 @@
                     <div><div style="width: 1rem; height: 1px; background-color: var(--color-observed-line); opacity: 0.9;"></div><span>Observed tide</span></div>
                     <div><div style="width: 0.75rem; height: 0.75rem; background-color: var(--color-chart-danger-area);"></div><span>Closed: Tide &lt; 1.5\u2032</span></div>`;
             }
-            
             async function updateNextTideEvent() {
                  try {
                     const now = getPTNow();
-                    
                     const [prevTides, currentTides, nextTides, nextNextTides] = await Promise.all([ 
                         fetchTideData(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)), 
                         fetchTideData(now), 
                         fetchTideData(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)),
                         fetchTideData(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2)) 
                     ]);
-                    
-                    const tideDataUnavailable = !currentTides || currentTides.length === 0;
-                    
-                    if (tideDataUnavailable) {
-                        currentTideStatus.innerHTML = `<div style="font-weight: 500; font-size: 0.95rem; color: var(--color-text-secondary);">Offline</div>`;
-                        observedStatusEl.innerHTML = `<div style="font-size: 0.65rem; color: var(--color-text-danger);">NOAA offline</div>`;
-                        nextTideDisplay.innerHTML = `<div style="font-weight: 500; font-size: 0.95rem; color: var(--color-text-secondary);">Offline</div>`;
-                    } else {
-                        const combinedTideDataForLookup = [...prevTides, ...currentTides, ...nextTides, ...nextNextTides];
-                        
-                        const currentHeight = getTideHeightAtTime(combinedTideDataForLookup, now);
-                        const timeIn5Mins = new Date(now.getTime() + 5 * 60000);
-                        const futureHeight = getTideHeightAtTime(combinedTideDataForLookup, timeIn5Mins);
-                        
-                        const currentHeightDisplay = currentHeight.toFixed(1);
-                        let directionArrow = '';
-                        if (futureHeight > currentHeight) directionArrow = `<svg class="icon-sm" style="display: inline-block; vertical-align: middle; color: var(--icon-color-high);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>`;
-                        else if (futureHeight < currentHeight) directionArrow = `<svg class="icon-sm" style="display: inline-block; vertical-align: middle; color: var(--icon-color-low);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>`;
-                        
-                        currentTideStatus.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.25rem;">${directionArrow}<span style="margin-left: 0.25rem;">${currentHeightDisplay}\u2032</span></div>`;
-                        
-                        if (currentDate.toDateString() === now.toDateString()) {
-                            const obsAnomalies = await fetchObservedTideData(now, true);
-                            if (obsAnomalies && obsAnomalies.length > 0) {
-                                const latestAnomaly = obsAnomalies[obsAnomalies.length - 1].anomaly;
-                                const roundedPredicted = parseFloat(currentHeight.toFixed(1));
-                                const roundedObserved = parseFloat((currentHeight + latestAnomaly).toFixed(1));
-                                const visualAnomaly = roundedObserved - roundedPredicted;
-                                const sign = visualAnomaly > 0 ? '+' : '';
-                                observedStatusEl.innerHTML = `<div style="font-size: 0.65rem; color: var(--color-text-secondary);">Observed: ${roundedObserved.toFixed(1)}\u2032 <span style="font-size: 0.6rem; color: var(--color-text-tertiary);">(${sign}${visualAnomaly.toFixed(1)}\u2032)</span></div>`;
-                            } else {
-                                observedStatusEl.innerHTML = `<div style="font-size: 0.65rem; color: var(--color-text-secondary);">Waiting for observed...</div>`;
-                            }
-                        } else {
-                            observedStatusEl.innerHTML = '';
-                        }
-                        
-                        const allRawTides = [...prevTides, ...currentTides, ...nextTides, ...nextNextTides];
-                        const allTideExtremes = findTideExtremes(allRawTides);
-                        const nextEvent = allTideExtremes.find(event => event.time > now);
-                        if (nextEvent) {
-                            const diff = nextEvent.time - now, hours = Math.floor(diff / 3600000), minutes = Math.floor((diff % 3600000) / 60000);
-                            nextTideDisplay.innerHTML = `<div style="font-weight: 600;">${nextEvent.type} Tide ${nextEvent.height.toFixed(1)}\u2032</div><div style="font-size:0.75rem; color:var(--color-text-secondary); margin-top:2px;">in ${hours}h ${minutes}m</div>`;
-                        } else {
-                            nextTideDisplay.innerHTML = "-";
-                        }
+                    if (!prevTides || !currentTides || !nextTides || !nextNextTides) { 
+                        nextTideDisplay.innerHTML = ""; 
+                        currentTideStatus.innerHTML = "";
+                        observedStatusEl.innerHTML = "";
+                        return; 
                     }
-
+                    const combinedTideDataForLookup = [...prevTides, ...currentTides, ...nextTides, ...nextNextTides];
+                    
+                    // Exact real-time interpolation
+                    const currentHeight = getTideHeightAtTime(combinedTideDataForLookup, now);
+                    const timeIn5Mins = new Date(now.getTime() + 5 * 60000);
+                    const futureHeight = getTideHeightAtTime(combinedTideDataForLookup, timeIn5Mins);
+                    
+                    const currentHeightDisplay = currentHeight.toFixed(1);
+                    let directionArrow = '';
+                    if (futureHeight > currentHeight) directionArrow = `<svg class="icon-sm" style="display: inline-block; vertical-align: middle; color: var(--icon-color-high);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>`;
+                    else if (futureHeight < currentHeight) directionArrow = `<svg class="icon-sm" style="display: inline-block; vertical-align: middle; color: var(--icon-color-low);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>`;
+                    
+                    currentTideStatus.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.25rem;">${directionArrow}<span style="margin-left: 0.25rem;">${currentHeightDisplay}\u2032</span></div>`;
+                    
+                    // Handle accurate real-time observed status mapping anomaly to current interpolation
                     if (currentDate.toDateString() === now.toDateString()) {
+                        const obsAnomalies = await fetchObservedTideData(now, true);
+                        if (obsAnomalies && obsAnomalies.length > 0) {
+                            const latestAnomaly = obsAnomalies[obsAnomalies.length - 1].anomaly;
+                            
+                            // Recalculate based on displayed numbers to prevent rounding inaccuracies
+                            const roundedPredicted = parseFloat(currentHeight.toFixed(1));
+                            const roundedObserved = parseFloat((currentHeight + latestAnomaly).toFixed(1));
+                            const visualAnomaly = roundedObserved - roundedPredicted;
+                            
+                            const sign = visualAnomaly > 0 ? '+' : '';
+                            
+                            observedStatusEl.innerHTML = `<div style="font-size: 0.65rem; color: var(--color-text-secondary);">Observed: ${roundedObserved.toFixed(1)}\u2032 <span style="font-size: 0.6rem; color: var(--color-text-tertiary);">(${sign}${visualAnomaly.toFixed(1)}\u2032)</span></div>`;
+                        } else {
+                            observedStatusEl.innerHTML = `<div style="font-size: 0.65rem; color: var(--color-text-secondary);">Waiting for observed data...</div>`;
+                        }
+                        
+                        // Handle Dynamic Club Schedule Countdown
                         let scheduleColorState = 'neutral';
                         let hasScheduleData = true;
-                        
                         if (!currentClubStatus) {
                             clubScheduleStatusEl.innerHTML = "-";
                             hasScheduleData = false;
@@ -1985,7 +2345,7 @@
                             } else if (currentClubStatus.midDayDockTime && currentClubStatus.midDayOpenTime) {
                                 if (now >= currentClubStatus.openTime && now < currentClubStatus.midDayDockTime) {
                                     const diff = timeDiffMs(currentClubStatus.midDayDockTime);
-                                    if (diff < 3600000) {
+                                    if (diff < 3600000) { // Less than 60 minutes
                                         nextEventText = "Mid-Day Dock";
                                         nextEventTime = `in ${formatTimeDiff(diff)}`;
                                     } else {
@@ -2036,7 +2396,7 @@
                                 hasScheduleData = false;
                             }
                         }
-                        
+                        // Apply Dynamic Box Styling safely for Mobile Safari
                         if (hasScheduleData && scheduleColorState !== 'neutral') {
                             clubScheduleBoxEl.style.setProperty('background-color', scheduleColorState === 'open' ? 'var(--color-open-bg)' : 'var(--color-dock-bg)', 'important');
                             clubScheduleBoxEl.style.setProperty('border-color', scheduleColorState === 'open' ? 'var(--color-open-line)' : 'var(--color-dock-line)', 'important');
@@ -2049,13 +2409,22 @@
                             clubScheduleLabelEl.style.removeProperty('color');
                         }
                     } else {
+                        observedStatusEl.innerHTML = '';
                         clubScheduleStatusEl.innerHTML = '';
                         clubScheduleBoxEl.style.removeProperty('background-color');
                         clubScheduleBoxEl.style.removeProperty('border-color');
                         clubScheduleBoxEl.style.removeProperty('box-shadow');
                         clubScheduleLabelEl.style.removeProperty('color');
                     }
-                    
+                    const allRawTides = [...prevTides, ...currentTides, ...nextTides, ...nextNextTides];
+                    const allTideExtremes = findTideExtremes(allRawTides);
+                    const nextEvent = allTideExtremes.find(event => event.time > now);
+                    if (nextEvent) {
+                        const diff = nextEvent.time - now, hours = Math.floor(diff / 3600000), minutes = Math.floor((diff % 3600000) / 60000);
+                        nextTideDisplay.innerHTML = `<div style="font-weight: 600;">${nextEvent.type} Tide ${nextEvent.height.toFixed(1)}\u2032</div><div style="font-size:0.75rem; color:var(--color-text-secondary); margin-top:2px;">in ${hours}h ${minutes}m</div>`;
+                    } else {
+                        nextTideDisplay.innerHTML = "-";
+                    }
                     updateNowIndicator(currentDate);
                 } catch (error) {
                     console.error("Error during periodic tide update:", error);
@@ -2063,7 +2432,6 @@
                     nextTideDisplay.innerHTML = "-";
                 }
             }
-            
             function clearHeaderInfo() {
                 dateDisplay.textContent = '';
                 currentTideStatus.innerHTML = '';
@@ -2081,14 +2449,10 @@
             }
 
             function checkLessonsActive() {
+                // If dinghy lessons configuration is set to false, don't execute or activate the lessons card
                 if (!ENABLE_DINGHY_LESSONS) return false;
-                
-                // Read ?debug=true query parameter from URL
-                const urlParams = new URLSearchParams(window.location.search);
-                const isDebugParam = urlParams.get('debug') === 'true';
-                if (isDebugParam) return true;
-
                 const now = getPTNow();
+                // Polling at any time, every day, so long as the currently displayed date matches today
                 return currentDate.toDateString() === now.toDateString();
             }
 
@@ -2106,7 +2470,7 @@
                     const isDebugParam = urlParams.get('debug') === 'true';
 
                     if (!isLiveEnvironment) {
-                        // Fallback directly to mock data if loaded outside live servers
+                        // Fallback directly to mock data if loaded outside live servers so the card is visible in sandbox
                         data = {
                             active_lessons: isDebugParam ? false : true, // If debug=true in test env, mock as inactive to preview that state
                             instructors: isDebugParam ? 1 : 3,           // Instructor warning trigger test state
@@ -2121,6 +2485,7 @@
                             data = JSON.parse(jsonString);
                         } catch (e) {
                             console.warn("Could not retrieve active dinghy lessons status:", e.message);
+                            // Default back to offline/inactive placeholder data
                             data = { active_lessons: false, instructors: 0, students_in_lesson: 0, students_waiting: 0 };
                         }
                     }
@@ -2192,9 +2557,10 @@
                 if (lessonsInterval) clearInterval(lessonsInterval);
                 lessonsInterval = setInterval(() => {
                     updateLessonsUI();
-                }, 60000); 
+                }, 60000); // Trigger check loops precisely once every minute
             }
 
+            // --- EVENT BINDINGS FOR INTERACTION CONTROLS ---
             document.getElementById('prev-day').addEventListener('click', () => {
                 if (isRendering) return;
                 currentDate.setDate(currentDate.getDate() - 1);
@@ -2211,6 +2577,8 @@
                 if (!dateString) return;
                 
                 const [year, month, day] = dateString.split('-').map(Number);
+                
+                // Safely update the date without running into the JS 31st Day Bug
                 const selectedDate = new Date(currentDate.getTime());
                 selectedDate.setFullYear(year, month - 1, day);
                 
@@ -2221,15 +2589,17 @@
                 }
             });
             
+            // PERFORMANCE FIX: Debounce the resize event to prevent heavy CPU usage when manipulating the browser window
             window.addEventListener('resize', () => {
                 clearTimeout(resizeTimeout);
                 resizeTimeout = setTimeout(() => {
+                    // Instantly snap to the current view during resize to avoid breaking transitions
                     chartContainer.selectAll(".slide-group").interrupt();
                     isRendering = false; 
                     drawChart(currentDate, 0);
                 }, 200);
             });
-            
+            // Midnight checker: Auto-refresh chart to the new "today" if local day rolls over while browser is left open
             setInterval(() => {
                 const currentRealDateString = getPTNow().toDateString();
                 if (currentRealDateString !== lastRealDateString && !isRendering) {
@@ -2239,6 +2609,8 @@
                 }
             }, 60000);
 
+            // --- TAP-AWAY DISMISSAL SYSTEM ---
+            // Listens for clicks/touches outside of active tooltip zones to reset state instantly
             const dismissAllTooltips = (e) => {
                 const container = document.getElementById('tide-chart-widget-container');
                 if (container && !container.contains(e.target)) {
