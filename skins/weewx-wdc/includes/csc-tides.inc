@@ -1,6 +1,5 @@
-
 <div class="bx--tile tile-radar-forecast">
-   
+
     <style>
         /* --- SCOPED CSS RESET --- */
         #tide-chart-widget-container * {
@@ -605,6 +604,14 @@
         #tide-chart-widget-container .lessons-badge-active {
             background-color: rgba(34, 197, 94, 0.15);
             color: #22c55e;
+        }
+        #tide-chart-widget-container .lessons-badge-closed {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+        .dark #tide-chart-widget-container .lessons-badge-closed {
+            background-color: rgba(239, 68, 68, 0.22);
+            color: #fca5a5;
         }
         #tide-chart-widget-container .lessons-badge-inactive {
             background-color: rgba(107, 114, 128, 0.15);
@@ -2473,6 +2480,7 @@
                         // Fallback directly to mock data if loaded outside live servers so the card is visible in sandbox
                         data = {
                             active_lessons: isDebugParam ? false : true, // If debug=true in test env, mock as inactive to preview that state
+                            allow_signups: isDebugParam ? false : true,  // Mock allow_signups state
                             instructors: isDebugParam ? 1 : 3,           // Instructor warning trigger test state
                             students_in_lesson: isDebugParam ? 3 : 8,
                             students_waiting: isDebugParam ? 12 : 2      // Student waiting alert trigger test state
@@ -2486,14 +2494,24 @@
                         } catch (e) {
                             console.warn("Could not retrieve active dinghy lessons status:", e.message);
                             // Default back to offline/inactive placeholder data
-                            data = { active_lessons: false, instructors: 0, students_in_lesson: 0, students_waiting: 0 };
+                            data = { active_lessons: false, allow_signups: false, instructors: 0, students_in_lesson: 0, students_waiting: 0 };
                         }
                     }
 
                     // Display the lessons box if active_lessons is true, OR if debug=true URL parameter is parsed!
                     if (data && (data.active_lessons === true || isDebugParam)) {
-                        const badgeClass = data.active_lessons ? 'lessons-badge-active' : 'lessons-badge-inactive';
-                        const badgeText = data.active_lessons ? 'In Progress' : 'No Active Lessons';
+                        let badgeClass = 'lessons-badge-inactive';
+                        let badgeText = 'No Active Lessons';
+                        
+                        if (data.active_lessons) {
+                            if (data.allow_signups !== false) {
+                                badgeClass = 'lessons-badge-active';
+                                badgeText = 'Signups Open';
+                            } else {
+                                badgeClass = 'lessons-badge-closed';
+                                badgeText = 'Signups Closed';
+                            }
+                        }
                         
                         // Apply conditional danger alert states
                         const instructorAlertClass = data.instructors === 1 ? 'stat-danger' : '';
