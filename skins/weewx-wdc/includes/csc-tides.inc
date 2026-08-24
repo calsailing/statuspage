@@ -1,4 +1,5 @@
 <div class="bx--tile tile-radar-forecast">
+
     <style>
         /* --- SCOPED CSS RESET --- */
         #tide-chart-widget-container * {
@@ -1052,9 +1053,14 @@
                 const yyyy = date.getFullYear();
                 const mm = String(date.getMonth() + 1).padStart(2, '0');
                 const dd = String(date.getDate()).padStart(2, '0');
-                const startDateStr = `${yyyy}-${mm}-${dd}T00%3A00%3A00%2B07%3A00`;
-                const endDateStr = `${yyyy}-${mm}-${dd}T23%3A59%3A59%2B07%3A00`;
+                const startDateStr = encodeURIComponent(`${yyyy}-${mm}-${dd}T00:00:00`);
                 
+                const nextDate = new Date(date);
+                nextDate.setDate(nextDate.getDate() + 1);
+                const n_yyyy = nextDate.getFullYear();
+                const n_mm = String(nextDate.getMonth() + 1).padStart(2, '0');
+                const n_dd = String(nextDate.getDate()).padStart(2, '0');
+                const endDateStr = encodeURIComponent(`${n_yyyy}-${n_mm}-${n_dd}T00:00:00`);
                 const targetUrl = `https://${CAL_SAILING_DOMAIN}/index.php?option=com_dpcalendar&view=events&format=raw&limit=0&Itemid=1402&filter%5Bcalendars%5D%5B%5D=61&filter%5Bcalendars%5D%5B%5D=sq-1&filter%5Bcalendars%5D%5B%5D=sq-2&filter%5Bcalendars%5D%5B%5D=sq-3&filter%5Bcalendars%5D%5B%5D=sq-4&list%5Bstart-date%5D=${startDateStr}&list%5Bend-date%5D=${endDateStr}&filter%5Bsearch%5D=&filter%5Blocation%5D=&filter%5Bradius%5D=20&filter%5Blength-type%5D=m&filter%5Bstate%5D=&filter%5Bcreated_by%5D=&Itemid=1402&filter%5Bcalendars%5D%5B%5D=-2`;
                 try {
                     let jsonString = null;
