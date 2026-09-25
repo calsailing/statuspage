@@ -112,31 +112,16 @@
     .iw-main-row { 
         display: flex; 
         flex-direction: column; 
-        gap: clamp(12px, 2vw, 24px); 
+        align-items: center;
+        gap: clamp(10px, 2vw, 16px); 
         width: 100%; 
-    }
-
-    @media (min-width: 768px) { 
-        .iw-main-row { 
-            flex-direction: row; 
-            align-items: stretch; 
-        } 
-        /* Keep wind gauge dial fixed at standard size without shrinking */
-        .iw-dial-card { 
-            flex: 0 0 350px !important; 
-            width: 350px !important; 
-            min-width: 350px !important; 
-            max-width: 350px !important; 
-            aspect-ratio: 330 / 284; 
-            margin: 0 !important;
-        } 
     }
     
     .iw-panel { 
         position: relative; 
-        flex: 1 1 0px; 
-        min-width: 0; 
         width: 100%; 
+        max-width: 350px;
+        margin: 0 auto;
         display: flex; 
         flex-direction: column; 
     }
@@ -212,30 +197,21 @@
         width: 100%;
     }
 
-    /* Single row on mobile (3 columns), single column on desktop */
+    /* Consistently 1 row with 3 equal columns under the wind gauge */
     .iw-weather-grid { 
         display: grid; 
         grid-template-columns: repeat(3, minmax(0, 1fr)); 
         gap: clamp(4px, 1.5vw, 8px); 
         width: 100%;
-        flex: 1;
-        min-width: 0;
-    }
-    
-    @media (min-width: 768px) {
-        .iw-weather-grid { 
-            grid-template-columns: 1fr; 
-            grid-template-rows: repeat(3, 1fr); 
-            gap: 8px;
-            height: 100%;
-        }
+        max-width: 350px;
+        margin: 0 auto;
     }
     
     .iw-card { 
         background-color: var(--bg-panel); 
         border: 1px solid var(--border-panel); 
         border-radius: 12px; 
-        padding: clamp(8px, 2.5cqi, 14px); 
+        padding: clamp(8px, 2.5cqi, 12px); 
         box-shadow: none; 
         transition: transform 0.2s ease; 
         min-width: 0;
@@ -249,14 +225,7 @@
         box-shadow: none; 
     }
     .iw-card-small { 
-        min-height: 110px; 
-    }
-    
-    @media (min-width: 768px) {
-        .iw-card-small { 
-            min-height: 0; 
-            height: 100%; 
-        }
+        min-height: 120px; 
     }
     
     .iw-flex-col { display: flex; flex-direction: column; min-width: 0; }
@@ -268,27 +237,20 @@
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        align-items: center;
+        text-align: center;
         height: 100%;
         width: 100%;
         min-width: 0;
         gap: 4px;
     }
     
-    @media (min-width: 768px) {
-        .iw-hero-content {
-            flex-direction: row;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 4px;
-            gap: 12px;
-        }
-    }
-    
     .iw-temp-label { 
         display: flex; 
         align-items: center; 
-        gap: 4px; 
-        font-size: clamp(9.5px, 2.8cqi, 12px) !important; 
+        justify-content: center;
+        gap: 3px; 
+        font-size: clamp(9px, 8.5cqi, 11px) !important; 
         font-weight: 600 !important; 
         color: var(--text-secondary); 
         text-transform: uppercase; 
@@ -297,7 +259,7 @@
         white-space: nowrap;
     }
     .iw-temp-val-f { 
-        font-size: clamp(19px, 6.5cqi, 34px) !important; 
+        font-size: clamp(17px, 17cqi, 24px) !important; 
         font-weight: 800 !important; 
         line-height: 1 !important; 
         letter-spacing: -0.03em !important; 
@@ -305,23 +267,23 @@
         white-space: nowrap;
     }
     .iw-temp-val-c { 
-        font-size: clamp(10.5px, 3.5cqi, 15px) !important; 
+        font-size: clamp(10px, 9cqi, 12px) !important; 
         font-weight: 500 !important; 
         color: var(--text-muted); 
-        margin-top: 2px; 
+        margin-top: 1px; 
         white-space: nowrap;
     }
     
     .iw-cond-text { 
-        font-size: clamp(9.5px, 3cqi, 13px) !important; 
+        font-size: clamp(9px, 8.5cqi, 11px) !important; 
         font-weight: 600 !important; 
         color: var(--text-secondary); 
-        margin-top: 3px; 
+        margin-top: 2px; 
         text-align: center; 
         max-width: 100%;
         overflow-wrap: break-word;
         word-break: normal;
-        line-height: 1.2 !important;
+        line-height: 1.15 !important;
     }
 
     /* Layout inside the Pressure and UV cards */
@@ -333,54 +295,16 @@
         width: 100%;
         min-width: 0;
     }
-
-    @media (min-width: 768px) {
-        .iw-card-small .iw-card-content {
-            display: grid;
-            grid-template-columns: auto 1fr auto;
-            grid-template-rows: auto auto;
-            grid-template-areas: 
-                "icon label value"
-                "extra extra value";
-            align-items: center;
-            column-gap: 10px;
-            row-gap: 4px;
-            padding: 0 4px;
-            height: 100%;
-        }
-        .iw-card-small .iw-icon-circle {
-            grid-area: icon;
-            margin-bottom: 0 !important;
-        }
-        .iw-card-small .iw-metric-data {
-            display: contents;
-        }
-        .iw-card-small .iw-data-label {
-            grid-area: label;
-            margin-top: 0 !important;
-            white-space: nowrap;
-        }
-        .iw-card-small .iw-data-val {
-            grid-area: value;
-            text-align: right;
-        }
-        .iw-card-small .iw-trend-badge,
-        .iw-card-small .iw-uv-bar-wrap {
-            grid-area: extra;
-            margin-top: 0 !important;
-            max-width: 140px;
-        }
-    }
     
     .iw-data-val { 
-        font-size: clamp(17px, 5.5cqi, 26px) !important; 
+        font-size: clamp(16px, 16cqi, 23px) !important; 
         font-weight: 800 !important; 
         color: var(--text-primary); 
         line-height: 1.1 !important;
         letter-spacing: -0.02em !important;
     }
     .iw-data-label { 
-        font-size: clamp(9px, 2.8cqi, 11.5px) !important; 
+        font-size: clamp(8.5px, 8.5cqi, 11px) !important; 
         font-weight: 600 !important; 
         color: var(--text-secondary); 
         text-transform: uppercase; 
@@ -395,8 +319,8 @@
         display: flex; 
         align-items: center; 
         justify-content: center; 
-        width: clamp(22px, 8cqi, 28px); 
-        height: clamp(22px, 8cqi, 28px); 
+        width: clamp(22px, 20cqi, 28px); 
+        height: clamp(22px, 20cqi, 28px); 
         border-radius: 9999px; 
         margin-bottom: 4px; 
         flex-shrink: 0;
@@ -408,10 +332,10 @@
         display: inline-flex; 
         align-items: center; 
         gap: 3px; 
-        font-size: clamp(9.5px, 2.8cqi, 11px) !important; 
+        font-size: clamp(8.5px, 8cqi, 10.5px) !important; 
         font-weight: 600 !important; 
         background-color: var(--trend-bg); 
-        padding: 2px 6px; 
+        padding: 2px 5px; 
         border-radius: 9999px; 
         margin-top: 4px; 
         width: fit-content; 
@@ -448,8 +372,8 @@
     }
     
     #icon-weather { 
-        width: clamp(26px, 8cqi, 44px); 
-        height: clamp(26px, 8cqi, 44px); 
+        width: clamp(24px, 22cqi, 34px); 
+        height: clamp(24px, 22cqi, 34px); 
         flex-shrink: 0;
         display: flex;
         align-items: center;
