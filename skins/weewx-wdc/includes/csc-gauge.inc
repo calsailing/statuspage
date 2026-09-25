@@ -109,12 +109,56 @@
     }
     #isolated-weather-widget .hidden { display: none !important; }
 
+    #isolated-weather-widget {
+        container-type: inline-size;
+        container-name: iw-widget;
+    }
+
     .iw-main-row { 
         display: flex; 
         flex-direction: column; 
         align-items: center;
         gap: clamp(10px, 2vw, 16px); 
         width: 100%; 
+    }
+
+    @media (min-width: 768px) {
+        .iw-main-row {
+            flex-direction: row;
+            align-items: stretch;
+            gap: 16px;
+        }
+        .iw-panel.iw-dial-card {
+            flex: 2 1 0%;
+            width: calc(66.666% - 8px);
+            max-width: none;
+            margin: 0;
+        }
+        .iw-panel-side {
+            flex: 1 1 0%;
+            width: calc(33.333% - 8px);
+            max-width: none;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .iw-weather-grid {
+            grid-template-columns: 1fr !important;
+            grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
+            height: 100% !important;
+            gap: 10px !important;
+        }
+        .iw-card {
+            min-height: 0 !important;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .iw-hero-content {
+            flex-direction: row !important;
+            justify-content: space-around !important;
+            align-items: center !important;
+        }
     }
     
     .iw-panel { 
@@ -125,6 +169,13 @@
         display: flex; 
         flex-direction: column; 
     }
+
+    .iw-dial-panel {
+        width: 100%;
+        max-width: 340px;
+        margin: 0 auto;
+    }
+
     .iw-dial-card { 
         background-color: var(--bg-panel); 
         border: 1px solid var(--border-panel); 
@@ -135,8 +186,12 @@
         align-items: center; 
         justify-content: center; 
         width: 100%;
-        max-width: 100%;
         aspect-ratio: 330 / 284;
+    }
+
+    .iw-weather-panel {
+        width: 100%;
+        max-width: 340px;
         margin: 0 auto;
     }
 
@@ -197,21 +252,19 @@
         width: 100%;
     }
 
-    /* Consistently 1 row with 3 equal columns under the wind gauge */
+    /* By default (narrow / mobile): 1 row with 3 equal columns under the wind gauge */
     .iw-weather-grid { 
         display: grid; 
         grid-template-columns: repeat(3, minmax(0, 1fr)); 
         gap: clamp(4px, 1.5vw, 10px); 
         width: 100%;
-        max-width: 100%;
-        margin: 0 auto;
     }
     
     .iw-card { 
         background-color: var(--bg-panel); 
         border: 1px solid var(--border-panel); 
         border-radius: 12px; 
-        padding: clamp(8px, 2.5cqi, 14px); 
+        padding: clamp(8px, 2.5cqi, 12px); 
         box-shadow: none; 
         transition: transform 0.2s ease; 
         min-width: 0;
@@ -232,7 +285,7 @@
     .iw-justify-between { display: flex; justify-content: space-between; }
     .iw-items-center { display: flex; align-items: center; }
     
-    /* Layout inside the hero (Current Temperature) card */
+    /* Layout inside Current Temperature card */
     .iw-hero-content {
         display: flex;
         flex-direction: column;
@@ -259,7 +312,7 @@
         white-space: nowrap;
     }
     .iw-temp-val-f { 
-        font-size: clamp(17px, 17cqi, 30px) !important; 
+        font-size: clamp(18px, 17cqi, 28px) !important; 
         font-weight: 800 !important; 
         line-height: 1 !important; 
         letter-spacing: -0.03em !important; 
@@ -286,7 +339,7 @@
         line-height: 1.15 !important;
     }
 
-    /* Layout inside the Pressure and UV cards */
+    /* Layout inside Pressure and UV cards */
     .iw-card-content {
         display: flex;
         flex-direction: column;
@@ -297,7 +350,7 @@
     }
     
     .iw-data-val { 
-        font-size: clamp(16px, 16cqi, 27px) !important; 
+        font-size: clamp(17px, 16cqi, 26px) !important; 
         font-weight: 800 !important; 
         color: var(--text-primary); 
         line-height: 1.1 !important;
@@ -350,6 +403,81 @@
     .iw-uv-red { flex: 5; background-color: var(--trend-red); }
     .iw-uv-marker { position: absolute; top: 50%; transform: translateY(-50%); width: 5px; height: 10px; background-color: white; border: 1px solid #d1d5db; border-radius: 9999px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); transition: left 0.5s ease; }
     #isolated-weather-widget.is-dark .iw-uv-marker { background-color: #1f2937; border-color: #4b5563; }
+
+    /* --- Desktop / Ample Width: side-by-side with 3 vertically stacked boxes --- */
+    @container iw-widget (min-width: 580px) {
+        .iw-main-row {
+            flex-direction: row;
+            align-items: stretch;
+            justify-content: center;
+        }
+        .iw-dial-panel {
+            flex: 0 0 320px;
+            width: 320px;
+            max-width: 52%;
+            margin: 0;
+        }
+        .iw-weather-panel {
+            flex: 1 1 240px;
+            max-width: 340px;
+            margin: 0;
+            display: flex;
+        }
+        .iw-weather-grid {
+            grid-template-columns: 1fr;
+            grid-template-rows: repeat(3, 1fr);
+            height: 100%;
+            gap: 8px;
+        }
+        .iw-card-small {
+            min-height: auto;
+        }
+        .iw-hero-content {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            text-align: left;
+            padding: 0 4px;
+        }
+        .iw-hero-content .iw-temp-label {
+            justify-content: flex-start;
+        }
+        .iw-card-content {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            grid-template-areas: 
+                "icon value"
+                "label value"
+                "extra value";
+            align-items: center;
+            gap: 2px 10px;
+        }
+        .iw-card-content .iw-icon-circle {
+            grid-area: icon;
+            margin-bottom: 0;
+        }
+        .iw-card-content .iw-metric-data {
+            display: contents;
+        }
+        .iw-card-content .iw-data-val {
+            grid-area: value;
+            text-align: right;
+            font-size: clamp(22px, 15cqi, 30px) !important;
+        }
+        .iw-card-content .iw-data-label {
+            grid-area: label;
+            margin-top: 0;
+        }
+        .iw-card-content .iw-trend-badge {
+            grid-area: extra;
+            margin-top: 2px;
+        }
+        .iw-card-content .iw-uv-bar-wrap {
+            grid-area: extra;
+            margin-top: 4px;
+            max-width: 120px;
+        }
+    }
     
     .iw-switch { position: relative; display: inline-block; width: 36px; height: 20px; }
     .iw-switch input { opacity: 0; width: 0; height: 0; }
@@ -451,7 +579,7 @@
 
 <div id="isolated-weather-widget">
     <div class="iw-main-row">
-        <div class="iw-panel iw-dial-card">
+        <div class="iw-panel iw-dial-panel iw-dial-card">
             <div class="iw-map-toggle">
                 <span class="iw-toggle-label" title="Satellite Map" style="display: flex; align-items: center;">
                     <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
@@ -467,7 +595,7 @@
             </div>
             <div id="gauge-mount" class="iw-gauge-mount"></div>
         </div>
-        <div class="iw-panel">
+        <div class="iw-panel iw-panel-side">
             <div class="iw-weather-grid">
                 <div class="iw-card iw-card-hero">
                     <div class="iw-hero-content">
