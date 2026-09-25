@@ -225,7 +225,7 @@
         background-color: var(--bg-panel); 
         border: 1px solid var(--border-panel); 
         border-radius: 12px; 
-        padding: clamp(10px, 3cqi, 16px); 
+        padding: clamp(12px, 3.5cqi, 16px); 
         box-shadow: none; 
         transition: transform 0.2s ease; 
         min-width: 0;
@@ -234,7 +234,7 @@
     }
     .iw-card:hover { transform: translateY(-2px); }
     .iw-card-hero { grid-column: 1 / -1; background: linear-gradient(135deg, var(--hero-bg-1) 0%, var(--hero-bg-2) 100%); border: 1px solid var(--hero-border); box-shadow: none; }
-    .iw-card-small { display: flex; flex-direction: column; justify-content: center; min-height: 110px; }
+    .iw-card-small { display: flex; flex-direction: column; justify-content: space-between; min-height: 116px; }
     
     .iw-flex-col { display: flex; flex-direction: column; min-width: 0; }
     .iw-justify-between { display: flex; justify-content: space-between; }
@@ -244,8 +244,8 @@
         display: flex; 
         align-items: center; 
         gap: 4px; 
-        font-size: clamp(10px, 2.8cqi, 12px) !important; 
-        font-weight: 400 !important; 
+        font-size: clamp(11px, 3cqi, 12.5px) !important; 
+        font-weight: 500 !important; 
         color: var(--text-secondary); 
         text-transform: uppercase; 
         letter-spacing: 0.05em !important; 
@@ -253,15 +253,15 @@
         white-space: nowrap;
     }
     .iw-temp-val-f { 
-        font-size: clamp(24px, 11cqi, 48px) !important; 
+        font-size: clamp(34px, 13.5cqi, 54px) !important; 
         font-weight: 800 !important; 
         line-height: 1 !important; 
-        letter-spacing: -0.025em !important; 
+        letter-spacing: -0.03em !important; 
         color: var(--text-primary); 
         white-space: nowrap;
     }
     .iw-temp-val-c { 
-        font-size: clamp(12px, 4.2cqi, 18px) !important; 
+        font-size: clamp(14px, 4.5cqi, 19px) !important; 
         font-weight: 500 !important; 
         color: var(--text-muted); 
         margin-top: 4px; 
@@ -269,26 +269,27 @@
     }
     
     .iw-cond-text { 
-        font-size: clamp(11px, 3.6cqi, 16px) !important; 
-        font-weight: 500 !important; 
+        font-size: clamp(12px, 3.8cqi, 16px) !important; 
+        font-weight: 600 !important; 
         color: var(--text-secondary); 
         margin-top: 6px; 
         text-align: center; 
         max-width: 100%;
         overflow-wrap: break-word;
-        word-break: break-word;
-        line-height: 1.2 !important;
+        word-break: normal;
+        line-height: 1.25 !important;
     }
     
     .iw-data-val { 
-        font-size: clamp(18px, 6cqi, 24px) !important; 
-        font-weight: 700 !important; 
+        font-size: clamp(22px, 14cqi, 30px) !important; 
+        font-weight: 800 !important; 
         color: var(--text-primary); 
         line-height: 1.1 !important;
+        letter-spacing: -0.02em !important;
     }
     .iw-data-label { 
-        font-size: clamp(10px, 3cqi, 12px) !important; 
-        font-weight: 500 !important; 
+        font-size: clamp(10.5px, 5.5cqi, 12.5px) !important; 
+        font-weight: 600 !important; 
         color: var(--text-secondary); 
         text-transform: uppercase; 
         letter-spacing: 0.05em !important; 
@@ -302,10 +303,10 @@
         display: flex; 
         align-items: center; 
         justify-content: center; 
-        width: clamp(26px, 7cqi, 32px); 
-        height: clamp(26px, 7cqi, 32px); 
+        width: clamp(28px, 14cqi, 34px); 
+        height: clamp(28px, 14cqi, 34px); 
         border-radius: 9999px; 
-        margin-bottom: clamp(6px, 2cqi, 12px); 
+        margin-bottom: clamp(6px, 3cqi, 10px); 
         flex-shrink: 0;
     }
     .iw-icon-circle.indigo { background-color: var(--icon-indigo-bg); color: var(--icon-indigo); }
@@ -315,7 +316,7 @@
         display: inline-flex; 
         align-items: center; 
         gap: 4px; 
-        font-size: clamp(10px, 2.8cqi, 12px) !important; 
+        font-size: clamp(11px, 5.5cqi, 12px) !important; 
         font-weight: 600 !important; 
         background-color: var(--trend-bg); 
         padding: 3px 8px; 
@@ -326,7 +327,7 @@
         white-space: nowrap;
     }
     
-    .iw-uv-bar-wrap { width: 100%; height: 6px; background-color: var(--scale-bg); border-radius: 9999px; margin-top: 12px; position: relative; }
+    .iw-uv-bar-wrap { width: 100%; height: 6px; background-color: var(--scale-bg); border-radius: 9999px; margin-top: 10px; position: relative; }
     .iw-uv-bar-bg { display: flex; width: 100%; height: 100%; border-radius: 9999px; overflow: hidden; }
     .iw-uv-green { flex: 3; background-color: var(--trend-green); }
     .iw-uv-amber { flex: 3; background-color: var(--icon-amber); }
@@ -355,23 +356,12 @@
     }
     
     #icon-weather { 
-        width: clamp(36px, 14cqi, 64px); 
-        height: clamp(36px, 14cqi, 64px); 
+        width: clamp(44px, 15cqi, 64px); 
+        height: clamp(44px, 15cqi, 64px); 
         flex-shrink: 0;
         display: flex;
         align-items: center;
         justify-content: center;
-    }
-
-    @container (max-width: 240px) {
-        .iw-card { padding: 8px !important; }
-        .iw-temp-val-f { font-size: 22px !important; }
-        .iw-temp-val-c { font-size: 11px !important; }
-        .iw-cond-text { font-size: 10px !important; }
-        #icon-weather { width: 32px !important; height: 32px !important; }
-        .iw-data-val { font-size: 16px !important; }
-        .iw-data-label { font-size: 9px !important; }
-        .iw-trend-badge { font-size: 9px !important; padding: 2px 4px !important; }
     }
     
     .animate-float { animation: float 6s ease-in-out infinite; }
