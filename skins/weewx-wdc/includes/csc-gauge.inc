@@ -362,20 +362,28 @@
         color: var(--text-secondary); 
         text-transform: uppercase; 
         letter-spacing: 0.05em !important; 
-        margin-top: 2px; 
+        margin-top: 0; 
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+    
+    .iw-card-header {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 4px;
+        min-width: 0;
     }
     
     .iw-icon-circle { 
         display: flex; 
         align-items: center; 
         justify-content: center; 
-        width: clamp(22px, 20cqi, 32px); 
-        height: clamp(22px, 20cqi, 32px); 
+        width: clamp(20px, 18cqi, 28px); 
+        height: clamp(20px, 18cqi, 28px); 
         border-radius: 9999px; 
-        margin-bottom: 4px; 
+        margin-bottom: 0; 
         flex-shrink: 0;
     }
     .iw-icon-circle.indigo { background-color: var(--icon-indigo-bg); color: var(--icon-indigo); }
@@ -443,39 +451,38 @@
             justify-content: flex-start;
         }
         .iw-card-content {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            grid-template-areas: 
-                "icon value"
-                "label value"
-                "extra value";
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
             align-items: center;
-            gap: 2px 10px;
+            width: 100%;
+            height: 100%;
+            gap: 8px;
         }
-        .iw-card-content .iw-icon-circle {
-            grid-area: icon;
+        .iw-card-content .iw-card-left {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-width: 0;
+            gap: 2px;
+        }
+        .iw-card-content .iw-card-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .iw-card-content .iw-card-header {
             margin-bottom: 0;
         }
-        .iw-card-content .iw-metric-data {
-            display: contents;
-        }
         .iw-card-content .iw-data-val {
-            grid-area: value;
             text-align: right;
-            font-size: clamp(22px, 15cqi, 30px) !important;
-        }
-        .iw-card-content .iw-data-label {
-            grid-area: label;
-            margin-top: 0;
-        }
-        .iw-card-content .iw-trend-badge {
-            grid-area: extra;
-            margin-top: 2px;
+            font-size: clamp(20px, 14cqi, 28px) !important;
         }
         .iw-card-content .iw-uv-bar-wrap {
-            grid-area: extra;
+            width: 80px;
             margin-top: 4px;
-            max-width: 120px;
         }
     }
     
@@ -508,8 +515,12 @@
         justify-content: center;
     }
     
-    .animate-float { animation: float 6s ease-in-out infinite; }
-    @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+    .animate-float { animation: float 4s ease-in-out infinite; }
+    @keyframes float { 
+        0% { transform: translateY(0px); } 
+        50% { transform: translateY(-4px); } 
+        100% { transform: translateY(0px); } 
+    }
     .animate-spin-slow { animation: spin 8s linear infinite; }
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
@@ -615,28 +626,36 @@
                 </div>
                 <div class="iw-card iw-card-small">
                     <div class="iw-card-content">
-                        <div class="iw-icon-circle indigo">
-                            <svg style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
+                        <div class="iw-card-left">
+                            <div class="iw-card-header">
+                                <div class="iw-icon-circle indigo">
+                                    <svg style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
+                                </div>
+                                <p class="iw-data-label">Pressure (mb)</p>
+                            </div>
+                            <div id="val-pressure-trend" class="iw-trend-badge"></div>
                         </div>
-                        <div class="iw-metric-data">
+                        <div class="iw-card-right">
                             <h2 id="val-pressure" class="iw-data-val">--</h2>
-                            <p class="iw-data-label">Pressure (mb)</p>
                         </div>
-                        <div id="val-pressure-trend" class="iw-trend-badge"></div>
                     </div>
                 </div>
                 <div class="iw-card iw-card-small">
                     <div class="iw-card-content">
-                        <div class="iw-icon-circle amber">
-                            <svg class="animate-spin-slow" style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                        <div class="iw-card-left">
+                            <div class="iw-card-header">
+                                <div class="iw-icon-circle amber">
+                                    <svg class="animate-spin-slow" style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                                </div>
+                                <p class="iw-data-label">UV Index</p>
+                            </div>
+                            <div class="iw-uv-bar-wrap">
+                                <div class="iw-uv-bar-bg"><div class="iw-uv-green"></div><div class="iw-uv-amber"></div><div class="iw-uv-red"></div></div>
+                                <div id="uv-marker" class="iw-uv-marker hidden"></div>
+                            </div>
                         </div>
-                        <div class="iw-metric-data">
+                        <div class="iw-card-right">
                             <h2 id="val-uv" class="iw-data-val">--</h2>
-                            <p class="iw-data-label">UV Index</p>
-                        </div>
-                        <div class="iw-uv-bar-wrap">
-                            <div class="iw-uv-bar-bg"><div class="iw-uv-green"></div><div class="iw-uv-amber"></div><div class="iw-uv-red"></div></div>
-                            <div id="uv-marker" class="iw-uv-marker hidden"></div>
                         </div>
                     </div>
                 </div>
