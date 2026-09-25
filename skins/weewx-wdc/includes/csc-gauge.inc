@@ -109,14 +109,37 @@
     }
     #isolated-weather-widget .hidden { display: none !important; }
 
-    .iw-main-row { display: flex; flex-direction: column; gap: 24px; width: 100%; }
+    .iw-main-row { 
+        display: flex; 
+        flex-direction: column; 
+        gap: clamp(12px, 2vw, 24px); 
+        width: 100%; 
+    }
 
     @media (min-width: 768px) { 
-        .iw-main-row { flex-direction: row; align-items: stretch; } 
-        .iw-dial-card { flex: 1.25; min-width: 350px; max-width: 550px; aspect-ratio: 330 / 284; }
+        .iw-main-row { 
+            flex-direction: row; 
+            align-items: stretch; 
+        } 
+        /* Keep wind gauge dial fixed at standard size without shrinking */
+        .iw-dial-card { 
+            flex: 0 0 350px !important; 
+            width: 350px !important; 
+            min-width: 350px !important; 
+            max-width: 350px !important; 
+            aspect-ratio: 330 / 284; 
+            margin: 0 !important;
+        } 
     }
     
-    .iw-panel { position: relative; flex: 1; width: 100%; display: flex; flex-direction: column; }
+    .iw-panel { 
+        position: relative; 
+        flex: 1 1 0px; 
+        min-width: 0; 
+        width: 100%; 
+        display: flex; 
+        flex-direction: column; 
+    }
     .iw-dial-card { 
         background-color: var(--bg-panel); 
         border: 1px solid var(--border-panel); 
@@ -126,6 +149,10 @@
         flex-direction: column; 
         align-items: center; 
         justify-content: center; 
+        width: 100%;
+        max-width: 350px;
+        aspect-ratio: 330 / 284;
+        margin: 0 auto;
     }
 
     .iw-map-bg {
@@ -185,31 +212,119 @@
         width: 100%;
     }
 
-    .iw-weather-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; flex: 1; }
+    .iw-weather-grid { 
+        display: grid; 
+        grid-template-columns: repeat(2, minmax(0, 1fr)); 
+        gap: 8px; 
+        flex: 1; 
+        min-width: 0;
+        width: 100%;
+    }
     
-    .iw-card { background-color: var(--bg-panel); border: 1px solid var(--border-panel); border-radius: 12px; padding: 16px; box-shadow: none; transition: transform 0.2s ease; }
+    .iw-card { 
+        background-color: var(--bg-panel); 
+        border: 1px solid var(--border-panel); 
+        border-radius: 12px; 
+        padding: clamp(10px, 3cqi, 16px); 
+        box-shadow: none; 
+        transition: transform 0.2s ease; 
+        min-width: 0;
+        overflow: hidden;
+        container-type: inline-size;
+    }
     .iw-card:hover { transform: translateY(-2px); }
     .iw-card-hero { grid-column: 1 / -1; background: linear-gradient(135deg, var(--hero-bg-1) 0%, var(--hero-bg-2) 100%); border: 1px solid var(--hero-border); box-shadow: none; }
     .iw-card-small { display: flex; flex-direction: column; justify-content: center; min-height: 110px; }
     
-    .iw-flex-col { display: flex; flex-direction: column; }
+    .iw-flex-col { display: flex; flex-direction: column; min-width: 0; }
     .iw-justify-between { display: flex; justify-content: space-between; }
     .iw-items-center { display: flex; align-items: center; }
     
-    .iw-temp-label { display: flex; align-items: center; gap: 4px; font-size: 12px !important; font-weight: 400 !important; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em !important; margin-bottom: 4px; }
-    .iw-temp-val-f { font-size: 48px !important; font-weight: 800 !important; line-height: 1 !important; letter-spacing: -0.025em !important; color: var(--text-primary); }
-    .iw-temp-val-c { font-size: 18px !important; font-weight: 500 !important; color: var(--text-muted); margin-top: 4px; }
+    .iw-temp-label { 
+        display: flex; 
+        align-items: center; 
+        gap: 4px; 
+        font-size: clamp(10px, 2.8cqi, 12px) !important; 
+        font-weight: 400 !important; 
+        color: var(--text-secondary); 
+        text-transform: uppercase; 
+        letter-spacing: 0.05em !important; 
+        margin-bottom: 4px; 
+        white-space: nowrap;
+    }
+    .iw-temp-val-f { 
+        font-size: clamp(24px, 11cqi, 48px) !important; 
+        font-weight: 800 !important; 
+        line-height: 1 !important; 
+        letter-spacing: -0.025em !important; 
+        color: var(--text-primary); 
+        white-space: nowrap;
+    }
+    .iw-temp-val-c { 
+        font-size: clamp(12px, 4.2cqi, 18px) !important; 
+        font-weight: 500 !important; 
+        color: var(--text-muted); 
+        margin-top: 4px; 
+        white-space: nowrap;
+    }
     
-    .iw-cond-text { font-size: 16px !important; font-weight: 500 !important; color: var(--text-secondary); margin-top: 8px; text-align: center; }
+    .iw-cond-text { 
+        font-size: clamp(11px, 3.6cqi, 16px) !important; 
+        font-weight: 500 !important; 
+        color: var(--text-secondary); 
+        margin-top: 6px; 
+        text-align: center; 
+        max-width: 100%;
+        overflow-wrap: break-word;
+        word-break: break-word;
+        line-height: 1.2 !important;
+    }
     
-    .iw-data-val { font-size: 24px !important; font-weight: 700 !important; color: var(--text-primary); }
-    .iw-data-label { font-size: 12px !important; font-weight: 500 !important; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em !important; margin-top: 4px; }
+    .iw-data-val { 
+        font-size: clamp(18px, 6cqi, 24px) !important; 
+        font-weight: 700 !important; 
+        color: var(--text-primary); 
+        line-height: 1.1 !important;
+    }
+    .iw-data-label { 
+        font-size: clamp(10px, 3cqi, 12px) !important; 
+        font-weight: 500 !important; 
+        color: var(--text-secondary); 
+        text-transform: uppercase; 
+        letter-spacing: 0.05em !important; 
+        margin-top: 4px; 
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
     
-    .iw-icon-circle { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 9999px; margin-bottom: 12px; }
+    .iw-icon-circle { 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        width: clamp(26px, 7cqi, 32px); 
+        height: clamp(26px, 7cqi, 32px); 
+        border-radius: 9999px; 
+        margin-bottom: clamp(6px, 2cqi, 12px); 
+        flex-shrink: 0;
+    }
     .iw-icon-circle.indigo { background-color: var(--icon-indigo-bg); color: var(--icon-indigo); }
     .iw-icon-circle.amber { background-color: var(--icon-amber-bg); color: var(--icon-amber); }
     
-    .iw-trend-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px !important; font-weight: 600 !important; background-color: var(--trend-bg); padding: 4px 8px; border-radius: 9999px; margin-top: 8px; width: fit-content; }
+    .iw-trend-badge { 
+        display: inline-flex; 
+        align-items: center; 
+        gap: 4px; 
+        font-size: clamp(10px, 2.8cqi, 12px) !important; 
+        font-weight: 600 !important; 
+        background-color: var(--trend-bg); 
+        padding: 3px 8px; 
+        border-radius: 9999px; 
+        margin-top: 8px; 
+        width: fit-content; 
+        max-width: 100%;
+        white-space: nowrap;
+    }
     
     .iw-uv-bar-wrap { width: 100%; height: 6px; background-color: var(--scale-bg); border-radius: 9999px; margin-top: 12px; position: relative; }
     .iw-uv-bar-bg { display: flex; width: 100%; height: 100%; border-radius: 9999px; overflow: hidden; }
@@ -239,8 +354,25 @@
         stroke: var(--track-bg) !important;
     }
     
-    #icon-weather { width: 56px; height: 56px; }
-    @media (min-width: 640px) { #icon-weather { width: 72px; height: 72px; } }
+    #icon-weather { 
+        width: clamp(36px, 14cqi, 64px); 
+        height: clamp(36px, 14cqi, 64px); 
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    @container (max-width: 240px) {
+        .iw-card { padding: 8px !important; }
+        .iw-temp-val-f { font-size: 22px !important; }
+        .iw-temp-val-c { font-size: 11px !important; }
+        .iw-cond-text { font-size: 10px !important; }
+        #icon-weather { width: 32px !important; height: 32px !important; }
+        .iw-data-val { font-size: 16px !important; }
+        .iw-data-label { font-size: 9px !important; }
+        .iw-trend-badge { font-size: 9px !important; padding: 2px 4px !important; }
+    }
     
     .animate-float { animation: float 6s ease-in-out infinite; }
     @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
@@ -311,7 +443,6 @@
     html.dark .offline .wf-dot { background-color: #f28b82; }
 </style>
 
-
 <div id="isolated-weather-widget">
     <div class="iw-main-row">
         <div class="iw-panel iw-dial-card">
@@ -333,16 +464,16 @@
         <div class="iw-panel">
             <div class="iw-weather-grid">
                 <div class="iw-card iw-card-hero">
-                    <div class="iw-justify-between iw-items-center" style="padding: 0 8px;">
-                        <div class="iw-flex-col">
+                    <div class="iw-justify-between iw-items-center" style="padding: 0 4px; gap: 8px; width: 100%; min-width: 0;">
+                        <div class="iw-flex-col" style="min-width: 0; flex-shrink: 1;">
                             <div class="iw-temp-label">
-                                <svg style="width: 14px; height: 14px; color: #3b82f6;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
+                                <svg style="width: 14px; height: 14px; color: #3b82f6; flex-shrink: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
                                 <span>Current</span>
                             </div>
                             <h1 id="val-temp-f" class="iw-temp-val-f">--&deg;F</h1>
                             <p id="val-temp-c" class="iw-temp-val-c">--&deg;C</p>
                         </div>
-                        <div class="iw-flex-col iw-items-center" style="padding-top: 4px;">
+                        <div class="iw-flex-col iw-items-center" style="padding-top: 4px; min-width: 0; flex-shrink: 1; max-width: 50%; text-align: center;">
                             <div id="icon-weather" class="animate-float"></div>
                             <p id="val-conditions" class="iw-cond-text">--</p>
                         </div>
