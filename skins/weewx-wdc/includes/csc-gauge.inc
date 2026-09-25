@@ -120,7 +120,7 @@
     .iw-panel { 
         position: relative; 
         width: 100%; 
-        max-width: 350px;
+        max-width: 100%;
         margin: 0 auto;
         display: flex; 
         flex-direction: column; 
@@ -135,7 +135,7 @@
         align-items: center; 
         justify-content: center; 
         width: 100%;
-        max-width: 350px;
+        max-width: 100%;
         aspect-ratio: 330 / 284;
         margin: 0 auto;
     }
@@ -201,9 +201,9 @@
     .iw-weather-grid { 
         display: grid; 
         grid-template-columns: repeat(3, minmax(0, 1fr)); 
-        gap: clamp(4px, 1.5vw, 8px); 
+        gap: clamp(4px, 1.5vw, 10px); 
         width: 100%;
-        max-width: 350px;
+        max-width: 100%;
         margin: 0 auto;
     }
     
@@ -211,7 +211,7 @@
         background-color: var(--bg-panel); 
         border: 1px solid var(--border-panel); 
         border-radius: 12px; 
-        padding: clamp(8px, 2.5cqi, 12px); 
+        padding: clamp(8px, 2.5cqi, 14px); 
         box-shadow: none; 
         transition: transform 0.2s ease; 
         min-width: 0;
@@ -225,7 +225,7 @@
         box-shadow: none; 
     }
     .iw-card-small { 
-        min-height: 120px; 
+        min-height: clamp(110px, 25cqi, 135px); 
     }
     
     .iw-flex-col { display: flex; flex-direction: column; min-width: 0; }
@@ -250,7 +250,7 @@
         align-items: center; 
         justify-content: center;
         gap: 3px; 
-        font-size: clamp(9px, 8.5cqi, 11px) !important; 
+        font-size: clamp(9px, 8.5cqi, 12px) !important; 
         font-weight: 600 !important; 
         color: var(--text-secondary); 
         text-transform: uppercase; 
@@ -259,7 +259,7 @@
         white-space: nowrap;
     }
     .iw-temp-val-f { 
-        font-size: clamp(17px, 17cqi, 24px) !important; 
+        font-size: clamp(17px, 17cqi, 30px) !important; 
         font-weight: 800 !important; 
         line-height: 1 !important; 
         letter-spacing: -0.03em !important; 
@@ -267,7 +267,7 @@
         white-space: nowrap;
     }
     .iw-temp-val-c { 
-        font-size: clamp(10px, 9cqi, 12px) !important; 
+        font-size: clamp(10px, 9cqi, 14px) !important; 
         font-weight: 500 !important; 
         color: var(--text-muted); 
         margin-top: 1px; 
@@ -275,7 +275,7 @@
     }
     
     .iw-cond-text { 
-        font-size: clamp(9px, 8.5cqi, 11px) !important; 
+        font-size: clamp(9px, 8.5cqi, 12px) !important; 
         font-weight: 600 !important; 
         color: var(--text-secondary); 
         margin-top: 2px; 
@@ -297,14 +297,14 @@
     }
     
     .iw-data-val { 
-        font-size: clamp(16px, 16cqi, 23px) !important; 
+        font-size: clamp(16px, 16cqi, 27px) !important; 
         font-weight: 800 !important; 
         color: var(--text-primary); 
         line-height: 1.1 !important;
         letter-spacing: -0.02em !important;
     }
     .iw-data-label { 
-        font-size: clamp(8.5px, 8.5cqi, 11px) !important; 
+        font-size: clamp(8.5px, 8.5cqi, 12px) !important; 
         font-weight: 600 !important; 
         color: var(--text-secondary); 
         text-transform: uppercase; 
@@ -319,8 +319,8 @@
         display: flex; 
         align-items: center; 
         justify-content: center; 
-        width: clamp(22px, 20cqi, 28px); 
-        height: clamp(22px, 20cqi, 28px); 
+        width: clamp(22px, 20cqi, 32px); 
+        height: clamp(22px, 20cqi, 32px); 
         border-radius: 9999px; 
         margin-bottom: 4px; 
         flex-shrink: 0;
@@ -332,7 +332,7 @@
         display: inline-flex; 
         align-items: center; 
         gap: 3px; 
-        font-size: clamp(8.5px, 8cqi, 10.5px) !important; 
+        font-size: clamp(8.5px, 8cqi, 11.5px) !important; 
         font-weight: 600 !important; 
         background-color: var(--trend-bg); 
         padding: 2px 5px; 
@@ -372,8 +372,8 @@
     }
     
     #icon-weather { 
-        width: clamp(24px, 22cqi, 34px); 
-        height: clamp(24px, 22cqi, 34px); 
+        width: clamp(24px, 22cqi, 40px); 
+        height: clamp(24px, 22cqi, 40px); 
         flex-shrink: 0;
         display: flex;
         align-items: center;
