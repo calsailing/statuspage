@@ -23,6 +23,8 @@
         --trend-bg: #f8fafc; 
         --trend-red: #ef4444; 
         --trend-green: #22c55e;
+        --icon-blue-bg: #eff6ff;
+        --icon-blue: #3b82f6;
         --icon-indigo-bg: #eef2ff; 
         --icon-indigo: #6366f1; 
         --icon-amber-bg: #fffbeb; 
@@ -57,6 +59,8 @@
         --trend-bg: #2a2a2a;
         --trend-red: #f87171;
         --trend-green: #4ade80;
+        --icon-blue-bg: rgba(59, 130, 246, 0.15);
+        --icon-blue: #60a5fa;
         --icon-indigo-bg: rgba(99, 102, 241, 0.15);
         --icon-indigo: #818cf8;
         --icon-amber-bg: rgba(245, 158, 11, 0.15);
@@ -153,11 +157,6 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-        }
-        .iw-hero-content {
-            flex-direction: row !important;
-            justify-content: space-around !important;
-            align-items: center !important;
         }
     }
     
@@ -285,54 +284,64 @@
     .iw-justify-between { display: flex; justify-content: space-between; }
     .iw-items-center { display: flex; align-items: center; }
     
-    /* Layout inside Current Temperature card */
-    .iw-hero-content {
+    /* Layout inside Current Temperature row */
+    .iw-temp-row {
         display: flex;
-        flex-direction: column;
-        justify-content: space-between;
         align-items: center;
-        text-align: center;
-        height: 100%;
+        justify-content: flex-start;
+        gap: clamp(6px, 4cqi, 12px);
         width: 100%;
         min-width: 0;
-        gap: 4px;
     }
-    
-    .iw-temp-label { 
-        display: flex; 
-        align-items: center; 
+
+    .iw-temp-numbers {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
         justify-content: center;
-        gap: 3px; 
-        font-size: clamp(9px, 8.5cqi, 12px) !important; 
-        font-weight: 600 !important; 
-        color: var(--text-secondary); 
-        text-transform: uppercase; 
-        letter-spacing: 0.05em !important; 
-        margin-bottom: 2px; 
-        white-space: nowrap;
+        flex-shrink: 0;
+        min-width: 0;
     }
+
+    .iw-temp-condition {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        min-width: 0;
+        gap: 2px;
+    }
+
+    @container (min-width: 160px) {
+        .iw-temp-condition {
+            flex-direction: row;
+            align-items: center;
+            gap: 6px;
+        }
+    }
+
     .iw-temp-val-f { 
-        font-size: clamp(18px, 17cqi, 28px) !important; 
+        font-size: clamp(17px, 15cqi, 26px) !important; 
         font-weight: 800 !important; 
         line-height: 1 !important; 
-        letter-spacing: -0.03em !important; 
+        letter-spacing: -0.02em !important; 
         color: var(--text-primary); 
         white-space: nowrap;
     }
     .iw-temp-val-c { 
-        font-size: clamp(10px, 9cqi, 14px) !important; 
+        font-size: clamp(9.5px, 8.5cqi, 13px) !important; 
         font-weight: 500 !important; 
         color: var(--text-muted); 
-        margin-top: 1px; 
+        margin-top: 2px !important; 
         white-space: nowrap;
     }
     
     .iw-cond-text { 
-        font-size: clamp(9px, 8.5cqi, 12px) !important; 
+        font-size: clamp(8.5px, 8cqi, 11.5px) !important; 
         font-weight: 600 !important; 
         color: var(--text-secondary); 
-        margin-top: 2px; 
-        text-align: center; 
+        margin-top: 0 !important; 
+        text-align: left; 
         max-width: 100%;
         overflow-wrap: break-word;
         word-break: normal;
@@ -385,6 +394,7 @@
         margin-bottom: 0; 
         flex-shrink: 0;
     }
+    .iw-icon-circle.blue { background-color: var(--icon-blue-bg); color: var(--icon-blue); }
     .iw-icon-circle.indigo { background-color: var(--icon-indigo-bg); color: var(--icon-indigo); }
     .iw-icon-circle.amber { background-color: var(--icon-amber-bg); color: var(--icon-amber); }
     
@@ -432,8 +442,8 @@
     }
     
     #icon-weather { 
-        width: clamp(24px, 22cqi, 40px); 
-        height: clamp(24px, 22cqi, 40px); 
+        width: clamp(20px, 18cqi, 28px); 
+        height: clamp(20px, 18cqi, 28px); 
         flex-shrink: 0;
         display: flex;
         align-items: center;
@@ -533,19 +543,23 @@
         </div>
         <div class="iw-panel iw-panel-side">
             <div class="iw-weather-grid">
-                <div class="iw-card iw-card-hero">
-                    <div class="iw-hero-content">
-                        <div class="iw-flex-col" style="min-width: 0; flex-shrink: 1;">
-                            <div class="iw-temp-label">
-                                <svg style="width: 13px; height: 13px; color: #3b82f6; flex-shrink: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
-                                <span>Current</span>
+                <div class="iw-card iw-card-hero iw-card-small">
+                    <div class="iw-card-content">
+                        <div class="iw-card-header">
+                            <div class="iw-icon-circle blue">
+                                <svg style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
                             </div>
-                            <h1 id="val-temp-f" class="iw-temp-val-f">--&deg;F</h1>
-                            <p id="val-temp-c" class="iw-temp-val-c">--&deg;C</p>
+                            <p class="iw-data-label">Current</p>
                         </div>
-                        <div class="iw-flex-col iw-items-center" style="min-width: 0; flex-shrink: 1; text-align: center;">
-                            <div id="icon-weather" class="animate-float"></div>
-                            <p id="val-conditions" class="iw-cond-text">--</p>
+                        <div class="iw-temp-row">
+                            <div class="iw-temp-numbers">
+                                <h1 id="val-temp-f" class="iw-temp-val-f">--&deg;F</h1>
+                                <p id="val-temp-c" class="iw-temp-val-c">--&deg;C</p>
+                            </div>
+                            <div class="iw-temp-condition">
+                                <div id="icon-weather" class="animate-float"></div>
+                                <p id="val-conditions" class="iw-cond-text">--</p>
+                            </div>
                         </div>
                     </div>
                 </div>
