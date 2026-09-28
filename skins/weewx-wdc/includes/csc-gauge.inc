@@ -23,8 +23,6 @@
         --trend-bg: #f8fafc; 
         --trend-red: #ef4444; 
         --trend-green: #22c55e;
-        --icon-blue-bg: #eff6ff;
-        --icon-blue: #3b82f6;
         --icon-indigo-bg: #eef2ff; 
         --icon-indigo: #6366f1; 
         --icon-amber-bg: #fffbeb; 
@@ -59,8 +57,6 @@
         --trend-bg: #2a2a2a;
         --trend-red: #f87171;
         --trend-green: #4ade80;
-        --icon-blue-bg: rgba(59, 130, 246, 0.15);
-        --icon-blue: #60a5fa;
         --icon-indigo-bg: rgba(99, 102, 241, 0.15);
         --icon-indigo: #818cf8;
         --icon-amber-bg: rgba(245, 158, 11, 0.15);
@@ -113,68 +109,14 @@
     }
     #isolated-weather-widget .hidden { display: none !important; }
 
-    #isolated-weather-widget {
-        container-type: inline-size;
-        container-name: iw-widget;
-    }
+    .iw-main-row { display: flex; flex-direction: column; gap: 24px; width: 100%; }
 
-    .iw-main-row { 
-        display: flex; 
-        flex-direction: column; 
-        align-items: center;
-        gap: clamp(10px, 2vw, 16px); 
-        width: 100%; 
-    }
-
-    @media (min-width: 768px) {
-        .iw-main-row {
-            flex-direction: row;
-            align-items: stretch;
-            gap: 16px;
-        }
-        .iw-panel.iw-dial-card {
-            flex: 2 1 0%;
-            width: calc(66.666% - 8px);
-            max-width: none;
-            margin: 0;
-        }
-        .iw-panel-side {
-            flex: 1 1 0%;
-            width: calc(33.333% - 8px);
-            max-width: none;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-        }
-        .iw-weather-grid {
-            grid-template-columns: 1fr !important;
-            grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
-            height: 100% !important;
-            gap: 10px !important;
-        }
-        .iw-card {
-            min-height: 0 !important;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
+    @media (min-width: 768px) { 
+        .iw-main-row { flex-direction: row; align-items: stretch; } 
+        .iw-dial-card { flex: 1.25; min-width: 350px; max-width: 550px; aspect-ratio: 330 / 284; }
     }
     
-    .iw-panel { 
-        position: relative; 
-        width: 100%; 
-        max-width: 100%;
-        margin: 0 auto;
-        display: flex; 
-        flex-direction: column; 
-    }
-
-    .iw-dial-panel {
-        width: 100%;
-        max-width: 340px;
-        margin: 0 auto;
-    }
-
+    .iw-panel { position: relative; flex: 1; width: 100%; display: flex; flex-direction: column; }
     .iw-dial-card { 
         background-color: var(--bg-panel); 
         border: 1px solid var(--border-panel); 
@@ -184,14 +126,6 @@
         flex-direction: column; 
         align-items: center; 
         justify-content: center; 
-        width: 100%;
-        aspect-ratio: 330 / 284;
-    }
-
-    .iw-weather-panel {
-        width: 100%;
-        max-width: 340px;
-        margin: 0 auto;
     }
 
     .iw-map-bg {
@@ -251,174 +185,38 @@
         width: 100%;
     }
 
-    /* By default (narrow / mobile): 1 row with 3 equal columns under the wind gauge */
-    .iw-weather-grid { 
-        display: grid; 
-        grid-template-columns: repeat(3, minmax(0, 1fr)); 
-        gap: clamp(4px, 1.5vw, 10px); 
-        width: 100%;
-    }
+    .iw-weather-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; flex: 1; }
     
-    .iw-card { 
-        background-color: var(--bg-panel); 
-        border: 1px solid var(--border-panel); 
-        border-radius: 12px; 
-        padding: clamp(8px, 2.5cqi, 12px); 
-        box-shadow: none; 
-        transition: transform 0.2s ease; 
-        min-width: 0;
-        overflow: hidden;
-        container-type: inline-size;
-    }
+    .iw-card { background-color: var(--bg-panel); border: 1px solid var(--border-panel); border-radius: 12px; padding: 16px; box-shadow: none; transition: transform 0.2s ease; }
     .iw-card:hover { transform: translateY(-2px); }
-    .iw-card-hero { 
-        background: linear-gradient(135deg, var(--hero-bg-1) 0%, var(--hero-bg-2) 100%); 
-        border: 1px solid var(--hero-border); 
-        box-shadow: none; 
-    }
-    .iw-card-small { 
-        min-height: clamp(110px, 25cqi, 135px); 
-    }
+    .iw-card-hero { grid-column: 1 / -1; background: linear-gradient(135deg, var(--hero-bg-1) 0%, var(--hero-bg-2) 100%); border: 1px solid var(--hero-border); box-shadow: none; }
+    .iw-card-small { display: flex; flex-direction: column; justify-content: center; min-height: 110px; }
     
-    .iw-flex-col { display: flex; flex-direction: column; min-width: 0; }
+    .iw-flex-col { display: flex; flex-direction: column; }
     .iw-justify-between { display: flex; justify-content: space-between; }
     .iw-items-center { display: flex; align-items: center; }
     
-    /* Layout inside Current Temperature row */
-    .iw-temp-row {
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        gap: clamp(6px, 4cqi, 12px);
-        width: 100%;
-        min-width: 0;
-    }
-
-    .iw-temp-numbers {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        justify-content: center;
-        flex-shrink: 0;
-        min-width: 0;
-    }
-
-    .iw-temp-condition {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        justify-content: center;
-        min-width: 0;
-        gap: 2px;
-    }
-
-    @container (min-width: 160px) {
-        .iw-temp-condition {
-            flex-direction: row;
-            align-items: center;
-            gap: 6px;
-        }
-    }
-
-    .iw-temp-val-f { 
-        font-size: clamp(17px, 15cqi, 26px) !important; 
-        font-weight: 800 !important; 
-        line-height: 1 !important; 
-        letter-spacing: -0.02em !important; 
-        color: var(--text-primary); 
-        white-space: nowrap;
-    }
-    .iw-temp-val-c { 
-        font-size: clamp(9.5px, 8.5cqi, 13px) !important; 
-        font-weight: 500 !important; 
-        color: var(--text-muted); 
-        margin-top: 2px !important; 
-        white-space: nowrap;
-    }
+    .iw-temp-label { display: flex; align-items: center; gap: 4px; font-size: 12px !important; font-weight: 400 !important; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em !important; margin-bottom: 4px; }
+    .iw-temp-val-f { font-size: 48px !important; font-weight: 800 !important; line-height: 1 !important; letter-spacing: -0.025em !important; color: var(--text-primary); }
+    .iw-temp-val-c { font-size: 18px !important; font-weight: 500 !important; color: var(--text-muted); margin-top: 4px; }
     
-    .iw-cond-text { 
-        font-size: clamp(8.5px, 8cqi, 11.5px) !important; 
-        font-weight: 600 !important; 
-        color: var(--text-secondary); 
-        margin-top: 0 !important; 
-        text-align: left; 
-        max-width: 100%;
-        overflow-wrap: break-word;
-        word-break: normal;
-        line-height: 1.15 !important;
-    }
-
-    /* Layout inside Pressure and UV cards */
-    .iw-card-content {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        height: 100%;
-        width: 100%;
-        min-width: 0;
-        gap: 3px;
-    }
+    .iw-cond-text { font-size: 16px !important; font-weight: 500 !important; color: var(--text-secondary); margin-top: 8px; text-align: center; }
     
-    .iw-data-val { 
-        font-size: clamp(18px, 16cqi, 26px) !important; 
-        font-weight: 800 !important; 
-        color: var(--text-primary); 
-        line-height: 1 !important;
-        letter-spacing: -0.02em !important;
-    }
-    .iw-data-label { 
-        font-size: clamp(8.5px, 8.5cqi, 11px) !important; 
-        font-weight: 600 !important; 
-        color: var(--text-secondary); 
-        text-transform: uppercase; 
-        letter-spacing: 0.05em !important; 
-        margin-top: 0; 
-        white-space: nowrap;
-    }
+    .iw-data-val { font-size: 24px !important; font-weight: 700 !important; color: var(--text-primary); }
+    .iw-data-label { font-size: 12px !important; font-weight: 500 !important; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em !important; margin-top: 4px; }
     
-    .iw-card-header {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin-bottom: 2px;
-        min-width: 0;
-    }
-    
-    .iw-icon-circle { 
-        display: flex; 
-        align-items: center; 
-        justify-content: center; 
-        width: clamp(20px, 18cqi, 26px); 
-        height: clamp(20px, 18cqi, 26px); 
-        border-radius: 9999px; 
-        margin-bottom: 0; 
-        flex-shrink: 0;
-    }
-    .iw-icon-circle.blue { background-color: var(--icon-blue-bg); color: var(--icon-blue); }
+    .iw-icon-circle { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 9999px; margin-bottom: 12px; }
     .iw-icon-circle.indigo { background-color: var(--icon-indigo-bg); color: var(--icon-indigo); }
     .iw-icon-circle.amber { background-color: var(--icon-amber-bg); color: var(--icon-amber); }
     
-    .iw-trend-badge { 
-        display: inline-flex; 
-        align-items: center; 
-        gap: 3px; 
-        font-size: clamp(8.5px, 8cqi, 11px) !important; 
-        font-weight: 600 !important; 
-        background-color: var(--trend-bg); 
-        padding: 2px 6px; 
-        border-radius: 9999px; 
-        margin-top: 2px; 
-        width: fit-content; 
-        max-width: 100%;
-        white-space: nowrap;
-    }
+    .iw-trend-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px !important; font-weight: 600 !important; background-color: var(--trend-bg); padding: 4px 8px; border-radius: 9999px; margin-top: 8px; width: fit-content; }
     
-    .iw-uv-bar-wrap { width: 100%; max-width: 130px; height: 5px; background-color: var(--scale-bg); border-radius: 9999px; margin-top: 4px; position: relative; }
+    .iw-uv-bar-wrap { width: 100%; height: 6px; background-color: var(--scale-bg); border-radius: 9999px; margin-top: 12px; position: relative; }
     .iw-uv-bar-bg { display: flex; width: 100%; height: 100%; border-radius: 9999px; overflow: hidden; }
     .iw-uv-green { flex: 3; background-color: var(--trend-green); }
     .iw-uv-amber { flex: 3; background-color: var(--icon-amber); }
     .iw-uv-red { flex: 5; background-color: var(--trend-red); }
-    .iw-uv-marker { position: absolute; top: 50%; transform: translateY(-50%); width: 5px; height: 10px; background-color: white; border: 1px solid #d1d5db; border-radius: 9999px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); transition: left 0.5s ease; }
+    .iw-uv-marker { position: absolute; top: 50%; transform: translateY(-50%); width: 6px; height: 12px; background-color: white; border: 1px solid #d1d5db; border-radius: 9999px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); transition: left 0.5s ease; }
     #isolated-weather-widget.is-dark .iw-uv-marker { background-color: #1f2937; border-color: #4b5563; }
     
     .iw-switch { position: relative; display: inline-block; width: 36px; height: 20px; }
@@ -441,21 +239,11 @@
         stroke: var(--track-bg) !important;
     }
     
-    #icon-weather { 
-        width: clamp(20px, 18cqi, 28px); 
-        height: clamp(20px, 18cqi, 28px); 
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
+    #icon-weather { width: 56px; height: 56px; }
+    @media (min-width: 640px) { #icon-weather { width: 72px; height: 72px; } }
     
-    .animate-float { animation: float 4s ease-in-out infinite; }
-    @keyframes float { 
-        0% { transform: translateY(0px); } 
-        50% { transform: translateY(-4px); } 
-        100% { transform: translateY(0px); } 
-    }
+    .animate-float { animation: float 6s ease-in-out infinite; }
+    @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
     .animate-spin-slow { animation: spin 8s linear infinite; }
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
@@ -523,9 +311,10 @@
     html.dark .offline .wf-dot { background-color: #f28b82; }
 </style>
 
+
 <div id="isolated-weather-widget">
     <div class="iw-main-row">
-        <div class="iw-panel iw-dial-panel iw-dial-card">
+        <div class="iw-panel iw-dial-card">
             <div class="iw-map-toggle">
                 <span class="iw-toggle-label" title="Satellite Map" style="display: flex; align-items: center;">
                     <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
@@ -541,49 +330,39 @@
             </div>
             <div id="gauge-mount" class="iw-gauge-mount"></div>
         </div>
-        <div class="iw-panel iw-panel-side">
+        <div class="iw-panel">
             <div class="iw-weather-grid">
-                <div class="iw-card iw-card-hero iw-card-small">
-                    <div class="iw-card-content">
-                        <div class="iw-card-header">
-                            <div class="iw-icon-circle blue">
-                                <svg style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
+                <div class="iw-card iw-card-hero">
+                    <div class="iw-justify-between iw-items-center" style="padding: 0 8px;">
+                        <div class="iw-flex-col">
+                            <div class="iw-temp-label">
+                                <svg style="width: 14px; height: 14px; color: #3b82f6;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
+                                <span>Current</span>
                             </div>
-                            <p class="iw-data-label">Current</p>
+                            <h1 id="val-temp-f" class="iw-temp-val-f">--&deg;F</h1>
+                            <p id="val-temp-c" class="iw-temp-val-c">--&deg;C</p>
                         </div>
-                        <div class="iw-temp-row">
-                            <div class="iw-temp-numbers">
-                                <h1 id="val-temp-f" class="iw-temp-val-f">--&deg;F</h1>
-                                <p id="val-temp-c" class="iw-temp-val-c">--&deg;C</p>
-                            </div>
-                            <div class="iw-temp-condition">
-                                <div id="icon-weather" class="animate-float"></div>
-                                <p id="val-conditions" class="iw-cond-text">--</p>
-                            </div>
+                        <div class="iw-flex-col iw-items-center" style="padding-top: 4px;">
+                            <div id="icon-weather" class="animate-float"></div>
+                            <p id="val-conditions" class="iw-cond-text">--</p>
                         </div>
                     </div>
                 </div>
                 <div class="iw-card iw-card-small">
-                    <div class="iw-card-content">
-                        <div class="iw-card-header">
-                            <div class="iw-icon-circle indigo">
-                                <svg style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
-                            </div>
-                            <p class="iw-data-label">Pressure (mb)</p>
+                    <div class="iw-flex-col" style="height: 100%; justify-content: space-between;">
+                        <div class="iw-icon-circle indigo">
+                            <svg style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
                         </div>
-                        <h2 id="val-pressure" class="iw-data-val">--</h2>
+                        <div><h2 id="val-pressure" class="iw-data-val">--</h2><p class="iw-data-label">Pressure (mb)</p></div>
                         <div id="val-pressure-trend" class="iw-trend-badge"></div>
                     </div>
                 </div>
                 <div class="iw-card iw-card-small">
-                    <div class="iw-card-content">
-                        <div class="iw-card-header">
-                            <div class="iw-icon-circle amber">
-                                <svg class="animate-spin-slow" style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
-                            </div>
-                            <p class="iw-data-label">UV Index</p>
+                    <div class="iw-flex-col" style="height: 100%; justify-content: space-between;">
+                        <div class="iw-icon-circle amber">
+                            <svg class="animate-spin-slow" style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
                         </div>
-                        <h2 id="val-uv" class="iw-data-val">--</h2>
+                        <div><h2 id="val-uv" class="iw-data-val">--</h2><p class="iw-data-label">UV Index</p></div>
                         <div class="iw-uv-bar-wrap">
                             <div class="iw-uv-bar-bg"><div class="iw-uv-green"></div><div class="iw-uv-amber"></div><div class="iw-uv-red"></div></div>
                             <div id="uv-marker" class="iw-uv-marker hidden"></div>
