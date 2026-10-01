@@ -217,13 +217,10 @@
       box-sizing: border-box !important;
     }
 
-    /* Push page content down so fixed bars do not cover top elements */
+    /* Only offset the primary top-level content container to clear the two fixed bars */
     .bx--content,
-    main,
-    #content,
-    [role="main"],
-    .bx--grid {
-      margin-top: calc(3rem + var(--csc-subnav-height, 44px) + 12px) !important;
+    body > main:not(.bx--content) {
+      margin-top: calc(var(--csc-header-height, 3rem) + var(--csc-subnav-height, 44px)) !important;
     }
   }
 
@@ -304,14 +301,7 @@
   #tides-hours,
   #webcams,
   [data-csc-anchor="true"] {
-    scroll-margin-top: calc(3rem + var(--csc-subnav-height, 44px) + 16px) !important;
-  }
-
-  /* Extra mobile bottom breathing room so the last section can scroll up to the top */
-  @media (max-width: 768px) {
-    body {
-      padding-bottom: 96px;
-    }
+    scroll-margin-top: calc(var(--csc-header-height, 3rem) + var(--csc-subnav-height, 44px) + 8px) !important;
   }
 </style>
 
@@ -375,17 +365,6 @@
       const h = getHeaderHeight();
       if (h >= 32) {
         document.documentElement.style.setProperty('--csc-header-height', h + 'px');
-      }
-
-      if (window.innerWidth <= 768) {
-        const contentEl = document.querySelector('.bx--content') || 
-                          document.querySelector('main') || 
-                          document.querySelector('#content') ||
-                          document.querySelector('.bx--grid');
-        if (contentEl) {
-          const effectiveH = Math.max(h, 48);
-          contentEl.style.setProperty('margin-top', (effectiveH + 44 + 12) + 'px', 'important');
-        }
       }
     }
 
