@@ -185,7 +185,7 @@
     /* Responsive Grid: All 3 cards in one single line on mobile; 2x2 layout on desktop */
     .iw-weather-grid { 
         display: grid; 
-        grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) minmax(0, 1fr); 
+        grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr); 
         gap: 6px; 
         flex: 1;
         width: 100%;
@@ -202,15 +202,20 @@
     .iw-card { 
         background-color: var(--bg-panel); 
         border: 1px solid var(--border-panel); 
-        padding: 8px; 
+        padding: 8px 6px; 
         box-shadow: none; 
         min-width: 0;
         overflow: hidden;
         transition: transform 0.2s ease;
+        container-type: inline-size;
+    }
+
+    @media (min-width: 480px) {
+        .iw-card { padding: 8px; }
     }
 
     @media (min-width: 768px) {
-        .iw-card { padding: 16px; }
+        .iw-card { padding: 14px 16px; }
     }
 
     .iw-card:hover { transform: translateY(-2px); }
@@ -311,18 +316,19 @@
         flex: 1 1 auto;
     }
 
-    /* Dedicated data value block to guarantee matching vertical alignment */
+    /* Dedicated data value block guaranteeing identical vertical baseline */
     .iw-data-val-block {
         display: flex;
         flex-direction: column;
         justify-content: center;
         flex: 1 1 auto;
         min-width: 0;
+        width: 100%;
     }
 
-    /* Fluid responsive font sizing: Prevents clipping on narrow desktop columns */
+    /* Responsive font sizing calibrated to never clip multi-digit values or 'mb' */
     .iw-temp-val-f { 
-        font-size: clamp(20px, 5.2vw, 24px) !important; 
+        font-size: clamp(18px, 4.8vw, 24px) !important; 
         font-weight: 800 !important; 
         line-height: 1.05 !important; 
         letter-spacing: -0.025em !important; 
@@ -331,7 +337,7 @@
     }
 
     .iw-data-val { 
-        font-size: clamp(16px, 4.2vw, 20px) !important; 
+        font-size: clamp(14px, 3.8vw, 19px) !important; 
         font-weight: 800 !important; 
         line-height: 1.05 !important; 
         letter-spacing: -0.025em !important; 
@@ -350,8 +356,10 @@
     .iw-val-with-unit {
         display: inline-flex;
         align-items: baseline;
-        gap: 3px;
+        gap: 2.5px;
         min-width: 0;
+        max-width: 100%;
+        white-space: nowrap;
     }
 
     .iw-data-unit {
@@ -359,25 +367,33 @@
         font-weight: 600 !important;
         color: var(--text-secondary);
         letter-spacing: -0.01em;
+        flex-shrink: 0;
+        user-select: none;
+        line-height: 1 !important;
     }
 
-    @media (min-width: 640px) {
-        .iw-temp-val-f { font-size: 34px !important; }
-        .iw-data-val { font-size: 26px !important; }
-        .iw-temp-val-c { font-size: 13px !important; }
-        .iw-data-unit { font-size: 12px !important; }
+    /* Container queries: Adapt dynamically to the card width regardless of viewport layout */
+    @container (max-width: 105px) {
+        .iw-data-val { font-size: 14.5px !important; }
+        .iw-data-unit { font-size: 9px !important; }
+    }
+
+    @container (max-width: 88px) {
+        .iw-data-val { font-size: 13px !important; letter-spacing: -0.035em !important; }
+        .iw-data-unit { font-size: 8.5px !important; }
+        .iw-val-with-unit { gap: 1.5px; }
     }
 
     @media (min-width: 768px) {
-        .iw-temp-val-f { font-size: clamp(34px, 3.6vw, 44px) !important; }
-        .iw-data-val { font-size: clamp(22px, 2.5vw, 30px) !important; }
-        .iw-temp-val-c { font-size: 16px !important; margin-top: 3px !important; }
-        .iw-data-unit { font-size: 13px !important; }
+        .iw-temp-val-f { font-size: clamp(32px, 3.4vw, 42px) !important; }
+        .iw-data-val { font-size: clamp(20px, 2.2vw, 28px) !important; }
+        .iw-temp-val-c { font-size: 15px !important; margin-top: 3px !important; }
+        .iw-data-unit { font-size: clamp(11px, 1.1vw, 13px) !important; }
     }
 
     @media (min-width: 1100px) {
         .iw-temp-val-f { font-size: 46px !important; }
-        .iw-data-val { font-size: 32px !important; }
+        .iw-data-val { font-size: 30px !important; }
         .iw-data-unit { font-size: 14px !important; }
     }
     
@@ -460,7 +476,7 @@
     .iw-icon-pill.indigo { background-color: var(--icon-indigo-bg); color: var(--icon-indigo); }
     .iw-icon-pill.amber { background-color: var(--icon-amber-bg); color: var(--icon-amber); }
     
-    /* Standardized footer container guaranteeing identical Y-coordinates */
+    /* Standardized footer container guaranteeing identical baseline */
     .iw-card-footer {
         display: flex;
         align-items: center;
@@ -639,7 +655,7 @@
                     </div>
                 </div>
 
-                <!-- Pressure Card: Label alongside icon, mb next to digits -->
+                <!-- Pressure Card: Label alongside icon, mb next to digits with non-clipping baseline -->
                 <div class="iw-card iw-card-small">
                     <div class="iw-temp-label">
                         <span class="iw-icon-pill indigo">
@@ -658,7 +674,7 @@
                     </div>
                 </div>
 
-                <!-- UV Index Card: Label alongside icon -->
+                <!-- UV Index Card: Label alongside icon, matching vertical layout -->
                 <div class="iw-card iw-card-small">
                     <div class="iw-temp-label">
                         <span class="iw-icon-pill amber">
