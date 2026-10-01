@@ -138,6 +138,11 @@
     </bx-btn>
   </div>
 
+
+
+
+</bx-header>
+
 <!-- =========================================================================
      CAL SAILING CLUB - MOBILE SUB-NAVIGATION SNIPPET
      Placement: Insert immediately below </bx-header> in your HTML/WeeWX template.
@@ -475,7 +480,8 @@
 </script>
 
 
-</bx-header>
+
+
 <bx-side-nav aria-label="Side navigation" collapse-mode="responsive">
   <bx-side-nav-items>
     <bx-side-nav-link
