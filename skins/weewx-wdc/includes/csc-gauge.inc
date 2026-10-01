@@ -1,7 +1,8 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://d3js.org/d3.v7.min.js"></script>
- 
+#include "includes/mapbox_config.inc"
+
 <!-- Import the Inter font so it always renders correctly on any website -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -656,7 +657,6 @@
     /* #raw */
     // 1. API Configuration
     const STATIC_TOKEN = "8535e71d-2290-4965-ad3f-ab05b9294fdf";
-    #include "includes/mapbox_config.inc"
     const MAPBOX_TOKEN = "{{ MAPBOX_TOKEN }}".startsWith("{") 
         ? "TOKEN_HERE" 
         : "{{ MAPBOX_TOKEN }}";
