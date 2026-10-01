@@ -347,56 +347,6 @@
         white-space: nowrap;
     }
 
-    @media (min-width: 640px) {
-        .iw-temp-val-f { font-size: 34px !important; }
-        .iw-data-val { font-size: 26px !important; }
-        .iw-temp-val-c { font-size: 13px !important; }
-    }
-
-    @media (min-width: 768px) {
-        .iw-temp-val-f { font-size: clamp(34px, 3.6vw, 44px) !important; }
-        .iw-data-val { font-size: clamp(22px, 2.5vw, 30px) !important; }
-        .iw-temp-val-c { font-size: 16px !important; margin-top: 3px !important; }
-    }
-
-    @media (min-width: 1100px) {
-        .iw-temp-val-f { font-size: 46px !important; }
-        .iw-data-val { font-size: 32px !important; }
-    }
-    
-    .iw-hero-cond-block {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        min-width: 0;
-        max-width: 52%;
-        flex: 1 1 auto;
-        overflow: visible;
-        position: relative;
-        z-index: 10;
-        padding-bottom: 2px;
-    }
-
-    #icon-weather { 
-        width: 26px; 
-        height: 26px; 
-        flex-shrink: 0; 
-        position: relative;
-        z-index: 10;
-    }
-
-    @media (min-width: 640px) { #icon-weather { width: 44px; height: 44px; } }
-    @media (min-width: 768px) { #icon-weather { width: 72px; height: 72px; } }
-    .iw-temp-val-c { 
-        font-size: 11px !important; 
-        font-weight: 500 !important; 
-        color: var(--text-muted); 
-        margin-top: 2px !important; 
-        white-space: nowrap;
-    }
-
     .iw-val-with-unit {
         display: inline-flex;
         align-items: baseline;
@@ -430,19 +380,66 @@
         .iw-data-val { font-size: 32px !important; }
         .iw-data-unit { font-size: 14px !important; }
     }
+    
+    .iw-hero-cond-block {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        min-width: 0;
+        max-width: 50%;
+        flex: 1 1 auto;
+        overflow: visible;
+        position: relative;
+        z-index: 10;
+        padding-bottom: 2px;
+    }
+
+    #icon-weather { 
+        width: 26px; 
+        height: 26px; 
+        flex-shrink: 0; 
+        position: relative;
+        z-index: 10;
+    }
+
+    @media (min-width: 640px) { #icon-weather { width: 44px; height: 44px; } }
+    @media (min-width: 768px) { #icon-weather { width: 72px; height: 72px; } }
+
+    /* Clean, compact current conditions text aligned with design typography */
+    .iw-cond-text { 
+        font-size: 10px !important; 
+        font-weight: 500 !important; 
+        color: var(--text-secondary); 
+        text-align: center;
+        line-height: 1.15 !important; 
+        margin-top: 2px !important; 
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        word-break: break-word;
+        max-width: 100%;
+        letter-spacing: -0.01em;
+    }
 
     @media (min-width: 640px) {
         .iw-cond-text { 
-            font-size: 13px !important; 
+            font-size: 12px !important; 
+            line-height: 1.25 !important;
             margin-top: 4px !important;
         }
     }
 
     @media (min-width: 768px) {
         .iw-cond-text { 
-            font-size: 16px !important; 
-            margin-top: 8px !important;
-            -webkit-line-clamp: 3;
+            font-size: 13px !important; 
+            font-weight: 500 !important;
+            line-height: 1.3 !important;
+            margin-top: 6px !important;
+            -webkit-line-clamp: 2;
         }
     }
 
@@ -642,7 +639,7 @@
                     </div>
                 </div>
 
-                <!-- Pressure Card: Label & Unit alongside icon -->
+                <!-- Pressure Card: Label alongside icon, mb next to digits -->
                 <div class="iw-card iw-card-small">
                     <div class="iw-temp-label">
                         <span class="iw-icon-pill indigo">
@@ -824,7 +821,7 @@
                         }).then(blob => {
                             tile.onload = () => done(null, tile);
                             tile.onerror = err => done(err, tile);
-                            tile.src = URL.createObjectURL(blob);
+                            tile.src = url;
                         }).catch(() => {
                             tile.onload = () => done(null, tile);
                             tile.onerror = err => done(err, tile);
