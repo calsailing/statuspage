@@ -7,6 +7,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
+<!-- Optional external configuration for local secrets (e.g. ignored in git) -->
+<script src="mapbox-config.js"></script>
+
 <style>
     #isolated-weather-widget {
         font-family: 'Inter', sans-serif !important;
@@ -241,7 +244,10 @@
     }
 
     @media (min-width: 768px) {
-        .iw-card-small { min-height: 110px; }
+        .iw-card-small { 
+            min-height: 110px; 
+            padding: 12px 14px;
+        }
     }
     
     .iw-flex-col { display: flex; flex-direction: column; min-width: 0; }
@@ -258,11 +264,12 @@
         color: var(--text-secondary); 
         text-transform: uppercase; 
         letter-spacing: 0.04em !important; 
-        margin-bottom: 4px; 
+        margin-bottom: 2px; 
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         min-width: 0;
+        height: 18px;
     }
 
     @media (min-width: 768px) {
@@ -271,6 +278,8 @@
             font-weight: 400 !important; 
             letter-spacing: 0.05em !important; 
             gap: 6px;
+            height: 22px;
+            margin-bottom: 4px;
         }
     }
 
@@ -302,10 +311,27 @@
         flex: 1 1 auto;
     }
 
-    /* Unified font size for Fahrenheit and data values (Pressure & UV) */
-    .iw-temp-val-f,
+    /* Dedicated data value block to guarantee matching vertical alignment */
+    .iw-data-val-block {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    /* Fluid responsive font sizing: Prevents clipping on narrow desktop columns */
+    .iw-temp-val-f { 
+        font-size: clamp(20px, 5.2vw, 24px) !important; 
+        font-weight: 800 !important; 
+        line-height: 1.05 !important; 
+        letter-spacing: -0.025em !important; 
+        color: var(--text-primary); 
+        white-space: nowrap;
+    }
+
     .iw-data-val { 
-        font-size: clamp(20px, 5.5vw, 24px) !important; 
+        font-size: clamp(16px, 4.2vw, 20px) !important; 
         font-weight: 800 !important; 
         line-height: 1.05 !important; 
         letter-spacing: -0.025em !important; 
@@ -322,15 +348,20 @@
     }
 
     @media (min-width: 640px) {
-        .iw-temp-val-f,
-        .iw-data-val { font-size: 36px !important; }
-        .iw-temp-val-c { font-size: 14px !important; }
+        .iw-temp-val-f { font-size: 34px !important; }
+        .iw-data-val { font-size: 26px !important; }
+        .iw-temp-val-c { font-size: 13px !important; }
     }
 
     @media (min-width: 768px) {
-        .iw-temp-val-f,
-        .iw-data-val { font-size: 48px !important; }
-        .iw-temp-val-c { font-size: 18px !important; margin-top: 4px !important; }
+        .iw-temp-val-f { font-size: clamp(34px, 3.6vw, 44px) !important; }
+        .iw-data-val { font-size: clamp(22px, 2.5vw, 30px) !important; }
+        .iw-temp-val-c { font-size: 16px !important; margin-top: 3px !important; }
+    }
+
+    @media (min-width: 1100px) {
+        .iw-temp-val-f { font-size: 46px !important; }
+        .iw-data-val { font-size: 32px !important; }
     }
     
     .iw-hero-cond-block {
@@ -406,6 +437,21 @@
     .iw-icon-pill.indigo { background-color: var(--icon-indigo-bg); color: var(--icon-indigo); }
     .iw-icon-pill.amber { background-color: var(--icon-amber-bg); color: var(--icon-amber); }
     
+    /* Standardized footer container guaranteeing identical Y-coordinates */
+    .iw-card-footer {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        min-width: 0;
+        height: 20px;
+    }
+
+    @media (min-width: 768px) {
+        .iw-card-footer {
+            height: 26px;
+        }
+    }
+
     .iw-trend-badge { 
         display: inline-flex; 
         align-items: center; 
@@ -413,15 +459,15 @@
         font-size: 9px !important; 
         font-weight: 600 !important; 
         background-color: var(--trend-bg); 
-        padding: 2px 5px; 
+        padding: 2px 6px; 
         border-radius: 9999px; 
-        margin-top: 4px; 
         width: fit-content; 
         white-space: nowrap;
+        line-height: 1 !important;
     }
 
     @media (min-width: 768px) {
-        .iw-trend-badge { font-size: 12px !important; padding: 4px 8px; margin-top: 8px; }
+        .iw-trend-badge { font-size: 11px !important; padding: 3px 8px; gap: 4px; }
     }
     
     .iw-uv-bar-wrap { 
@@ -429,12 +475,11 @@
         height: 5px; 
         background-color: var(--scale-bg); 
         border-radius: 9999px; 
-        margin-top: 6px; 
         position: relative; 
     }
 
     @media (min-width: 768px) {
-        .iw-uv-bar-wrap { height: 6px; margin-top: 12px; }
+        .iw-uv-bar-wrap { height: 6px; }
     }
 
     .iw-uv-bar-bg { display: flex; width: 100%; height: 100%; border-radius: 9999px; overflow: hidden; }
@@ -579,10 +624,12 @@
                         </span>
                         <span>Pressure (mb)</span>
                     </div>
-                    <div>
+                    <div class="iw-data-val-block">
                         <h2 id="val-pressure" class="iw-data-val">--</h2>
                     </div>
-                    <div id="val-pressure-trend" class="iw-trend-badge"></div>
+                    <div class="iw-card-footer">
+                        <div id="val-pressure-trend" class="iw-trend-badge"></div>
+                    </div>
                 </div>
 
                 <!-- UV Index Card: Label alongside icon -->
@@ -593,12 +640,14 @@
                         </span>
                         <span>UV Index</span>
                     </div>
-                    <div>
+                    <div class="iw-data-val-block">
                         <h2 id="val-uv" class="iw-data-val">--</h2>
                     </div>
-                    <div class="iw-uv-bar-wrap">
-                        <div class="iw-uv-bar-bg"><div class="iw-uv-green"></div><div class="iw-uv-amber"></div><div class="iw-uv-red"></div></div>
-                        <div id="uv-marker" class="iw-uv-marker hidden"></div>
+                    <div class="iw-card-footer">
+                        <div class="iw-uv-bar-wrap">
+                            <div class="iw-uv-bar-bg"><div class="iw-uv-green"></div><div class="iw-uv-amber"></div><div class="iw-uv-red"></div></div>
+                            <div id="uv-marker" class="iw-uv-marker hidden"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -610,7 +659,9 @@
     /* #raw */
     // 1. API Configuration
     const STATIC_TOKEN = "8535e71d-2290-4965-ad3f-ab05b9294fdf";
-    const MAPBOX_TOKEN = "TOKEN_HERE";
+    const MAPBOX_TOKEN = (typeof window !== 'undefined' && window.MAPBOX_TOKEN) 
+        ? window.MAPBOX_TOKEN 
+        : "TOKEN_HERE";
     const API_OBS_BASE = "https://swd.weatherflow.com/swd/rest/observations/stn/127241";
     const API_FCST_BASE = `https://swd.weatherflow.com/swd/rest/better_forecast?station_id=127241&units_wind=kts&token=${STATIC_TOKEN}`;
     const WEEWX_FALLBACK_URL = "https://status.cal-sailing.org/weewx.json";
