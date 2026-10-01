@@ -142,7 +142,6 @@
 
 
 </bx-header>
-
 <!-- =========================================================================
      CAL SAILING CLUB - MOBILE SUB-NAVIGATION SNIPPET
      Placement: Insert immediately below </bx-header> in your HTML/WeeWX template.
@@ -153,7 +152,7 @@
      1. Design Tokens & Carbon-compatible Variables
      -------------------------------------------------- */
   :root {
-    --csc-header-height: 48px;  /* Dynamically updated by JS if bx-header changes */
+    --csc-header-height: 3rem;  /* Matches Carbon <bx-header> 3rem (48px) */
     --csc-subnav-height: 44px;  /* Standard Carbon tab bar height */
     --csc-bg: #ffffff;
     --csc-border: #e0e0e0;
@@ -200,18 +199,26 @@
   @media (max-width: 768px) {
     #csc-mobile-subnav {
       display: block !important;
-      position: sticky;
-      top: var(--csc-header-height);
-      left: 0;
-      right: 0;
-      width: 100%;
-      height: var(--csc-subnav-height);
-      background: var(--csc-bg);
-      border-bottom: 1px solid var(--csc-border);
-      box-shadow: var(--csc-shadow);
-      z-index: 7990; /* Right below Carbon <bx-header> (~8000) */
-      overflow: hidden;
-      box-sizing: border-box;
+      position: fixed !important; /* Fixed at top: 3rem to lock right under bx-header */
+      top: var(--csc-header-height, 3rem) !important;
+      left: 0 !important;
+      right: 0 !important;
+      width: 100% !important;
+      height: var(--csc-subnav-height) !important;
+      background: var(--csc-bg) !important;
+      border-bottom: 1px solid var(--csc-border) !important;
+      box-shadow: var(--csc-shadow) !important;
+      z-index: 7990 !important; /* Sits directly beneath Carbon <bx-header> (z-index: 8000) */
+      overflow: hidden !important;
+      box-sizing: border-box !important;
+    }
+
+    /* Push page content down so the fixed subnav does not cover the top card */
+    .bx--content,
+    main,
+    #content,
+    [role="main"] {
+      margin-top: calc(var(--csc-header-height, 3rem) + var(--csc-subnav-height) + 12px) !important;
     }
   }
 
@@ -292,7 +299,7 @@
   #tides-hours,
   #webcams,
   [data-csc-anchor="true"] {
-    scroll-margin-top: calc(var(--csc-header-height) + var(--csc-subnav-height) + 12px);
+    scroll-margin-top: calc(var(--csc-header-height, 3rem) + var(--csc-subnav-height) + 16px);
   }
 
   /* Extra mobile bottom breathing room so the last section can scroll up to the top */
@@ -312,7 +319,7 @@
         <path d="M8 1a7 7 0 1 0 7 7A7.008 7.008 0 0 0 8 1zm0 13a6 6 0 1 1 6-6 6.007 6.007 0 0 1-6 6z"/>
         <path d="M7.5 4.5v3.25l2.25 1.5.5-.866-1.75-1.167V4.5z"/>
       </svg>
-      <span>Wind & Weather</span>
+      <span>Today</span>
     </a>
 
     <!-- Forecast -->
@@ -344,18 +351,31 @@
 
 <script id="csc-mobile-subnav-script">
   (function () {
-    // 1. Dynamic Header Height Calculation
+    // 1. Dynamic Header Height & Content Offset
     function getHeaderHeight() {
-      const header = document.querySelector('bx-header') || document.querySelector('[role="banner"]');
+      const header = document.querySelector('bx-header') || 
+                           document.querySelector('.bx--header') || 
+                           document.querySelector('[role="banner"]');
       return header ? header.offsetHeight : 48;
     }
 
-    function syncHeaderHeight() {
+    function syncHeaderLayout() {
       const h = getHeaderHeight();
       document.documentElement.style.setProperty('--csc-header-height', h + 'px');
+
+      if (window.innerWidth <= 768) {
+        const contentEl = document.querySelector('.bx--content') || 
+                          document.querySelector('main') || 
+                          document.querySelector('#content');
+        if (contentEl) {
+          contentEl.style.setProperty('margin-top', (h + 44 + 8) + 'px', 'important');
+        }
+      }
     }
-    syncHeaderHeight();
-    window.addEventListener('resize', syncHeaderHeight);
+
+    syncHeaderLayout();
+    window.addEventListener('resize', syncHeaderLayout);
+    window.addEventListener('orientationchange', syncHeaderLayout);
 
     // 2. Section Keyword Mapping & Auto-Anchoring
     // If the target elements don't already have these IDs, this automatically hooks into headings
