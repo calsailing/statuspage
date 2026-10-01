@@ -199,26 +199,31 @@
   @media (max-width: 768px) {
     #csc-mobile-subnav {
       display: block !important;
-      position: fixed !important; /* Fixed at top: 3rem to lock right under bx-header */
-      top: var(--csc-header-height, 3rem) !important;
+      position: fixed !important;
+      /* Hard-lock to 3rem matching Carbon <bx-header> height */
+      top: 3rem !important;
+      top: max(3rem, var(--csc-header-height, 3rem)) !important;
       left: 0 !important;
       right: 0 !important;
       width: 100% !important;
-      height: var(--csc-subnav-height) !important;
+      height: var(--csc-subnav-height, 44px) !important;
+      min-height: 44px !important;
       background: var(--csc-bg) !important;
       border-bottom: 1px solid var(--csc-border) !important;
       box-shadow: var(--csc-shadow) !important;
-      z-index: 7990 !important; /* Sits directly beneath Carbon <bx-header> (z-index: 8000) */
+      /* Directly underneath Carbon <bx-header> (z-index: 8000) and above all page elements */
+      z-index: 7999 !important;
       overflow: hidden !important;
       box-sizing: border-box !important;
     }
 
-    /* Push page content down so the fixed subnav does not cover the top card */
+    /* Push page content down so fixed bars do not cover top elements */
     .bx--content,
     main,
     #content,
-    [role="main"] {
-      margin-top: calc(var(--csc-header-height, 3rem) + var(--csc-subnav-height) + 12px) !important;
+    [role="main"],
+    .bx--grid {
+      margin-top: calc(3rem + var(--csc-subnav-height, 44px) + 12px) !important;
     }
   }
 
@@ -299,7 +304,7 @@
   #tides-hours,
   #webcams,
   [data-csc-anchor="true"] {
-    scroll-margin-top: calc(var(--csc-header-height, 3rem) + var(--csc-subnav-height) + 16px);
+    scroll-margin-top: calc(3rem + var(--csc-subnav-height, 44px) + 16px) !important;
   }
 
   /* Extra mobile bottom breathing room so the last section can scroll up to the top */
@@ -351,24 +356,35 @@
 
 <script id="csc-mobile-subnav-script">
   (function () {
-    // 1. Dynamic Header Height & Content Offset
+    // 1. Safe Header Height Calculation (guarantees >= 3rem / 48px)
     function getHeaderHeight() {
       const header = document.querySelector('bx-header') || 
-                           document.querySelector('.bx--header') || 
-                           document.querySelector('[role="banner"]');
-      return header ? header.offsetHeight : 48;
+                     document.querySelector('.bx--header') || 
+                     document.querySelector('[role="banner"]');
+      if (header) {
+        const rect = header.getBoundingClientRect();
+        if (rect.height && rect.height > 20) return rect.height;
+        if (header.offsetHeight && header.offsetHeight > 20) return header.offsetHeight;
+      }
+      // Accurate fallback based on root rem (16px * 3 = 48px)
+      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      return rem * 3;
     }
 
     function syncHeaderLayout() {
       const h = getHeaderHeight();
-      document.documentElement.style.setProperty('--csc-header-height', h + 'px');
+      if (h >= 32) {
+        document.documentElement.style.setProperty('--csc-header-height', h + 'px');
+      }
 
       if (window.innerWidth <= 768) {
         const contentEl = document.querySelector('.bx--content') || 
                           document.querySelector('main') || 
-                          document.querySelector('#content');
+                          document.querySelector('#content') ||
+                          document.querySelector('.bx--grid');
         if (contentEl) {
-          contentEl.style.setProperty('margin-top', (h + 44 + 8) + 'px', 'important');
+          const effectiveH = Math.max(h, 48);
+          contentEl.style.setProperty('margin-top', (effectiveH + 44 + 12) + 'px', 'important');
         }
       }
     }
@@ -376,9 +392,9 @@
     syncHeaderLayout();
     window.addEventListener('resize', syncHeaderLayout);
     window.addEventListener('orientationchange', syncHeaderLayout);
+    document.addEventListener('DOMContentLoaded', syncHeaderLayout);
 
     // 2. Section Keyword Mapping & Auto-Anchoring
-    // If the target elements don't already have these IDs, this automatically hooks into headings
     const sectionTargets = [
       { id: 'todays-conditions', keywords: ["today's conditions", "todays conditions", "today's", "today"] },
       { id: 'forecast', keywords: ["forecast"] },
@@ -439,40 +455,55 @@
     // 4. Smooth Tap-to-Scroll Handling with ScrollSpy Lock
     navLinks.forEach(link => {
       link.addEventListener('click', function (e) {
+        e.preventDefault();
         const targetId = this.getAttribute('data-target');
-        const targetElement = document.getElementById(targetId);
 
-        if (targetElement) {
-          e.preventDefault();
-          isClickScrolling = true;
-          clearTimeout(clickTimeout);
+        isClickScrolling = true;
+        clearTimeout(clickTimeout);
+        activateTab(targetId);
 
-          activateTab(targetId);
-
-          const headerH = getHeaderHeight();
-          const subnavH = 44;
-          const totalOffset = headerH + subnavH + 8;
-          const targetY = targetElement.getBoundingClientRect().top + window.pageYOffset - totalOffset;
-
+        // Clicking "Today" scrolls completely to the top
+        if (targetId === 'todays-conditions') {
           window.scrollTo({
-            top: Math.max(0, targetY),
+            top: 0,
             behavior: 'smooth'
           });
+        } else {
+          const targetElement = document.getElementById(targetId);
+          if (targetElement) {
+            const headerH = getHeaderHeight();
+            const subnavH = 44;
+            const totalOffset = headerH + subnavH + 8;
+            const targetY = targetElement.getBoundingClientRect().top + window.pageYOffset - totalOffset;
 
-          // Re-enable scrollspy after scroll finishes
-          clickTimeout = setTimeout(() => {
-            isClickScrolling = false;
-          }, 850);
+            window.scrollTo({
+              top: Math.max(0, targetY),
+              behavior: 'smooth'
+            });
+          }
         }
+
+        // Re-enable scrollspy after scroll finishes
+        clickTimeout = setTimeout(() => {
+          isClickScrolling = false;
+        }, 850);
       });
     });
 
-    // 5. ScrollSpy with Bottom-of-Page Detection
+    // 5. ScrollSpy with Top & Bottom-of-Page Detection
     function handleScroll() {
       if (isClickScrolling) return;
 
-      // When user reaches near the bottom of the page, highlight the last section (Webcams)
-      const scrollBottom = window.innerHeight + window.pageYOffset;
+      const currentScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+
+      // If near the top, highlight "Today"
+      if (currentScrollY <= 60) {
+        activateTab('todays-conditions');
+        return;
+      }
+
+      // If near the bottom, highlight "Webcams"
+      const scrollBottom = window.innerHeight + currentScrollY;
       const docHeight = document.documentElement.scrollHeight;
       if (scrollBottom >= docHeight - 45) {
         const lastTarget = sectionTargets[sectionTargets.length - 1];
@@ -482,7 +513,7 @@
 
       const headerH = getHeaderHeight();
       const subnavH = 44;
-      const scrollThreshold = window.pageYOffset + headerH + subnavH + 40;
+      const scrollThreshold = currentScrollY + headerH + subnavH + 40;
 
       let currentTargetId = sectionTargets[0].id;
       for (let i = 0; i < sectionTargets.length; i++) {
