@@ -656,7 +656,7 @@
     /* #raw */
     // 1. API Configuration
     const STATIC_TOKEN = "8535e71d-2290-4965-ad3f-ab05b9294fdf";
-    // Injected via Python template/include; falls back gracefully if opened standalone
+    #include "includes/mapbox_config.inc"
     const MAPBOX_TOKEN = "{{ MAPBOX_TOKEN }}".startsWith("{") 
         ? "TOKEN_HERE" 
         : "{{ MAPBOX_TOKEN }}";
