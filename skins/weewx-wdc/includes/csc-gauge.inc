@@ -1,10 +1,7 @@
-#include "mapbox_config.inc"
-
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://d3js.org/d3.v7.min.js"></script>
-
-
+ 
 <!-- Import the Inter font so it always renders correctly on any website -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -227,12 +224,15 @@
         flex-direction: column;
         justify-content: space-between;
         min-height: 86px;
+        overflow: visible !important;
+        position: relative;
+        z-index: 2;
     }
 
     @media (min-width: 768px) {
         .iw-card-hero { 
             grid-column: 1 / -1; 
-            min-height: 110px;
+            min-height: 110px; 
         }
     }
 
@@ -373,7 +373,9 @@
         min-width: 0;
         max-width: 52%;
         flex: 1 1 auto;
-        overflow: hidden;
+        overflow: visible;
+        position: relative;
+        z-index: 10;
         padding-bottom: 2px;
     }
 
@@ -381,28 +383,52 @@
         width: 26px; 
         height: 26px; 
         flex-shrink: 0; 
+        position: relative;
+        z-index: 10;
     }
 
     @media (min-width: 640px) { #icon-weather { width: 44px; height: 44px; } }
     @media (min-width: 768px) { #icon-weather { width: 72px; height: 72px; } }
-
-    /* Graceful conditions text: wrapping and scaling to prevent spilling */
-    .iw-cond-text { 
-        font-size: 10px !important; 
+    .iw-temp-val-c { 
+        font-size: 11px !important; 
         font-weight: 500 !important; 
-        color: var(--text-secondary); 
-        margin-top: 1px !important; 
-        text-align: center; 
-        width: 100%;
-        max-width: 100%;
-        overflow-wrap: break-word;
-        word-break: break-word;
-        hyphens: auto;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        line-height: 1.15 !important;
+        color: var(--text-muted); 
+        margin-top: 2px !important; 
+        white-space: nowrap;
+    }
+
+    .iw-val-with-unit {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 3px;
+        min-width: 0;
+    }
+
+    .iw-data-unit {
+        font-size: 10px !important;
+        font-weight: 600 !important;
+        color: var(--text-secondary);
+        letter-spacing: -0.01em;
+    }
+
+    @media (min-width: 640px) {
+        .iw-temp-val-f { font-size: 34px !important; }
+        .iw-data-val { font-size: 26px !important; }
+        .iw-temp-val-c { font-size: 13px !important; }
+        .iw-data-unit { font-size: 12px !important; }
+    }
+
+    @media (min-width: 768px) {
+        .iw-temp-val-f { font-size: clamp(34px, 3.6vw, 44px) !important; }
+        .iw-data-val { font-size: clamp(22px, 2.5vw, 30px) !important; }
+        .iw-temp-val-c { font-size: 16px !important; margin-top: 3px !important; }
+        .iw-data-unit { font-size: 13px !important; }
+    }
+
+    @media (min-width: 1100px) {
+        .iw-temp-val-f { font-size: 46px !important; }
+        .iw-data-val { font-size: 32px !important; }
+        .iw-data-unit { font-size: 14px !important; }
     }
 
     @media (min-width: 640px) {
@@ -622,10 +648,13 @@
                         <span class="iw-icon-pill indigo">
                             <svg style="width: 11px; height: 11px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
                         </span>
-                        <span>Pressure (mb)</span>
+                        <span>Pressure</span>
                     </div>
                     <div class="iw-data-val-block">
-                        <h2 id="val-pressure" class="iw-data-val">--</h2>
+                        <div class="iw-val-with-unit">
+                            <h2 id="val-pressure" class="iw-data-val">--</h2>
+                            <span class="iw-data-unit">mb</span>
+                        </div>
                     </div>
                     <div class="iw-card-footer">
                         <div id="val-pressure-trend" class="iw-trend-badge"></div>
@@ -659,9 +688,7 @@
     /* #raw */
     // 1. API Configuration
     const STATIC_TOKEN = "8535e71d-2290-4965-ad3f-ab05b9294fdf";
-    const MAPBOX_TOKEN = "{{ MAPBOX_TOKEN }}".startsWith("{") 
-        ? "TOKEN_HERE" 
-        : "{{ MAPBOX_TOKEN }}";
+    const MAPBOX_TOKEN = "TOKEN_HERE";
     const API_OBS_BASE = "https://swd.weatherflow.com/swd/rest/observations/stn/127241";
     const API_FCST_BASE = `https://swd.weatherflow.com/swd/rest/better_forecast?station_id=127241&units_wind=kts&token=${STATIC_TOKEN}`;
     const WEEWX_FALLBACK_URL = "https://status.cal-sailing.org/weewx.json";
