@@ -41,6 +41,7 @@
         width: 100%;
         position: relative;
         color: var(--text-primary);
+        box-sizing: border-box;
     }
 
     #isolated-weather-widget.is-dark {
@@ -71,7 +72,6 @@
     }
 
     #isolated-weather-widget.map-mode .iw-gauge-mount {
-        /* Force Dark Mode for Wind Gauge Elements */
         --bg-panel: #2a2a2a !important; 
         --text-primary: #e5e7eb !important;
         --text-secondary: #9ca3af !important;
@@ -79,8 +79,6 @@
         --dial-tick: #4a4a4a !important;
         --bubble-fill: #2a2a2a !important;
         --bubble-opacity: 0.9 !important;
-        
-        /* Force Light Mode for Compass Elements */
         --compass-text: rgba(255, 255, 255, 0.6) !important;
         --grey-tick: #9ca3af !important;
     }
@@ -91,7 +89,6 @@
         border-radius: 0 !important; 
     }
 
-    /* Aggressive CSS Reset to isolate from host site styles */
     #isolated-weather-widget * { 
         box-sizing: border-box; 
         font-family: 'Inter', sans-serif !important;
@@ -109,14 +106,14 @@
     }
     #isolated-weather-widget .hidden { display: none !important; }
 
-    .iw-main-row { display: flex; flex-direction: column; gap: 24px; width: 100%; }
+    .iw-main-row { display: flex; flex-direction: column; gap: 16px; width: 100%; }
 
     @media (min-width: 768px) { 
-        .iw-main-row { flex-direction: row; align-items: stretch; } 
+        .iw-main-row { flex-direction: row; align-items: stretch; gap: 24px; } 
         .iw-dial-card { flex: 1.25; min-width: 350px; max-width: 550px; aspect-ratio: 330 / 284; }
     }
     
-    .iw-panel { position: relative; flex: 1; width: 100%; display: flex; flex-direction: column; }
+    .iw-panel { position: relative; flex: 1; width: 100%; min-width: 0; display: flex; flex-direction: column; }
     .iw-dial-card { 
         background-color: var(--bg-panel); 
         border: 1px solid var(--border-panel); 
@@ -185,38 +182,271 @@
         width: 100%;
     }
 
-    .iw-weather-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; flex: 1; }
+    /* Responsive Grid: All 3 cards in one single line on mobile; 2x2 layout on desktop */
+    .iw-weather-grid { 
+        display: grid; 
+        grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) minmax(0, 1fr); 
+        gap: 6px; 
+        flex: 1;
+        width: 100%;
+        min-width: 0;
+    }
+
+    @media (min-width: 768px) {
+        .iw-weather-grid { 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 8px; 
+        }
+    }
     
-    .iw-card { background-color: var(--bg-panel); border: 1px solid var(--border-panel); border-radius: 12px; padding: 16px; box-shadow: none; transition: transform 0.2s ease; }
+    .iw-card { 
+        background-color: var(--bg-panel); 
+        border: 1px solid var(--border-panel); 
+        padding: 8px; 
+        box-shadow: none; 
+        min-width: 0;
+        overflow: hidden;
+        transition: transform 0.2s ease;
+    }
+
+    @media (min-width: 768px) {
+        .iw-card { padding: 16px; }
+    }
+
     .iw-card:hover { transform: translateY(-2px); }
-    .iw-card-hero { grid-column: 1 / -1; background: linear-gradient(135deg, var(--hero-bg-1) 0%, var(--hero-bg-2) 100%); border: 1px solid var(--hero-border); box-shadow: none; }
-    .iw-card-small { display: flex; flex-direction: column; justify-content: center; min-height: 110px; }
     
-    .iw-flex-col { display: flex; flex-direction: column; }
-    .iw-justify-between { display: flex; justify-content: space-between; }
-    .iw-items-center { display: flex; align-items: center; }
+    .iw-card-hero { 
+        grid-column: auto; 
+        background: linear-gradient(135deg, var(--hero-bg-1) 0%, var(--hero-bg-2) 100%); 
+        border: 1px solid var(--hero-border); 
+        box-shadow: none; 
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 86px;
+    }
+
+    @media (min-width: 768px) {
+        .iw-card-hero { 
+            grid-column: 1 / -1; 
+            min-height: 110px;
+        }
+    }
+
+    .iw-card-small { 
+        display: flex; 
+        flex-direction: column; 
+        justify-content: space-between; 
+        min-height: 86px; 
+    }
+
+    @media (min-width: 768px) {
+        .iw-card-small { min-height: 110px; }
+    }
     
-    .iw-temp-label { display: flex; align-items: center; gap: 4px; font-size: 12px !important; font-weight: 400 !important; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em !important; margin-bottom: 4px; }
-    .iw-temp-val-f { font-size: 48px !important; font-weight: 800 !important; line-height: 1 !important; letter-spacing: -0.025em !important; color: var(--text-primary); }
-    .iw-temp-val-c { font-size: 18px !important; font-weight: 500 !important; color: var(--text-muted); margin-top: 4px; }
+    .iw-flex-col { display: flex; flex-direction: column; min-width: 0; }
+    .iw-justify-between { display: flex; justify-content: space-between; min-width: 0; }
+    .iw-items-center { display: flex; align-items: center; min-width: 0; }
+
+    /* Label with icon directly next to it */
+    .iw-temp-label { 
+        display: flex; 
+        align-items: center; 
+        gap: 4px; 
+        font-size: 10px !important; 
+        font-weight: 500 !important; 
+        color: var(--text-secondary); 
+        text-transform: uppercase; 
+        letter-spacing: 0.04em !important; 
+        margin-bottom: 4px; 
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+    }
+
+    @media (min-width: 768px) {
+        .iw-temp-label { 
+            font-size: 12px !important; 
+            font-weight: 400 !important; 
+            letter-spacing: 0.05em !important; 
+            gap: 6px;
+        }
+    }
+
+    .iw-label-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
     
-    .iw-cond-text { font-size: 16px !important; font-weight: 500 !important; color: var(--text-secondary); margin-top: 8px; text-align: center; }
+    /* Hero temperature & conditions layout */
+    .iw-hero-content {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 4px;
+        width: 100%;
+        min-width: 0;
+        flex: 1 1 auto;
+        padding-bottom: 2px;
+    }
+
+    .iw-hero-temp-block {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    /* Unified font size for Fahrenheit and data values (Pressure & UV) */
+    .iw-temp-val-f,
+    .iw-data-val { 
+        font-size: clamp(20px, 5.5vw, 24px) !important; 
+        font-weight: 800 !important; 
+        line-height: 1.05 !important; 
+        letter-spacing: -0.025em !important; 
+        color: var(--text-primary); 
+        white-space: nowrap;
+    }
+
+    .iw-temp-val-c { 
+        font-size: 11px !important; 
+        font-weight: 500 !important; 
+        color: var(--text-muted); 
+        margin-top: 2px !important; 
+        white-space: nowrap;
+    }
+
+    @media (min-width: 640px) {
+        .iw-temp-val-f,
+        .iw-data-val { font-size: 36px !important; }
+        .iw-temp-val-c { font-size: 14px !important; }
+    }
+
+    @media (min-width: 768px) {
+        .iw-temp-val-f,
+        .iw-data-val { font-size: 48px !important; }
+        .iw-temp-val-c { font-size: 18px !important; margin-top: 4px !important; }
+    }
     
-    .iw-data-val { font-size: 24px !important; font-weight: 700 !important; color: var(--text-primary); }
-    .iw-data-label { font-size: 12px !important; font-weight: 500 !important; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em !important; margin-top: 4px; }
+    .iw-hero-cond-block {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        min-width: 0;
+        max-width: 52%;
+        flex: 1 1 auto;
+        overflow: hidden;
+        padding-bottom: 2px;
+    }
+
+    #icon-weather { 
+        width: 26px; 
+        height: 26px; 
+        flex-shrink: 0; 
+    }
+
+    @media (min-width: 640px) { #icon-weather { width: 44px; height: 44px; } }
+    @media (min-width: 768px) { #icon-weather { width: 72px; height: 72px; } }
+
+    /* Graceful conditions text: wrapping and scaling to prevent spilling */
+    .iw-cond-text { 
+        font-size: 10px !important; 
+        font-weight: 500 !important; 
+        color: var(--text-secondary); 
+        margin-top: 1px !important; 
+        text-align: center; 
+        width: 100%;
+        max-width: 100%;
+        overflow-wrap: break-word;
+        word-break: break-word;
+        hyphens: auto;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        line-height: 1.15 !important;
+    }
+
+    @media (min-width: 640px) {
+        .iw-cond-text { 
+            font-size: 13px !important; 
+            margin-top: 4px !important;
+        }
+    }
+
+    @media (min-width: 768px) {
+        .iw-cond-text { 
+            font-size: 16px !important; 
+            margin-top: 8px !important;
+            -webkit-line-clamp: 3;
+        }
+    }
+
+    .iw-icon-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        border-radius: 9999px;
+        flex-shrink: 0;
+    }
+
+    @media (min-width: 768px) {
+        .iw-icon-pill { width: 22px; height: 22px; }
+    }
+
+    .iw-icon-pill.indigo { background-color: var(--icon-indigo-bg); color: var(--icon-indigo); }
+    .iw-icon-pill.amber { background-color: var(--icon-amber-bg); color: var(--icon-amber); }
     
-    .iw-icon-circle { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 9999px; margin-bottom: 12px; }
-    .iw-icon-circle.indigo { background-color: var(--icon-indigo-bg); color: var(--icon-indigo); }
-    .iw-icon-circle.amber { background-color: var(--icon-amber-bg); color: var(--icon-amber); }
+    .iw-trend-badge { 
+        display: inline-flex; 
+        align-items: center; 
+        gap: 3px; 
+        font-size: 9px !important; 
+        font-weight: 600 !important; 
+        background-color: var(--trend-bg); 
+        padding: 2px 5px; 
+        border-radius: 9999px; 
+        margin-top: 4px; 
+        width: fit-content; 
+        white-space: nowrap;
+    }
+
+    @media (min-width: 768px) {
+        .iw-trend-badge { font-size: 12px !important; padding: 4px 8px; margin-top: 8px; }
+    }
     
-    .iw-trend-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px !important; font-weight: 600 !important; background-color: var(--trend-bg); padding: 4px 8px; border-radius: 9999px; margin-top: 8px; width: fit-content; }
-    
-    .iw-uv-bar-wrap { width: 100%; height: 6px; background-color: var(--scale-bg); border-radius: 9999px; margin-top: 12px; position: relative; }
+    .iw-uv-bar-wrap { 
+        width: 100%; 
+        height: 5px; 
+        background-color: var(--scale-bg); 
+        border-radius: 9999px; 
+        margin-top: 6px; 
+        position: relative; 
+    }
+
+    @media (min-width: 768px) {
+        .iw-uv-bar-wrap { height: 6px; margin-top: 12px; }
+    }
+
     .iw-uv-bar-bg { display: flex; width: 100%; height: 100%; border-radius: 9999px; overflow: hidden; }
     .iw-uv-green { flex: 3; background-color: var(--trend-green); }
     .iw-uv-amber { flex: 3; background-color: var(--icon-amber); }
     .iw-uv-red { flex: 5; background-color: var(--trend-red); }
-    .iw-uv-marker { position: absolute; top: 50%; transform: translateY(-50%); width: 6px; height: 12px; background-color: white; border: 1px solid #d1d5db; border-radius: 9999px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); transition: left 0.5s ease; }
+    .iw-uv-marker { position: absolute; top: 50%; transform: translateY(-50%); width: 5px; height: 10px; background-color: white; border: 1px solid #d1d5db; border-radius: 9999px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); transition: left 0.5s ease; }
+    
+    @media (min-width: 768px) {
+        .iw-uv-marker { width: 6px; height: 12px; }
+    }
+
     #isolated-weather-widget.is-dark .iw-uv-marker { background-color: #1f2937; border-color: #4b5563; }
     
     .iw-switch { position: relative; display: inline-block; width: 36px; height: 20px; }
@@ -239,27 +469,24 @@
         stroke: var(--track-bg) !important;
     }
     
-    #icon-weather { width: 56px; height: 56px; }
-    @media (min-width: 640px) { #icon-weather { width: 72px; height: 72px; } }
-    
     .animate-float { animation: float 6s ease-in-out infinite; }
-    @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+    @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-8px); } 100% { transform: translateY(0px); } }
     .animate-spin-slow { animation: spin 8s linear infinite; }
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-    /* --- Status Pill Styles (For elements outside widget) --- */
+    /* --- Status Pill Styles --- */
     .wf-update-time {
         font-weight: normal;
         vertical-align: middle;
         margin-left: 8px;
         display: inline-block;
-        min-width: 38px; /* Reserves exact horizontal space for the clock digits */
+        min-width: 38px;
         text-align: center;
     }
     .wf-status-pill {
         display: inline-flex;
         align-items: center;
-        justify-content: center; /* Centers contents inside the pill */
+        justify-content: center;
         gap: 6px;
         font-size: 13px;
         font-weight: 500;
@@ -268,7 +495,7 @@
         font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
         vertical-align: middle;
         margin-left: 8px;
-        min-width: 92px; /* Reserves exact horizontal space to prevent jumping on state switch */
+        min-width: 92px;
     }
     .wf-status-pill.online { background-color: #e6f4ea; color: #1e8e3e; }
     .wf-status-pill.delayed { background-color: #fef7e0; color: #b06000; }
@@ -285,22 +512,14 @@
         100% { box-shadow: 0 0 0 0 rgba(30, 142, 62, 0); }
     }
 
-    /* --- New: Loading State Styles & Keyframes --- */
-    .wf-status-pill.loading {
-        background-color: #f1f5f9;
-        color: #64748b;
-    }
-    .loading .wf-dot {
-        background-color: #64748b;
-        animation: wf-pulse-gray 1.5s infinite;
-    }
+    .wf-status-pill.loading { background-color: #f1f5f9; color: #64748b; }
+    .loading .wf-dot { background-color: #64748b; animation: wf-pulse-gray 1.5s infinite; }
     @keyframes wf-pulse-gray {
         0% { box-shadow: 0 0 0 0 rgba(100, 116, 139, 0.4); }
         70% { box-shadow: 0 0 0 4px rgba(100, 116, 139, 0); }
         100% { box-shadow: 0 0 0 0 rgba(100, 116, 139, 0); }
     }
 
-    /* Dark Mode Hooks - Assuming 'dark' class on html */
     html.dark .wf-status-pill.loading { background-color: rgba(100, 116, 139, 0.2); color: #94a3b8; }
     html.dark .loading .wf-dot { background-color: #94a3b8; }
     html.dark .wf-status-pill.online { background-color: rgba(30, 142, 62, 0.2); color: #81c995; }
@@ -311,9 +530,9 @@
     html.dark .offline .wf-dot { background-color: #f28b82; }
 </style>
 
-
 <div id="isolated-weather-widget">
     <div class="iw-main-row">
+        <!-- Wind Dial Card -->
         <div class="iw-panel iw-dial-card">
             <div class="iw-map-toggle">
                 <span class="iw-toggle-label" title="Satellite Map" style="display: flex; align-items: center;">
@@ -330,43 +549,56 @@
             </div>
             <div id="gauge-mount" class="iw-gauge-mount"></div>
         </div>
+
+        <!-- Weather Metrics Panel: 1 single horizontal row on mobile, 2x2 grid on desktop -->
         <div class="iw-panel">
             <div class="iw-weather-grid">
+                <!-- Current Temperature & Conditions Hero Card -->
                 <div class="iw-card iw-card-hero">
-                    <div class="iw-justify-between iw-items-center" style="padding: 0 8px;">
-                        <div class="iw-flex-col">
-                            <div class="iw-temp-label">
-                                <svg style="width: 14px; height: 14px; color: #3b82f6;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
-                                <span>Current</span>
-                            </div>
+                    <div class="iw-temp-label">
+                        <svg class="iw-label-icon" style="width: 14px; height: 14px; color: #3b82f6;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
+                        <span>Current</span>
+                    </div>
+                    <div class="iw-hero-content">
+                        <div class="iw-hero-temp-block">
                             <h1 id="val-temp-f" class="iw-temp-val-f">--&deg;F</h1>
                             <p id="val-temp-c" class="iw-temp-val-c">--&deg;C</p>
                         </div>
-                        <div class="iw-flex-col iw-items-center" style="padding-top: 4px;">
+                        <div class="iw-hero-cond-block">
                             <div id="icon-weather" class="animate-float"></div>
-                            <p id="val-conditions" class="iw-cond-text">--</p>
+                            <p id="val-conditions" class="iw-cond-text" title="Current conditions">--</p>
                         </div>
                     </div>
                 </div>
+
+                <!-- Pressure Card: Label & Unit alongside icon -->
                 <div class="iw-card iw-card-small">
-                    <div class="iw-flex-col" style="height: 100%; justify-content: space-between;">
-                        <div class="iw-icon-circle indigo">
-                            <svg style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
-                        </div>
-                        <div><h2 id="val-pressure" class="iw-data-val">--</h2><p class="iw-data-label">Pressure (mb)</p></div>
-                        <div id="val-pressure-trend" class="iw-trend-badge"></div>
+                    <div class="iw-temp-label">
+                        <span class="iw-icon-pill indigo">
+                            <svg style="width: 11px; height: 11px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
+                        </span>
+                        <span>Pressure (mb)</span>
                     </div>
+                    <div>
+                        <h2 id="val-pressure" class="iw-data-val">--</h2>
+                    </div>
+                    <div id="val-pressure-trend" class="iw-trend-badge"></div>
                 </div>
+
+                <!-- UV Index Card: Label alongside icon -->
                 <div class="iw-card iw-card-small">
-                    <div class="iw-flex-col" style="height: 100%; justify-content: space-between;">
-                        <div class="iw-icon-circle amber">
-                            <svg class="animate-spin-slow" style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
-                        </div>
-                        <div><h2 id="val-uv" class="iw-data-val">--</h2><p class="iw-data-label">UV Index</p></div>
-                        <div class="iw-uv-bar-wrap">
-                            <div class="iw-uv-bar-bg"><div class="iw-uv-green"></div><div class="iw-uv-amber"></div><div class="iw-uv-red"></div></div>
-                            <div id="uv-marker" class="iw-uv-marker hidden"></div>
-                        </div>
+                    <div class="iw-temp-label">
+                        <span class="iw-icon-pill amber">
+                            <svg class="animate-spin-slow" style="width: 11px; height: 11px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                        </span>
+                        <span>UV Index</span>
+                    </div>
+                    <div>
+                        <h2 id="val-uv" class="iw-data-val">--</h2>
+                    </div>
+                    <div class="iw-uv-bar-wrap">
+                        <div class="iw-uv-bar-bg"><div class="iw-uv-green"></div><div class="iw-uv-amber"></div><div class="iw-uv-red"></div></div>
+                        <div id="uv-marker" class="iw-uv-marker hidden"></div>
                     </div>
                 </div>
             </div>
@@ -448,7 +680,6 @@
 
     // 3. Fetch Helper
     const fetchWithRetry = async (url, options = {}, maxRetries = 3) => {
-        // Handle backward compatibility if the 2nd argument passed was maxRetries
         if (typeof options === 'number') {
             maxRetries = options;
             options = {};
@@ -690,7 +921,6 @@
     
     const oppRangeText = oppTextGroup.append("text").attr("y", 4.5).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "6.5px").style("font-weight", "300").attr("fill", "var(--text-primary)");
     
-    // Extracted tspan variables for programmatic toggling during fallback
     const oppLullVal = oppRangeText.append("tspan").text("0");
     const oppToText = oppRangeText.append("tspan").text(" to ");
     const oppGustVal = oppRangeText.append("tspan").text("0");
@@ -700,7 +930,6 @@
     const speedReadout = topBubble.append("text").attr("y", -2).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "46px").style("font-weight", "800").style("letter-spacing", "-1px").attr("fill", "var(--text-primary)").text("0");
     const unitsReadout = topBubble.append("text").attr("y", 24).attr("text-anchor", "middle").attr("dominant-baseline", "central").style("font-size", "11px").style("font-weight", "300").attr("fill", "var(--text-secondary)").text("kt");
 
-    /* --- Status Pill Helper Functions --- */
     function getCompactTimeAgo(obsTimeMs) {
         const seconds = Math.floor((Date.now() - obsTimeMs) / 1000);
         const minutes = Math.floor(seconds / 60);
@@ -715,7 +944,7 @@
     function updateStatusPill(obsTimeMs) {
         const timeText = document.getElementById('wf-time');
         const pill = document.getElementById('wf-pill');
-        if (!timeText || !pill) return; // Fail gracefully if elements are not on page
+        if (!timeText || !pill) return;
 
         if (!obsTimeMs) {
             pill.style.display = 'inline-flex';
@@ -742,11 +971,7 @@
     }
 
     function update(data, isInstantRestore = false) {
-        // Detect if Lull data is available (null during fallback state)
         const hasLull = data.lull !== null && data.lull !== undefined;
-        
-        // If lull is unavailable, we default to speed mathematically so the dial logic doesn't break,
-        // but visually it gets completely hidden below.
         const l = hasLull ? data.lull : (data.speed || 0);
         const s = data.speed || 0, g = data.gust || 0, d = data.direction || 0;
         
@@ -766,7 +991,6 @@
             return time => { dat.endAngle = i(time); return d3.arc().innerRadius(R.speedTrack - 14).outerRadius(R.speedTrack + 2)(dat); }; 
         });
         
-        // Hide the lull marker completely during fallback
         lullMarker.transition(t)
             .attr("transform", `rotate(${(speedScale(l) * 180) / Math.PI})`)
             .attr("opacity", hasLull ? 1 : 0);
@@ -792,7 +1016,6 @@
             }; 
         });
 
-        // Conditionally show/hide lull text values in the bubble
         oppLullVal.style("display", hasLull ? "inline" : "none");
         oppToText.style("display", hasLull ? "inline" : "none");
 
@@ -817,7 +1040,6 @@
     async function fetchWeatherData(isInitialLoad = false) {
         let primarySuccess = false;
 
-        // Try primary API first
         try {
             let obsData;
             const currentUrl = getObsUrl();
@@ -829,7 +1051,6 @@
                 obsData = await fetchWithRetry(currentUrl).catch(() => null); 
             }
 
-            // Verify obs payload is populated and recent
             if (obsData && obsData.obs && Array.isArray(obsData.obs) && obsData.obs.length > 0) {
                 let speedSum = 0, uSum = 0, vSum = 0;
                 let minLull = Infinity, maxGust = -Infinity;
@@ -888,8 +1109,6 @@
                         primarySuccess = false;
                     } else {
                         primarySuccess = true;
-                        
-                        // Update the UI pill with the fresh timestamp
                         updateStatusPill(latestObsTime * 1000);
                         
                         const avgSpeed = speedSum / count;
@@ -943,25 +1162,20 @@
             console.error("Tempest API error:", e); 
         }
 
-        // TRIGGER FALLBACK Logic if Tempest failed or payload array is empty
         if (!primarySuccess) {
             console.warn("Primary API delayed or unavailable. Sourcing from weewx.json fallback...");
             try {
-                // 1. Add cache bypass via HTTP headers rather than mutating the URL
                 let fallbackData;
                 try {
                     fallbackData = await fetchWithRetry(WEEWX_FALLBACK_URL, { cache: 'no-store' });
                 } catch (directErr) {
-                    // Fallback to proxy if CORS/Network error occurs (e.g. testing in a sandbox environment)
-                    console.warn("Direct fetch failed (likely CORS). Attempting proxy bypass...", directErr);
+                    console.warn("Direct fetch failed. Attempting proxy bypass...", directErr);
                     fallbackData = await fetchWithRetry(`https://api.allorigins.win/raw?url=${encodeURIComponent(WEEWX_FALLBACK_URL)}`, { cache: 'no-store' });
                 }
                 
-                // 2. Be resilient to slight JSON nesting differences (nested 'current' vs flat structure)
                 const curr = (fallbackData && fallbackData.current) ? fallbackData.current : fallbackData;
 
                 if (curr) {
-                    // Ultra-robust time parser (handles epoch seconds, epoch ms, standard ISO strings, and nested .value objects)
                     let fallbackTimeMs = Date.now();
                     let tRaw = curr.dateTime || curr.datetime || curr.time || curr.timestamp || fallbackData.dateTime;
                     if (tRaw && typeof tRaw === 'object' && 'value' in tRaw) {
@@ -973,19 +1187,16 @@
                         if (isNaN(parsed)) {
                             fallbackTimeMs = new Date(tRaw).getTime();
                         } else {
-                            // If it's a 10-digit epoch (seconds), multiply by 1000 for JS (milliseconds)
                             fallbackTimeMs = parsed > 10000000000 ? parsed : parsed * 1000;
                         }
                     }
                     
                     updateStatusPill(fallbackTimeMs);
 
-                    // 3. Robust extractor for various standard WeeWX naming conventions and nested .value objects
                     const getVal = (keys) => {
                         for (let k of keys) {
                             if (curr[k] !== undefined && curr[k] !== null) {
                                 let rawVal = curr[k];
-                                // Dig into nested 'value' object if that's how it's formatted
                                 if (typeof rawVal === 'object' && rawVal !== null && 'value' in rawVal) {
                                     rawVal = rawVal.value;
                                 }
@@ -996,7 +1207,6 @@
                         return null;
                     };
 
-                    // Explicitly pass `null` to disable Lull UI features
                     const weatherState = {
                         lull: null, 
                         speed: getVal(['wind speed', 'wind_speed', 'windSpeed', 'wind_avg']) || 0,
@@ -1005,7 +1215,6 @@
                     };
                     update(weatherState);
 
-                    // Opportunistic updates for side panels if they exist in the JSON
                     const temp = getVal(['outTemp', 'out temp', 'out_temp', 'temperature', 'temp']);
                     if (temp !== null) {
                         const tempF = temp;
@@ -1020,7 +1229,7 @@
                     const baro = getVal(['barometer', 'pressure', 'baro']);
                     if (baro !== null) {
                         let pressMb = baro;
-                        if (pressMb < 50) pressMb = pressMb * 33.8639; // Detects inHg & Converts to mb
+                        if (pressMb < 50) pressMb = pressMb * 33.8639;
                         const pressEl = document.getElementById('val-pressure');
                         if (pressEl) pressEl.innerText = pressMb.toFixed(1);
                         saveToLocalStorage({ pressure: pressMb.toFixed(1) });
@@ -1038,15 +1247,15 @@
                         saveToLocalStorage({ uv: uv.toFixed(1) });
                     }
                 } else {
-                    updateStatusPill(null); // Force Offline state if JSON format is completely unrecognized
+                    updateStatusPill(null);
                 }
             } catch (fallbackErr) {
                 console.error("Fallback API failed:", fallbackErr);
-                updateStatusPill(null); // Force Offline state if fallback network error (e.g., CORS/Offline)
+                updateStatusPill(null);
             }
         }
 
-        // Run forecast explicitly after observations
+        // Fetch forecast conditions
         if (isInitialLoad) {
             try {
                 let fcstData;
@@ -1105,10 +1314,10 @@
         update({ lull: 0, speed: 0, gust: 0, direction: 0 }, true); 
     }
 
-    // 1. Run immediately on page load
+    // Run observation fetch immediately
     fetchWeatherData(true); 
     
-    // 2. Sync future updates exactly to the top of the system clock's minute (plus a 8-second delay)
+    // Schedule synchronized polling at the top of the minute
     function scheduleNextMinuteUpdate() {
         const now = new Date();
         const msUntilNextUpdate = 60000 - (now.getSeconds() * 1000 + now.getMilliseconds()) + 8000;
