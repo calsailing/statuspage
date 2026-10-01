@@ -7,9 +7,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-<!-- Optional external configuration for local secrets (e.g. ignored in git) -->
-<script src="mapbox-config.js"></script>
-
 <style>
     #isolated-weather-widget {
         font-family: 'Inter', sans-serif !important;
@@ -659,9 +656,10 @@
     /* #raw */
     // 1. API Configuration
     const STATIC_TOKEN = "8535e71d-2290-4965-ad3f-ab05b9294fdf";
-    const MAPBOX_TOKEN = (typeof window !== 'undefined' && window.MAPBOX_TOKEN) 
-        ? window.MAPBOX_TOKEN 
-        : "TOKEN_HERE";
+    // Injected via Python template/include; falls back gracefully if opened standalone
+    const MAPBOX_TOKEN = "{{ MAPBOX_TOKEN }}".startsWith("{") 
+        ? "TOKEN_HERE" 
+        : "{{ MAPBOX_TOKEN }}";
     const API_OBS_BASE = "https://swd.weatherflow.com/swd/rest/observations/stn/127241";
     const API_FCST_BASE = `https://swd.weatherflow.com/swd/rest/better_forecast?station_id=127241&units_wind=kts&token=${STATIC_TOKEN}`;
     const WEEWX_FALLBACK_URL = "https://status.cal-sailing.org/weewx.json";
