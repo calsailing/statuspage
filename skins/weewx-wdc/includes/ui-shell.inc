@@ -137,6 +137,344 @@
       </svg>
     </bx-btn>
   </div>
+
+<!-- =========================================================================
+     CAL SAILING CLUB - MOBILE SUB-NAVIGATION SNIPPET
+     Placement: Insert immediately below </bx-header> in your HTML/WeeWX template.
+     ========================================================================= -->
+
+<style id="csc-mobile-subnav-styles">
+  /* --------------------------------------------------
+     1. Design Tokens & Carbon-compatible Variables
+     -------------------------------------------------- */
+  :root {
+    --csc-header-height: 48px;  /* Dynamically updated by JS if bx-header changes */
+    --csc-subnav-height: 44px;  /* Standard Carbon tab bar height */
+    --csc-bg: #ffffff;
+    --csc-border: #e0e0e0;
+    --csc-text: #525252;
+    --csc-text-hover: #161616;
+    --csc-text-active: #0f62fe; /* Carbon Blue */
+    --csc-tab-hover-bg: #f4f4f4;
+    --csc-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Dark mode support (System preference and Carbon g90/g100 themes) */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --csc-bg: #161616;
+      --csc-border: #393939;
+      --csc-text: #c6c6c6;
+      --csc-text-hover: #f4f4f4;
+      --csc-text-active: #78a9ff;
+      --csc-tab-hover-bg: #262626;
+      --csc-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+  }
+
+  body[data-carbon-theme="g90"],
+  body[data-carbon-theme="g100"],
+  .bx--g90,
+  .bx--g100 {
+    --csc-bg: #161616;
+    --csc-border: #393939;
+    --csc-text: #c6c6c6;
+    --csc-text-hover: #f4f4f4;
+    --csc-text-active: #78a9ff;
+    --csc-tab-hover-bg: #262626;
+    --csc-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  }
+
+  /* --------------------------------------------------
+     2. Strict Mobile Visibility (< 768px only)
+     -------------------------------------------------- */
+  #csc-mobile-subnav {
+    display: none !important; /* Hidden completely on desktop & tablet */
+  }
+
+  @media (max-width: 768px) {
+    #csc-mobile-subnav {
+      display: block !important;
+      position: sticky;
+      top: var(--csc-header-height);
+      left: 0;
+      right: 0;
+      width: 100%;
+      height: var(--csc-subnav-height);
+      background: var(--csc-bg);
+      border-bottom: 1px solid var(--csc-border);
+      box-shadow: var(--csc-shadow);
+      z-index: 7990; /* Right below Carbon <bx-header> (~8000) */
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+  }
+
+  /* --------------------------------------------------
+     3. Scrollable Tab Container & Carbon Tab Styling
+     -------------------------------------------------- */
+  .csc-subnav-scroll {
+    display: flex;
+    align-items: stretch;
+    height: 100%;
+    padding: 0 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+    box-sizing: border-box;
+  }
+
+  .csc-subnav-scroll::-webkit-scrollbar {
+    display: none; /* Safari and Chrome */
+  }
+
+  .csc-subnav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 14px;
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "IBM Plex Sans", "Segoe UI", Roboto, sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--csc-text);
+    background: transparent;
+    text-decoration: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+    flex-shrink: 0;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+    box-sizing: border-box;
+  }
+
+  .csc-subnav-link svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+    opacity: 0.85;
+    flex-shrink: 0;
+  }
+
+  .csc-subnav-link:hover {
+    background-color: var(--csc-tab-hover-bg);
+    color: var(--csc-text-hover);
+  }
+
+  /* Active state matching Carbon Design System tabs */
+  .csc-subnav-link.active {
+    color: var(--csc-text-active);
+    font-weight: 600;
+    border-bottom: 2px solid var(--csc-text-active);
+    background-color: transparent;
+  }
+
+  .csc-subnav-link.active svg {
+    opacity: 1;
+    fill: var(--csc-text-active);
+  }
+
+  /* --------------------------------------------------
+     4. Scroll Margins to Prevent Sticky Header Overlap
+     -------------------------------------------------- */
+  #todays-conditions,
+  #forecast,
+  #tides-hours,
+  #webcams,
+  [data-csc-anchor="true"] {
+    scroll-margin-top: calc(var(--csc-header-height) + var(--csc-subnav-height) + 12px);
+  }
+
+  /* Extra mobile bottom breathing room so the last section can scroll up to the top */
+  @media (max-width: 768px) {
+    body {
+      padding-bottom: 96px;
+    }
+  }
+</style>
+
+<!-- Mobile Sub-Navigation Bar -->
+<nav id="csc-mobile-subnav" aria-label="Page Sections Navigation">
+  <div class="csc-subnav-scroll" role="tablist">
+    <!-- Today's Conditions -->
+    <a href="#todays-conditions" class="csc-subnav-link active" data-target="todays-conditions" role="tab" aria-selected="true">
+      <svg viewBox="0 0 16 16">
+        <path d="M8 1a7 7 0 1 0 7 7A7.008 7.008 0 0 0 8 1zm0 13a6 6 0 1 1 6-6 6.007 6.007 0 0 1-6 6z"/>
+        <path d="M7.5 4.5v3.25l2.25 1.5.5-.866-1.75-1.167V4.5z"/>
+      </svg>
+      <span>Wind & Weather</span>
+    </a>
+
+    <!-- Forecast -->
+    <a href="#forecast" class="csc-subnav-link" data-target="forecast" role="tab" aria-selected="false">
+      <svg viewBox="0 0 16 16">
+        <path d="M12 4.5a3.5 3.5 0 0 0-6.8-1.1A4.002 4.002 0 0 0 1 7.2 4 4 0 0 0 5 11h7a3 3 0 0 0 0-6z"/>
+      </svg>
+      <span>Forecast</span>
+    </a>
+
+    <!-- Tides & Hours -->
+    <a href="#tides-hours" class="csc-subnav-link" data-target="tides-hours" role="tab" aria-selected="false">
+      <svg viewBox="0 0 16 16">
+        <path d="M14.5 9.5a2.5 2.5 0 0 1-2.5 2.5c-1.3 0-2-.8-3-1.8C8 9.2 7.3 8.5 6 8.5c-1.3 0-2 .8-3 1.8L2 11.2l-.7-.7.9-.9c1.2-1.2 2.2-2.1 3.8-2.1 1.3 0 2 .8 3 1.8 1 1 1.7 1.7 3 1.7 1 0 1.8-.8 1.8-1.5z"/>
+        <path d="M14.5 5.5a2.5 2.5 0 0 1-2.5 2.5c-1.3 0-2-.8-3-1.8C8 5.2 7.3 4.5 6 4.5c-1.3 0-2 .8-3 1.8L2 7.2l-.7-.7.9-.9c1.2-1.2 2.2-2.1 3.8-2.1 1.3 0 2 .8 3 1.8 1 1 1.7 1.7 3 1.7 1 0 1.8-.8 1.8-1.5z"/>
+      </svg>
+      <span>Tides &amp; Hours</span>
+    </a>
+
+    <!-- Webcams -->
+    <a href="#webcams" class="csc-subnav-link" data-target="webcams" role="tab" aria-selected="false">
+      <svg viewBox="0 0 16 16">
+        <path d="M14 4.5l-3 2.25V5a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V9.25l3 2.25z"/>
+      </svg>
+      <span>Webcams</span>
+    </a>
+  </div>
+</nav>
+
+<script id="csc-mobile-subnav-script">
+  (function () {
+    // 1. Dynamic Header Height Calculation
+    function getHeaderHeight() {
+      const header = document.querySelector('bx-header') || document.querySelector('[role="banner"]');
+      return header ? header.offsetHeight : 48;
+    }
+
+    function syncHeaderHeight() {
+      const h = getHeaderHeight();
+      document.documentElement.style.setProperty('--csc-header-height', h + 'px');
+    }
+    syncHeaderHeight();
+    window.addEventListener('resize', syncHeaderHeight);
+
+    // 2. Section Keyword Mapping & Auto-Anchoring
+    // If the target elements don't already have these IDs, this automatically hooks into headings
+    const sectionTargets = [
+      { id: 'todays-conditions', keywords: ["today's conditions", "todays conditions", "today's", "today"] },
+      { id: 'forecast', keywords: ["forecast"] },
+      { id: 'tides-hours', keywords: ["club tides & hours", "tides & hours", "club tides", "tide", "hours"] },
+      { id: 'webcams', keywords: ["webcam", "webcams", "webcams & radar"] }
+    ];
+
+    function resolveSectionElements() {
+      sectionTargets.forEach(target => {
+        let el = document.getElementById(target.id);
+        if (!el) {
+          const candidates = document.querySelectorAll('h1, h2, h3, h4, section, div');
+          for (let node of candidates) {
+            const text = (node.textContent || '').trim().toLowerCase();
+            if (target.keywords.some(kw => text.startsWith(kw) || text === kw)) {
+              node.id = target.id;
+              node.setAttribute('data-csc-anchor', 'true');
+              break;
+            }
+          }
+        }
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', resolveSectionElements);
+    } else {
+      resolveSectionElements();
+    }
+
+    // 3. Tab State Management & Auto-Centering
+    const navBar = document.getElementById('csc-mobile-subnav');
+    const navLinks = navBar.querySelectorAll('.csc-subnav-link');
+    const scrollContainer = navBar.querySelector('.csc-subnav-scroll');
+    let isClickScrolling = false;
+    let clickTimeout = null;
+
+    function activateTab(targetId) {
+      let matchedLink = null;
+      navLinks.forEach(link => {
+        const matches = link.getAttribute('data-target') === targetId;
+        link.classList.toggle('active', matches);
+        link.setAttribute('aria-selected', matches ? 'true' : 'false');
+        if (matches) matchedLink = link;
+      });
+
+      if (matchedLink && scrollContainer) {
+        const linkLeft = matchedLink.offsetLeft;
+        const linkWidth = matchedLink.offsetWidth;
+        const containerWidth = scrollContainer.offsetWidth;
+        scrollContainer.scrollTo({
+          left: linkLeft - (containerWidth / 2) + (linkWidth / 2),
+          behavior: 'smooth'
+        });
+      }
+    }
+
+    // 4. Smooth Tap-to-Scroll Handling with ScrollSpy Lock
+    navLinks.forEach(link => {
+      link.addEventListener('click', function (e) {
+        const targetId = this.getAttribute('data-target');
+        const targetElement = document.getElementById(targetId);
+
+        if (targetElement) {
+          e.preventDefault();
+          isClickScrolling = true;
+          clearTimeout(clickTimeout);
+
+          activateTab(targetId);
+
+          const headerH = getHeaderHeight();
+          const subnavH = 44;
+          const totalOffset = headerH + subnavH + 8;
+          const targetY = targetElement.getBoundingClientRect().top + window.pageYOffset - totalOffset;
+
+          window.scrollTo({
+            top: Math.max(0, targetY),
+            behavior: 'smooth'
+          });
+
+          // Re-enable scrollspy after scroll finishes
+          clickTimeout = setTimeout(() => {
+            isClickScrolling = false;
+          }, 850);
+        }
+      });
+    });
+
+    // 5. ScrollSpy with Bottom-of-Page Detection
+    function handleScroll() {
+      if (isClickScrolling) return;
+
+      // When user reaches near the bottom of the page, highlight the last section (Webcams)
+      const scrollBottom = window.innerHeight + window.pageYOffset;
+      const docHeight = document.documentElement.scrollHeight;
+      if (scrollBottom >= docHeight - 45) {
+        const lastTarget = sectionTargets[sectionTargets.length - 1];
+        activateTab(lastTarget.id);
+        return;
+      }
+
+      const headerH = getHeaderHeight();
+      const subnavH = 44;
+      const scrollThreshold = window.pageYOffset + headerH + subnavH + 40;
+
+      let currentTargetId = sectionTargets[0].id;
+      for (let i = 0; i < sectionTargets.length; i++) {
+        const el = document.getElementById(sectionTargets[i].id);
+        if (el && el.offsetTop <= scrollThreshold) {
+          currentTargetId = sectionTargets[i].id;
+        }
+      }
+
+      activateTab(currentTargetId);
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+  })();
+</script>
+
+
 </bx-header>
 <bx-side-nav aria-label="Side navigation" collapse-mode="responsive">
   <bx-side-nav-items>
