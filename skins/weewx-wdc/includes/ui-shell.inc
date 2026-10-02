@@ -142,6 +142,10 @@
 
 
 </bx-header>
+
+
+#if $context == 'day' and not $daily_archive
+
 <!-- =========================================================================
      CAL SAILING CLUB - MOBILE SUB-NAVIGATION SNIPPET
      Placement: Insert immediately below </bx-header> in your HTML/WeeWX template.
@@ -545,7 +549,7 @@
 </script>
 
 
-
+#end if
 
 <bx-side-nav aria-label="Side navigation" collapse-mode="responsive">
   <bx-side-nav-items>
