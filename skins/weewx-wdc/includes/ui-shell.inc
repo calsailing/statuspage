@@ -163,7 +163,24 @@
     --csc-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
   }
 
-  /* Dark mode support (System preference and Carbon g90/g100 themes) */
+  /* --------------------------------------------------
+     Dark Mode Support (html.dark, Carbon g90/g100 themes, prefers-color-scheme)
+     -------------------------------------------------- */
+  html.dark,
+  html.dark #csc-mobile-subnav,
+  body[data-carbon-theme="g90"],
+  body[data-carbon-theme="g100"],
+  .bx--g90,
+  .bx--g100 {
+    --csc-bg: #161616 !important;
+    --csc-border: #393939 !important;
+    --csc-text: #c6c6c6 !important;
+    --csc-text-hover: #f4f4f4 !important;
+    --csc-text-active: #78a9ff !important;
+    --csc-tab-hover-bg: #262626 !important;
+    --csc-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+  }
+
   @media (prefers-color-scheme: dark) {
     :root {
       --csc-bg: #161616;
@@ -176,28 +193,29 @@
     }
   }
 
-  body[data-carbon-theme="g90"],
-  body[data-carbon-theme="g100"],
-  .bx--g90,
-  .bx--g100 {
-    --csc-bg: #161616;
-    --csc-border: #393939;
-    --csc-text: #c6c6c6;
-    --csc-text-hover: #f4f4f4;
-    --csc-text-active: #78a9ff;
-    --csc-tab-hover-bg: #262626;
-    --csc-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  /* --------------------------------------------------
+     Carbon Side Navigation Mobile Layering
+     -------------------------------------------------- */
+  @media (max-width: 65.98rem) {
+    bx-side-nav,
+    .bx--side-nav,
+    bx-side-nav-overlay,
+    .bx--side-nav__overlay {
+      z-index: 88888888 !important;
+    }
   }
 
   /* --------------------------------------------------
      2. Strict Mobile Visibility (< 768px only)
      -------------------------------------------------- */
   #csc-mobile-subnav {
-    display: none !important; /* Hidden completely on desktop & tablet */
+    display: none !important; /* Hidden completely on desktop & non-conditions pages */
   }
 
   @media (max-width: 768px) {
-    #csc-mobile-subnav {
+    /* Only displays if meta description validation passes */
+    html.csc-subnav-active #csc-mobile-subnav,
+    html:has(meta[name="description"][content*="Cal Sailing Club - Current Conditions"]) #csc-mobile-subnav {
       display: block !important;
       position: fixed !important;
       /* Hard-lock to 3rem matching Carbon <bx-header> height */
@@ -211,15 +229,17 @@
       background: var(--csc-bg) !important;
       border-bottom: 1px solid var(--csc-border) !important;
       box-shadow: var(--csc-shadow) !important;
-      /* Directly underneath Carbon <bx-header> (z-index: 8000) and above all page elements */
+      /* Directly underneath Carbon <bx-header> (z-index: 8000) and below bx-side-nav */
       z-index: 7999 !important;
       overflow: hidden !important;
       box-sizing: border-box !important;
     }
 
-    /* Only offset the primary top-level content container to clear the two fixed bars */
-    .bx--content,
-    body > main:not(.bx--content) {
+    /* Only offset the primary top-level container when sub-nav is active */
+    html.csc-subnav-active .bx--content,
+    html.csc-subnav-active body > main:not(.bx--content),
+    html:has(meta[name="description"][content*="Cal Sailing Club - Current Conditions"]) .bx--content,
+    html:has(meta[name="description"][content*="Cal Sailing Club - Current Conditions"]) body > main:not(.bx--content) {
       margin-top: calc(var(--csc-header-height, 3rem) + var(--csc-subnav-height, 44px)) !important;
     }
   }
@@ -346,6 +366,21 @@
 
 <script id="csc-mobile-subnav-script">
   (function () {
+    // 0. Page Validation: Only run on pages whose meta description contains "Cal Sailing Club - Current Conditions"
+    const metaTag = document.querySelector('meta[name="description"]');
+    const metaContent = metaTag ? (metaTag.getAttribute('content') || '') : '';
+    const isConditionsPage = metaContent.includes('Cal Sailing Club - Current Conditions');
+
+    if (!isConditionsPage) {
+      // Remove subnav element and do not register any layout/scroll listeners
+      const subnavEl = document.getElementById('csc-mobile-subnav');
+      if (subnavEl) subnavEl.remove();
+      return;
+    }
+
+    // Mark html as active to trigger CSS rules
+    document.documentElement.classList.add('csc-subnav-active');
+
     // 1. Safe Header Height Calculation (guarantees >= 3rem / 48px)
     function getHeaderHeight() {
       const header = document.querySelector('bx-header') || 
