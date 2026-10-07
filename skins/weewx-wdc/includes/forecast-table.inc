@@ -239,6 +239,20 @@
     letter-spacing: -0.02em;
   }
 
+  table.structured-forecast.hourly-view .hour-time.current-hour {
+    color: #0f62fe;
+    font-weight: 600;
+  }
+
+  .now-dot {
+    display: block;
+    width: 4px;
+    height: 4px;
+    background-color: #0f62fe;
+    border-radius: 50%;
+    margin: 1px auto 0 auto;
+  }
+
   table.structured-forecast.hourly-view .row-temp td {
     padding-top: 0 !important;
     padding-bottom: 0 !important;
@@ -793,11 +807,39 @@
     }
   }
 
+  function getCurrentHourStartIndex(times) {
+    if (!times || !times.length) return 0;
+    const now = new Date();
+    // 55-minute buffer so the ongoing current hour remains displayed
+    const threshold = now.getTime() - (55 * 60 * 1000);
+
+    for (let i = 0; i < times.length; i++) {
+      const tStr = times[i].replace(' ', 'T');
+      const tDate = new Date(tStr);
+      if (!isNaN(tDate.getTime())) {
+        if (tDate.getTime() >= threshold) {
+          return i;
+        }
+      } else {
+        const yr = now.getFullYear();
+        const mo = String(now.getMonth() + 1).padStart(2, '0');
+        const da = String(now.getDate()).padStart(2, '0');
+        const hr = String(now.getHours()).padStart(2, '0');
+        const currentPrefix = `${yr}-${mo}-${da} ${hr}`;
+        if (times[i] >= currentPrefix) {
+          return i;
+        }
+      }
+    }
+    return 0;
+  }
+
   function renderHourlyTable(thead, tbody) {
     const data = weatherData.data_1h;
     const units = weatherData.units;
     if (!data || !data.time || !data.time.length) return;
 
+    const startIdx = getCurrentHourStartIndex(data.time);
     const numHours = Math.min(data.time.length, 168);
     thead.innerHTML = '';
     tbody.innerHTML = '';
@@ -805,27 +847,29 @@
     const daySpans = [];
     let currentDayStr = null;
     let currentSpan = 0;
+    let currentFirstIdx = startIdx;
 
-    for (let i = 0; i < numHours; i++) {
+    for (let i = startIdx; i < numHours; i++) {
       const dayStr = data.time[i].substring(0, 10);
       if (dayStr !== currentDayStr) {
         if (currentDayStr !== null) {
-          daySpans.push({ dayStr: currentDayStr, span: currentSpan });
+          daySpans.push({ dayStr: currentDayStr, span: currentSpan, firstHour: currentFirstIdx });
         }
         currentDayStr = dayStr;
         currentSpan = 1;
+        currentFirstIdx = i;
       } else {
         currentSpan++;
       }
     }
     if (currentSpan > 0) {
-      daySpans.push({ dayStr: currentDayStr, span: currentSpan });
+      daySpans.push({ dayStr: currentDayStr, span: currentSpan, firstHour: currentFirstIdx });
     }
 
     // Group Header Row
     const groupHeaderRow = document.createElement('tr');
     groupHeaderRow.innerHTML = `<th></th>`;
-    daySpans.forEach((ds, dayIdx) => {
+    daySpans.forEach((ds) => {
       const th = document.createElement('th');
       th.className = 'day-group-header';
       th.colSpan = ds.span;
@@ -834,15 +878,15 @@
       th.textContent = formatted;
       th.style.cursor = 'pointer';
       th.title = 'Click to jump to this day';
-      th.onclick = () => jumpToTimelineDay(dayIdx);
+      th.onclick = () => jumpToTimelineDay(0, ds.firstHour);
       groupHeaderRow.appendChild(th);
     });
     thead.appendChild(groupHeaderRow);
 
-    // Hourly Subheader Row
+    // Hourly Subheader Row (Starting from current hour)
     const hourHeaderRow = document.createElement('tr');
     hourHeaderRow.innerHTML = `<th>Hour</th>`;
-    for (let i = 0; i < numHours; i++) {
+    for (let i = startIdx; i < numHours; i++) {
       const th = document.createElement('th');
       th.id = `col-hour-${i}`;
       const timeStr = data.time[i];
@@ -855,7 +899,7 @@
     // 1. Wind (kts) Row
     const windRow = document.createElement('tr');
     windRow.innerHTML = `<td>Wind (kts)<span class="unit-label">direction</span></td>`;
-    for (let i = 0; i < numHours; i++) {
+    for (let i = startIdx; i < numHours; i++) {
       const spdKt = toKnots(data.windspeed ? data.windspeed[i] : null, units.windspeed);
       const dirDeg = (data.winddirection && data.winddirection[i] !== undefined) ? data.winddirection[i] : 230;
       const td = document.createElement('td');
@@ -879,7 +923,7 @@
     // 2. Gust Speed Row
     const gustRow = document.createElement('tr');
     gustRow.innerHTML = `<td>Gust Speed<span class="unit-label">in knots</span></td>`;
-    for (let i = 0; i < numHours; i++) {
+    for (let i = startIdx; i < numHours; i++) {
       let gustKt = (data.gust && data.gust[i] !== undefined && data.gust[i] !== null)
         ? toKnots(data.gust[i], units.windspeed)
         : null;
@@ -897,7 +941,7 @@
     // 3. Outlook Row
     const skyRow = document.createElement('tr');
     skyRow.innerHTML = `<td>Outlook</td>`;
-    for (let i = 0; i < numHours; i++) {
+    for (let i = startIdx; i < numHours; i++) {
       const code = (data.pictocode && data.pictocode[i] !== undefined) ? data.pictocode[i] : 2;
       const td = document.createElement('td');
       td.innerHTML = `<div class="weather-icon-cell">${getPictocodeIcon(code)}</div>`;
@@ -909,7 +953,7 @@
     const tempRow = document.createElement('tr');
     tempRow.className = 'row-temp';
     tempRow.innerHTML = `<td>°F</td>`;
-    for (let i = 0; i < numHours; i++) {
+    for (let i = startIdx; i < numHours; i++) {
       const valF = toFahrenheit(data.temperature ? data.temperature[i] : null, units.temperature);
       const tempColor = getTemperatureColor(valF);
       const td = document.createElement('td');
@@ -921,7 +965,7 @@
     // 5. Rain % Row
     const popRow = document.createElement('tr');
     popRow.innerHTML = `<td>Rain %</td>`;
-    for (let i = 0; i < numHours; i++) {
+    for (let i = startIdx; i < numHours; i++) {
       const td = document.createElement('td');
       let pop = null;
       if (data.precipitation_probability && data.precipitation_probability[i] !== undefined && data.precipitation_probability[i] !== null) {
@@ -1120,6 +1164,8 @@
     const peakGust = Math.max(...gustsKnots, 10);
     if (peakBadge) peakBadge.textContent = `Peak: ${peakGust} kts`;
 
+    const startIdx = getCurrentHourStartIndex(hourly.time);
+
     for (let h = 0; h < totalHours; h++) {
       const val = gustsKnots[h];
       const bar = document.createElement('div');
@@ -1127,6 +1173,9 @@
       const heightPct = Math.max(12, Math.round((val / (peakGust * 1.1)) * 100));
       bar.style.height = `${heightPct}%`;
       bar.style.backgroundColor = getWindHexColor(val);
+      if (h < startIdx) {
+        bar.style.opacity = '0.35';
+      }
       bar.title = `${hourly.time[h].replace('T', ' ')}: Gust ${val} kts`;
 
       const dayIdx = Math.floor(h / 24);
@@ -1159,6 +1208,67 @@
     }
   }
 
+  function getCurrentHourIndex() {
+    if (!weatherData || !weatherData.data_1h || !weatherData.data_1h.time) return 0;
+    const times = weatherData.data_1h.time;
+    const now = new Date();
+
+    const pad = (n) => String(n).padStart(2, '0');
+    const localNowPrefix = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}`;
+    const localNowIsoPrefix = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}`;
+
+    // Direct string match against local YYYY-MM-DD HH
+    for (let i = 0; i < times.length; i++) {
+      const t = times[i];
+      if (t.startsWith(localNowPrefix) || t.startsWith(localNowIsoPrefix)) {
+        return i;
+      }
+    }
+
+    // Proximity fallback based on timestamp difference
+    const nowMs = now.getTime();
+    let closestIdx = 0;
+    let minDiff = Infinity;
+
+    for (let i = 0; i < times.length; i++) {
+      const parsedDate = new Date(times[i].replace(' ', 'T'));
+      if (!isNaN(parsedDate.getTime())) {
+        const diff = Math.abs(parsedDate.getTime() - nowMs);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closestIdx = i;
+        }
+      }
+    }
+
+    return closestIdx;
+  }
+
+  function scrollToHour(hourIdx, smooth = true) {
+    const scrollContainer = document.querySelector('.table-scroll-container');
+    const targetCol = document.getElementById(`col-hour-${hourIdx}`);
+    if (!scrollContainer || !targetCol) return;
+
+    isProgrammaticScrolling = true;
+    if (programmaticScrollTimeout) clearTimeout(programmaticScrollTimeout);
+
+    const stickyWidth = window.innerWidth <= 640 ? 78 : 90;
+    const targetLeft = Math.max(0, targetCol.offsetLeft - stickyWidth);
+
+    if (smooth) {
+      scrollContainer.scrollTo({ left: targetLeft, behavior: 'smooth' });
+    } else {
+      scrollContainer.scrollLeft = targetLeft;
+    }
+
+    const dayIdx = Math.floor(hourIdx / 24);
+    updateTimelineSelector(dayIdx);
+
+    programmaticScrollTimeout = setTimeout(() => {
+      isProgrammaticScrolling = false;
+    }, 750);
+  }
+
   function jumpToTimelineDay(dayIndex, hourIndex = null) {
     if (currentMode === 'day') {
       currentMode = 'hour';
@@ -1174,7 +1284,9 @@
     isProgrammaticScrolling = true;
     if (programmaticScrollTimeout) clearTimeout(programmaticScrollTimeout);
 
-    const targetHourIdx = hourIndex !== null ? hourIndex : dayIndex * 24;
+    const startIdx = weatherData?.data_1h?.time ? getCurrentHourStartIndex(weatherData.data_1h.time) : 0;
+    let targetHourIdx = hourIndex !== null ? hourIndex : dayIndex * 24;
+    if (targetHourIdx < startIdx) targetHourIdx = startIdx;
 
     setTimeout(() => {
       const targetCol = document.getElementById(`col-hour-${targetHourIdx}`);
@@ -1353,7 +1465,16 @@
 
     renderForecast();
     renderWindOverview();
-    updateTimelineSelector(0);
+
+    // Start Daily forecast aligned at the current time
+    setTimeout(() => {
+      if (currentMode === 'hour') {
+        const curIdx = getCurrentHourIndex();
+        scrollToHour(curIdx, false);
+      } else {
+        updateTimelineSelector(0);
+      }
+    }, 50);
 
     const timeNow = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
     const dateNow = new Date().toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' });
@@ -1391,7 +1512,10 @@
         tabDaily.classList.add('active');
         if (tab7Day) tab7Day.classList.remove('active');
         renderForecast();
-        updateTimelineSelector(0);
+        setTimeout(() => {
+          const curIdx = getCurrentHourIndex();
+          scrollToHour(curIdx, true);
+        }, 50);
       });
     }
 
