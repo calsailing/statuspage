@@ -733,6 +733,9 @@
 <script>
 /* #raw */
   const METEOBLUE_ENDPOINT = 'https://my.meteoblue.com/packages/basic-1h_basic-day?apikey=HImRZ4w2iEX9eOWT&lat=37.855&lon=-122.312&asl=52&format=json';
+  const CACHE_KEY_DATA = 'meteoblue_forecast_data';
+  const CACHE_KEY_TIME = 'meteoblue_forecast_timestamp';
+  const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes cache window
 
   let weatherData = null;
   let currentMode = 'hour'; // 'hour' is the Daily view; 'day' is the 7 Day view
@@ -1540,11 +1543,58 @@
     const statusDot = document.getElementById('statusDot');
     const footerTimestamp = document.getElementById('footerTimestamp');
 
+    // 1. Check local browser cache first
+    let cachedPayload = null;
+    let cachedTime = 0;
+    try {
+      const storedTime = localStorage.getItem(CACHE_KEY_TIME);
+      const storedData = localStorage.getItem(CACHE_KEY_DATA);
+      if (storedTime && storedData) {
+        cachedTime = parseInt(storedTime, 10);
+        cachedPayload = JSON.parse(storedData);
+      }
+    } catch (err) {
+      console.warn('LocalStorage read unavailable:', err);
+    }
+
+    const nowMs = Date.now();
+    const isCacheValid = cachedPayload && (nowMs - cachedTime < CACHE_TTL_MS);
+
+    if (isCacheValid) {
+      weatherData = cachedPayload;
+      statusText.textContent = 'Meteoblue';
+      if (statusBadge) {
+        statusBadge.className = 'status-badge micro live';
+      }
+      statusDot.style.backgroundColor = '#24a148';
+
+      renderForecast();
+      renderWindOverview();
+
+      setTimeout(() => {
+        if (currentMode === 'hour') {
+          const curIdx = getCurrentHourIndex();
+          scrollToHour(curIdx, false);
+        } else {
+          updateTimelineSelector(0);
+        }
+      }, 50);
+
+      const issueDate = new Date(cachedTime);
+      const timeStr = issueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+      const dateStr = issueDate.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' });
+      footerTimestamp.textContent = `Issued: ${dateStr} ${timeStr}`;
+      return;
+    }
+
+    // 2. Fetch fresh data if cache is expired or absent
     statusText.textContent = 'Updating...';
     if (statusBadge) {
       statusBadge.className = 'status-badge micro updating';
     }
     statusDot.style.backgroundColor = '#d97706';
+
+    let fetchTimestamp = Date.now();
 
     try {
       const response = await fetch(METEOBLUE_ENDPOINT, { cache: 'no-cache' });
@@ -1553,6 +1603,16 @@
 
       if (json && (json.data_day || json.data_1h)) {
         weatherData = json;
+        fetchTimestamp = Date.now();
+
+        // Save fresh response to localStorage
+        try {
+          localStorage.setItem(CACHE_KEY_DATA, JSON.stringify(json));
+          localStorage.setItem(CACHE_KEY_TIME, String(fetchTimestamp));
+        } catch (saveErr) {
+          console.warn('LocalStorage save failed:', saveErr);
+        }
+
         statusText.textContent = 'Meteoblue';
         if (statusBadge) {
           statusBadge.className = 'status-badge micro live';
@@ -1562,13 +1622,26 @@
         throw new Error('Unexpected JSON schema');
       }
     } catch (err) {
-      console.warn('Direct fetch failed, initializing fallback forecast dataset:', err.message);
-      weatherData = getFallbackMockData();
-      statusText.textContent = 'Demo Mode';
-      if (statusBadge) {
-        statusBadge.className = 'status-badge micro demo';
+      console.warn('Direct fetch failed:', err.message);
+
+      // If network fails but stale cache exists, prefer stale data over mock demo
+      if (cachedPayload) {
+        console.info('Serving stale cached forecast data due to fetch error');
+        weatherData = cachedPayload;
+        fetchTimestamp = cachedTime;
+        statusText.textContent = 'Meteoblue';
+        if (statusBadge) {
+          statusBadge.className = 'status-badge micro live';
+        }
+        statusDot.style.backgroundColor = '#24a148';
+      } else {
+        weatherData = getFallbackMockData();
+        statusText.textContent = 'Demo Mode';
+        if (statusBadge) {
+          statusBadge.className = 'status-badge micro demo';
+        }
+        statusDot.style.backgroundColor = '#0f62fe';
       }
-      statusDot.style.backgroundColor = '#0f62fe';
     }
 
     renderForecast();
@@ -1584,8 +1657,9 @@
       }
     }, 50);
 
-    const timeNow = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-    const dateNow = new Date().toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' });
+    const issueDate = new Date(fetchTimestamp);
+    const timeNow = issueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    const dateNow = issueDate.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' });
     footerTimestamp.textContent = `Issued: ${dateNow} ${timeNow}`;
   }
 
