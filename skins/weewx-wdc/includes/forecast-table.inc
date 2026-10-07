@@ -34,15 +34,9 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.75rem 1rem;
+    padding: 0.6rem 0.85rem;
     border-bottom: 1px solid var(--cds-ui-border);
     background-color: #ffffff;
-  }
-
-  .header-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
   }
 
   .carbon-switcher {
@@ -54,7 +48,7 @@
   }
 
   .carbon-switcher-btn {
-    padding: 0.4rem 1.1rem;
+    padding: 0.35rem 1.1rem;
     font-size: 0.82rem;
     font-weight: 500;
     cursor: pointer;
@@ -63,6 +57,7 @@
     color: #161616;
     transition: all 0.15s ease-in-out;
     outline: none;
+    user-select: none;
   }
 
   .carbon-switcher-btn.active {
@@ -70,73 +65,76 @@
     color: #ffffff;
   }
 
-  .status-badge {
-    font-size: 0.72rem;
-    border-radius: 9999px;
-    padding: 0.25rem 0.75rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.45rem;
-    font-weight: 500;
-    letter-spacing: -0.01em;
-    border: none;
-    transition: background-color 0.2s ease, color 0.2s ease;
-  }
-
-  /* Live state: soft green background without border */
-  .status-badge.live {
-    background-color: #defbe6;
-    border: none;
-    color: #0e6027;
-  }
-
-  /* Updating state: soft amber/yellow background */
-  .status-badge.updating {
-    background-color: #fef3c7;
-    border: none;
-    color: #92400e;
-  }
-
-  /* Demo fallback state: soft blue background */
-  .status-badge.demo {
-    background-color: #edf5ff;
-    border: none;
-    color: #0353e9;
-  }
-
-  .status-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background-color: #24a148;
-  }
-
-  /* Light-themed Refresh Button */
-  .btn-light-action {
+  /* Micro Footer Status Pill & Refresh Button */
+  .footer-actions {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    padding: 0.3rem 0.75rem;
-    font-size: 0.75rem;
+  }
+
+  .status-badge.micro {
+    font-size: 0.62rem;
+    border-radius: 9999px;
+    padding: 0.18rem 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
     font-weight: 500;
-    color: #393939;
+    letter-spacing: -0.01em;
+    border: none;
+    line-height: 1.1;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .status-badge.micro.live {
+    background-color: #defbe6;
+    color: #0e6027;
+  }
+
+  .status-badge.micro.updating {
+    background-color: #fef3c7;
+    color: #92400e;
+  }
+
+  .status-badge.micro.demo {
+    background-color: #edf5ff;
+    color: #0353e9;
+  }
+
+  .status-badge.micro .status-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background-color: #24a148;
+    flex-shrink: 0;
+  }
+
+  .btn-micro-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.18rem 0.45rem;
+    font-size: 0.62rem;
+    font-weight: 500;
+    color: #4b5563;
     background: #ffffff;
-    border: 1px solid #dcdcdc;
-    border-radius: 4px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    border: 1px solid #d4d4d8;
+    border-radius: 3px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.03);
     cursor: pointer;
+    line-height: 1.1;
     transition: all 0.15s ease-in-out;
     outline: none;
   }
 
-  .btn-light-action:hover {
-    background: #f4f4f4;
-    border-color: #c6c6c6;
-    color: #161616;
+  .btn-micro-action:hover {
+    background: #f4f4f5;
+    border-color: #a1a1aa;
+    color: #18181b;
   }
 
-  .btn-light-action:active {
-    background: #e0e0e0;
+  .btn-micro-action:active {
+    background: #e4e4e7;
     transform: translateY(1px);
   }
 
@@ -148,10 +146,11 @@
     position: relative;
     scrollbar-width: thin;
     scrollbar-color: #c6c6c6 #f4f4f4;
+    -webkit-overflow-scrolling: touch;
   }
 
   .table-scroll-container::-webkit-scrollbar {
-    height: 7px;
+    height: 6px;
   }
   .table-scroll-container::-webkit-scrollbar-track {
     background: #f4f4f4;
@@ -174,11 +173,11 @@
     border-bottom: 1px solid #e0e0e0;
     border-right: 1px solid #e0e0e0;
     vertical-align: middle;
-    padding: 0.45rem 0.5rem;
+    padding: 0.45rem 0.4rem;
     white-space: nowrap;
   }
 
-  /* Sticky first column (legend) */
+  /* Sticky first column with elevation shadow for mobile scrolling */
   table.structured-forecast th:first-child,
   table.structured-forecast td:first-child {
     position: sticky;
@@ -189,15 +188,16 @@
     font-weight: 400;
     color: var(--cds-text-primary);
     border-right: 2px solid #8d8d8d;
-    min-width: 110px;
-    max-width: 110px;
-    padding-left: 0.65rem;
-    padding-right: 0.4rem;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.04);
+    min-width: 105px;
+    max-width: 105px;
+    padding-left: 0.55rem;
+    padding-right: 0.35rem;
   }
 
   .unit-label {
     display: block;
-    font-size: 0.6875rem;
+    font-size: 0.65rem;
     color: #6f6f6f;
     font-weight: normal;
     margin-top: 1px;
@@ -213,10 +213,10 @@
 
   table.structured-forecast.hourly-view th:first-child,
   table.structured-forecast.hourly-view td:first-child {
-    min-width: 95px;
-    max-width: 95px;
-    padding: 0.35rem 0.5rem;
-    font-size: 0.75rem;
+    min-width: 90px;
+    max-width: 90px;
+    padding: 0.35rem 0.45rem;
+    font-size: 0.73rem;
   }
 
   table.structured-forecast.hourly-view .day-group-header {
@@ -227,7 +227,7 @@
     background-color: transparent;
     border-bottom: 1px solid #c6c6c6;
     border-right: 1px solid #c6c6c6;
-    padding: 0.25rem 0.5rem;
+    padding: 0.25rem 0.4rem;
   }
 
   table.structured-forecast.hourly-view .hour-time {
@@ -238,14 +238,13 @@
     letter-spacing: -0.02em;
   }
 
-  /* Zero vertical padding for high-density metrics */
   table.structured-forecast.hourly-view .row-temp td {
     padding-top: 0 !important;
     padding-bottom: 0 !important;
     height: 20px;
   }
 
-  /* Wind histogram in Daily hourly view - 1.5x height */
+  /* Wind histogram in Daily hourly view */
   table.structured-forecast.hourly-view .wind-histo-cell {
     height: 111px;
     vertical-align: bottom !important;
@@ -283,7 +282,6 @@
     transition: height 0.2s ease;
   }
 
-  /* Sky icons in hourly view */
   table.structured-forecast.hourly-view .weather-icon-cell {
     height: 24px;
     display: flex;
@@ -298,7 +296,7 @@
   table.structured-forecast.seven-day-view th,
   table.structured-forecast.seven-day-view td {
     min-width: 82px;
-    padding: 0.5rem 0.4rem;
+    padding: 0.5rem 0.35rem;
   }
 
   table.structured-forecast.seven-day-view .day-name {
@@ -314,27 +312,17 @@
     display: block;
   }
 
-  /* 0-3 kts: lighter blue */
+  /* Wind Colors */
   .wind-calm     { background-color: #eef8fc !important; color: #161616 !important; }
-  /* 4-5 kts: light blue */
   .wind-light    { background-color: #dcf4fb !important; color: #161616 !important; }
-  /* 6-7 kts: light sky blue */
   .wind-mod      { background-color: #b4e7fa !important; color: #161616 !important; }
-  /* 8-9 kts: lighter turquoise / seafoam */
   .wind-breeze   { background-color: #abf0d4 !important; color: #161616 !important; }
-  /* 10-14 kts: green */
   .wind-green    { background-color: #80ff80 !important; color: #161616 !important; }
-  /* 15-16 kts: yellow */
   .wind-yellow   { background-color: #ffea29 !important; color: #161616 !important; }
-  /* 17 kts: light orange */
   .wind-lt-orange{ background-color: #ffba42 !important; color: #161616 !important; }
-  /* 18-19 kts: lighter orange */
   .wind-dk-orange{ background-color: #ff8c1a !important; color: #161616 !important; }
-  /* 20-23 kts: red */
   .wind-red      { background-color: #e52222 !important; color: #ffffff !important; }
-  /* 24-29 kts: dark red */
   .wind-dk-red   { background-color: #b70c18 !important; color: #ffffff !important; }
-  /* 30+ kts: red purple */
   .wind-purple   { background-color: #9f135b !important; color: #ffffff !important; }
 
   .wind-arrow {
@@ -355,8 +343,9 @@
   .wind-overview-section {
     background: #ffffff;
     border-top: 1px solid #e0e0e0;
-    padding: 0.6rem 0.8rem 0.5rem 0.8rem;
+    padding: 0.55rem 0.75rem 0.45rem 0.75rem;
     user-select: none;
+    -webkit-user-select: none;
   }
 
   .overview-header {
@@ -364,10 +353,12 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 0.35rem;
+    flex-wrap: wrap;
+    gap: 0.25rem;
   }
 
   .overview-title {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -378,16 +369,16 @@
   }
 
   .peak-badge {
-    font-size: 10px;
+    font-size: 9.5px;
     font-weight: 600;
     background-color: #f3f4f6;
     color: #374151;
-    padding: 0.125rem 0.375rem;
+    padding: 0.1rem 0.35rem;
     border-radius: 3px;
   }
 
   .overview-hint {
-    font-size: 11px;
+    font-size: 10.5px;
     color: #9ca3af;
   }
 
@@ -396,14 +387,15 @@
     background: #f4f4f4;
     border: 1px solid #dcdcdc;
     border-radius: 4px;
-    height: 78px;
+    height: 74px;
     overflow: hidden;
     cursor: pointer;
+    touch-action: pan-y;
   }
 
   .timeline-bars-container {
     display: flex;
-    height: 58px;
+    height: 55px;
     align-items: flex-end;
     width: 100%;
   }
@@ -426,17 +418,18 @@
   .timeline-day-label {
     flex: 1;
     text-align: center;
-    font-size: 0.65rem;
+    font-size: 0.63rem;
     font-weight: 600;
     color: #525252;
     line-height: 18px;
     border-right: 1px solid #f0f0f0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .timeline-day-label:last-child {
     border-right: none;
   }
 
-  /* Active viewport highlight selector */
   .timeline-selector {
     position: absolute;
     top: 0;
@@ -450,43 +443,101 @@
   }
 
   .issued-footer {
-    padding: 0.5rem 1rem;
-    font-size: 0.7rem;
+    padding: 0.45rem 0.8rem;
+    font-size: 0.68rem;
     color: #6f6f6f;
     border-top: 1px solid #f0f0f0;
-    background: #ffffff;
+    background: #fafafa;
     display: flex;
     justify-content: space-between;
+    align-items: center;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 0.4rem;
+  }
+
+  .footer-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  /* Mobile Responsive Fine-Tuning */
+  @media (max-width: 640px) {
+    .app-card {
+      border-radius: 0;
+      border-left: none;
+      border-right: none;
+    }
+
+    .view-switcher-container {
+      padding: 0.5rem 0.6rem;
+      justify-content: center;
+    }
+
+    .carbon-switcher {
+      width: 100%;
+      max-width: 280px;
+    }
+
+    .carbon-switcher-btn {
+      flex: 1;
+      text-align: center;
+      padding: 0.35rem 0.5rem;
+    }
+
+    table.structured-forecast.hourly-view th:first-child,
+    table.structured-forecast.hourly-view td:first-child {
+      min-width: 78px;
+      max-width: 78px;
+      padding: 0.3rem 0.35rem;
+      font-size: 0.7rem;
+    }
+
+    table.structured-forecast.seven-day-view th:first-child,
+    table.structured-forecast.seven-day-view td:first-child {
+      min-width: 82px;
+      max-width: 82px;
+      padding: 0.4rem 0.35rem;
+      font-size: 0.72rem;
+    }
+
+    .overview-hint {
+      display: none;
+    }
+
+    .issued-footer {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.35rem;
+      padding: 0.4rem 0.6rem;
+    }
+
+    .footer-meta {
+      font-size: 0.64rem;
+      line-height: 1.3;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.15rem;
+    }
+
+    .footer-actions {
+      align-self: flex-end;
+      margin-top: -0.25rem;
+    }
   }
 </style>
 
 <div class="app-card">
-  <!-- Top Bar & Carbon Switcher -->
+  <!-- Top Bar with Centered Carbon Switcher -->
   <div class="view-switcher-container">
     <div class="carbon-switcher">
       <button id="tabDaily" class="carbon-switcher-btn active" type="button">Daily</button>
       <button id="tab7Day" class="carbon-switcher-btn" type="button">7 Day</button>
     </div>
-
-    <div class="header-actions">
-      <div class="status-badge live" id="statusBadge">
-        <span class="status-dot" id="statusDot"></span>
-        <span id="statusText">Meteoblue Live</span>
-      </div>
-      <button id="btnRefresh" class="btn-light-action" type="button" title="Refresh Forecast Data">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="23 4 23 10 17 10"></polyline>
-          <polyline points="1 20 1 14 7 14"></polyline>
-          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-        </svg>
-        <span>Refresh</span>
-      </button>
-    </div>
   </div>
 
-  <!-- Table Container -->
+  <!-- Table Container with Horizontal Scroll -->
   <div class="table-scroll-container">
     <table id="forecastTable" class="structured-forecast hourly-view">
       <thead id="tableHead"></thead>
@@ -494,27 +545,43 @@
     </table>
   </div>
 
-  <!-- 7-Day Wind Gust Overview Graph -->
+  <!-- 7-Day Wind Gust Overview Graph Scrubber -->
   <div class="wind-overview-section">
     <div class="overview-header">
       <div class="overview-title">
-        <span>7-Day Wind Gusts &amp; Trends</span>
+        <span>7-Day Wind Gusts</span>
         <span id="overviewPeakBadge" class="peak-badge">Peak: -- kts</span>
       </div>
-      <div class="overview-hint">Click day or scroll table to jump</div>
+      <div class="overview-hint">Touch or drag anywhere to scrub</div>
     </div>
 
-    <div class="timeline-wrapper" id="timelineWrapper" title="Click anywhere to jump to that day">
+    <div class="timeline-wrapper" id="timelineWrapper" title="Drag or tap to jump to day">
       <div class="timeline-bars-container" id="timelineBars"></div>
       <div class="timeline-days-labels" id="timelineLabels"></div>
       <div class="timeline-selector" id="timelineSelector"></div>
     </div>
   </div>
 
-  <!-- Footer Details -->
+  <!-- Footer with Metadata and Micro Actions -->
   <div class="issued-footer">
-    <span id="footerLocation">Forecast for 37.855°N, -122.312°W (Cal Sailing Club, Berkeley Marina)</span>
-    <span id="footerTimestamp">Updated: Loading...</span>
+    <div class="footer-meta">
+      <span id="footerLocation">Cal Sailing Club, Berkeley Marina (37.855°N, -122.312°W)</span>
+      <span id="footerTimestamp">Updated: Loading...</span>
+    </div>
+    <div class="footer-actions">
+      <div class="status-badge micro live" id="statusBadge" title="Data Source Status">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Meteoblue</span>
+      </div>
+      <button id="btnRefresh" class="btn-micro-action" type="button" title="Refresh Forecast Data">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <polyline points="1 20 1 14 7 14"></polyline>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+        </svg>
+        <span>Refresh</span>
+      </button>
+    </div>
   </div>
 </div>
 
@@ -545,26 +612,19 @@
     return Math.round((tempVal * 9 / 5) + 32);
   }
 
-  function toInches(precipVal, unitStr) {
-    if (precipVal === null || precipVal === undefined) return '0.00';
-    const u = (unitStr || 'mm').toLowerCase();
-    if (u.includes('in')) return Number(precipVal).toFixed(2);
-    return (precipVal * 0.0393701).toFixed(2);
-  }
-
   function getWindClass(speedKnots) {
     if (!speedKnots || speedKnots <= 0) return '';
-    if (speedKnots <= 3) return 'wind-calm';      // <=3 kts lighter blue
-    if (speedKnots <= 5) return 'wind-light';     // 4-5 kts light blue
-    if (speedKnots <= 7) return 'wind-mod';       // 6-7 kts light sky blue
-    if (speedKnots <= 9) return 'wind-breeze';    // 8-9 kts lighter turquoise / seafoam
-    if (speedKnots <= 14) return 'wind-green';    // 10-14 kts green
-    if (speedKnots <= 16) return 'wind-yellow';   // 15-16 kts yellow
-    if (speedKnots === 17) return 'wind-lt-orange';// 17 kts light orange
-    if (speedKnots <= 19) return 'wind-dk-orange';// 18-19 kts dark orange
-    if (speedKnots <= 23) return 'wind-red';      // 20-23 kts red
-    if (speedKnots <= 29) return 'wind-dk-red';   // 24-29 kts dark red
-    return 'wind-purple';                         // 30+ kts red purple
+    if (speedKnots <= 3) return 'wind-calm';
+    if (speedKnots <= 5) return 'wind-light';
+    if (speedKnots <= 7) return 'wind-mod';
+    if (speedKnots <= 9) return 'wind-breeze';
+    if (speedKnots <= 14) return 'wind-green';
+    if (speedKnots <= 16) return 'wind-yellow';
+    if (speedKnots === 17) return 'wind-lt-orange';
+    if (speedKnots <= 19) return 'wind-dk-orange';
+    if (speedKnots <= 23) return 'wind-red';
+    if (speedKnots <= 29) return 'wind-dk-red';
+    return 'wind-purple';
   }
 
   function getWindHexColor(spd) {
@@ -624,7 +684,6 @@
 
   function createWindArrowSvg(degrees) {
     if (degrees === null || degrees === undefined || isNaN(degrees)) return '';
-    // Reverse arrow by 180 degrees while keeping the numeric degree reading intact
     const reversedDeg = (Math.round(degrees) + 180) % 360;
     return `
       <div class="wind-arrow" style="transform: rotate(${reversedDeg}deg);">
@@ -639,11 +698,9 @@
 
   function getPictocodeIcon(code) {
     const c = Number(code) || 1;
-    // Clear sunny
     if (c === 1) {
       return `<svg viewBox="0 0 24 24" fill="none" stroke="#e57e00" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>`;
     }
-    // Partly cloudy (sun behind cloud)
     if (c >= 2 && c <= 4) {
       return `<svg viewBox="0 0 24 24" fill="none">
         <path d="M16 4v-2M19.5 5.5l1.4-1.4M21 9h2M19.5 12.5l1.4 1.4" stroke="#f59e0b" stroke-width="1.6" stroke-linecap="round"/>
@@ -651,23 +708,18 @@
         <path d="M6 19h11a3.5 3.5 0 0 0 .5-6.96 4.5 4.5 0 0 0-8.2-2.2A4 4 0 0 0 6 19z" fill="#eceff1" stroke="#546e7a" stroke-width="1.4" stroke-linejoin="round"/>
       </svg>`;
     }
-    // Overcast / Cloudy
     if (c >= 5 && c <= 6) {
       return `<svg viewBox="0 0 24 24" fill="#eceff1" stroke="#546e7a" stroke-width="2" stroke-linecap="round"><path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/></svg>`;
     }
-    // Rain / Showers
     if ((c >= 7 && c <= 11) || (c >= 13 && c <= 17)) {
       return `<svg viewBox="0 0 24 24" fill="none" stroke="#0072c3" stroke-width="2" stroke-linecap="round"><path d="M20 16.58A5 5 0 0018 7h-1.26A8 8 0 104 15.25" fill="#eceff1" stroke="#546e7a"/><path d="M8 19v2M12 18v2M16 19v2"/></svg>`;
     }
-    // Thunderstorm
     if (c >= 25 && c <= 32) {
       return `<svg viewBox="0 0 24 24" fill="none" stroke="#f1c21b" stroke-width="2" stroke-linecap="round"><path d="M19 14h-1.26A8 8 0 106 14" fill="#cfd8dc" stroke="#455a64"/><polyline points="13 10 9 16 14 16 11 22"/></svg>`;
     }
-    // Fog
     if (c === 12) {
       return `<svg viewBox="0 0 24 24" fill="none" stroke="#78909c" stroke-width="2" stroke-linecap="round"><line x1="3" y1="10" x2="21" y2="10"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="6" y1="18" x2="18" y2="18"/></svg>`;
     }
-    // Default sun behind cloud
     return `<svg viewBox="0 0 24 24" fill="none">
       <path d="M16 4v-2M19.5 5.5l1.4-1.4M21 9h2M19.5 12.5l1.4 1.4" stroke="#f59e0b" stroke-width="1.6" stroke-linecap="round"/>
       <circle cx="16" cy="9" r="3" fill="#f59e0b" stroke="#d97706" stroke-width="0.6"/>
@@ -695,7 +747,6 @@
       const cosH = (Math.cos(zenithRad) - Math.sin(latRad) * Math.sin(declination)) / (Math.cos(latRad) * Math.cos(declination));
       const hourAngleDeg = Math.acos(Math.max(-1, Math.min(1, cosH))) * (180 / Math.PI);
 
-      // Berkeley Marina is Pacific Time (UTC-7 PDT / UTC-8 PST)
       const isDst = (month > 2 && month < 10) || (month === 2 && day > 8) || (month === 10 && day < 5);
       const tzOffsetHours = isDst ? -7 : -8;
 
@@ -724,11 +775,10 @@
     const units = weatherData.units;
     if (!data || !data.time || !data.time.length) return;
 
-    const numHours = Math.min(data.time.length, 168); // 7 full days
+    const numHours = Math.min(data.time.length, 168);
     thead.innerHTML = '';
     tbody.innerHTML = '';
 
-    // Find date boundaries for top header spanning banner
     const daySpans = [];
     let currentDayStr = null;
     let currentSpan = 0;
@@ -749,7 +799,7 @@
       daySpans.push({ dayStr: currentDayStr, span: currentSpan });
     }
 
-    // Group Header Row (Centered Date banner with neutral styling)
+    // Group Header Row
     const groupHeaderRow = document.createElement('tr');
     groupHeaderRow.innerHTML = `<th></th>`;
     daySpans.forEach((ds, dayIdx) => {
@@ -760,13 +810,13 @@
       const formatted = dObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
       th.textContent = formatted;
       th.style.cursor = 'pointer';
-      th.title = 'Click to view day';
+      th.title = 'Click to jump to this day';
       th.onclick = () => jumpToTimelineDay(dayIdx);
       groupHeaderRow.appendChild(th);
     });
     thead.appendChild(groupHeaderRow);
 
-    // Hourly Subheader Row (24h format: 00, 01, ..., 23; unbolded)
+    // Hourly Subheader Row
     const hourHeaderRow = document.createElement('tr');
     hourHeaderRow.innerHTML = `<th>Hour</th>`;
     for (let i = 0; i < numHours; i++) {
@@ -779,7 +829,7 @@
     }
     thead.appendChild(hourHeaderRow);
 
-    // 1. Wind (kts) Row - Histogram format with speed number above and colored bar below
+    // 1. Wind (kts) Row
     const windRow = document.createElement('tr');
     windRow.innerHTML = `<td>Wind (kts)<span class="unit-label">direction</span></td>`;
     for (let i = 0; i < numHours; i++) {
@@ -788,7 +838,6 @@
       const td = document.createElement('td');
       td.className = 'wind-histo-cell';
 
-      // Calculate proportional height for the histogram bar with 1.5x cell height (min 30px, max 88px)
       const barHeight = Math.max(30, Math.min(88, Math.round(28 + ((spdKt || 0) / 24) * 58)));
       const windClass = getWindClass(spdKt);
 
@@ -804,7 +853,7 @@
     }
     tbody.appendChild(windRow);
 
-    // 2. Gust Speed (kts) Row
+    // 2. Gust Speed Row
     const gustRow = document.createElement('tr');
     gustRow.innerHTML = `<td>Gust Speed<span class="unit-label">in knots</span></td>`;
     for (let i = 0; i < numHours; i++) {
@@ -822,7 +871,7 @@
     }
     tbody.appendChild(gustRow);
 
-    // 3. Outlook / Sky Row
+    // 3. Outlook Row
     const skyRow = document.createElement('tr');
     skyRow.innerHTML = `<td>Outlook</td>`;
     for (let i = 0; i < numHours; i++) {
@@ -833,7 +882,7 @@
     }
     tbody.appendChild(skyRow);
 
-    // 4. Temp Row (Progressive font color, unbolded)
+    // 4. Temp Row
     const tempRow = document.createElement('tr');
     tempRow.className = 'row-temp';
     tempRow.innerHTML = `<td>°F</td>`;
@@ -959,7 +1008,7 @@
     }
     tbody.appendChild(outlookRow);
 
-    // 4. Temp Row (Hi / Lo with progressive styling)
+    // 4. Temp Row
     const tempRow = document.createElement('tr');
     tempRow.innerHTML = `<td>Temp<span class="unit-label">in °F</span></td>`;
     for (let i = 0; i < numDays; i++) {
@@ -1016,7 +1065,6 @@
     const dayData = weatherData.data_day;
     const numDays = Math.min((dayData?.time?.length || 7), 7);
 
-    // Populate Day labels
     for (let d = 0; d < numDays; d++) {
       const lbl = document.createElement('div');
       lbl.className = 'timeline-day-label';
@@ -1034,7 +1082,6 @@
       labelsContainer.appendChild(lbl);
     }
 
-    // Calculate peak gust speed for relative bar heights
     const gustsKnots = [];
     for (let h = 0; h < totalHours; h++) {
       let g = (hourly.gust && hourly.gust[h] !== null && hourly.gust[h] !== undefined)
@@ -1048,9 +1095,8 @@
     }
 
     const peakGust = Math.max(...gustsKnots, 10);
-    if (peakBadge) peakBadge.textContent = `Peak Gust: ${peakGust} kts`;
+    if (peakBadge) peakBadge.textContent = `Peak: ${peakGust} kts`;
 
-    // Render vertical bars for gusts
     for (let h = 0; h < totalHours; h++) {
       const val = gustsKnots[h];
       const bar = document.createElement('div');
@@ -1068,22 +1114,29 @@
       barsContainer.appendChild(bar);
     }
 
-    // Allow clicking anywhere across the timeline wrapper to jump
+    // Touch and click scrubber logic for timeline
     const timelineWrapper = document.getElementById('timelineWrapper');
     if (timelineWrapper) {
-      timelineWrapper.onclick = (e) => {
+      const handleTimelineScrub = (clientX) => {
         const rect = timelineWrapper.getBoundingClientRect();
-        const clickX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
-        const totalHours = Math.min((weatherData?.data_1h?.time?.length || 168), 168);
-        const targetHour = Math.min(totalHours - 1, Math.floor((clickX / rect.width) * totalHours));
+        const clickX = Math.max(0, Math.min(rect.width, clientX - rect.left));
+        const total = Math.min((weatherData?.data_1h?.time?.length || 168), 168);
+        const targetHour = Math.min(total - 1, Math.floor((clickX / rect.width) * total));
         const dayIdx = Math.floor(targetHour / 24);
         jumpToTimelineDay(dayIdx, targetHour);
       };
+
+      timelineWrapper.onclick = (e) => handleTimelineScrub(e.clientX);
+
+      timelineWrapper.addEventListener('touchmove', (e) => {
+        if (e.touches && e.touches.length > 0) {
+          handleTimelineScrub(e.touches[0].clientX);
+        }
+      }, { passive: true });
     }
   }
 
   function jumpToTimelineDay(dayIndex, hourIndex = null) {
-    // If currently on the 7 Day view, automatically switch to Daily (hourly) view
     if (currentMode === 'day') {
       currentMode = 'hour';
       const tabDaily = document.getElementById('tabDaily');
@@ -1100,7 +1153,6 @@
 
     const targetHourIdx = hourIndex !== null ? hourIndex : dayIndex * 24;
 
-    // Defer scroll slightly to allow the DOM to render if we just switched views
     setTimeout(() => {
       const targetCol = document.getElementById(`col-hour-${targetHourIdx}`);
       if (targetCol) {
@@ -1139,7 +1191,7 @@
     selector.style.display = 'block';
 
     if (currentMode === 'hour') {
-      const stickyWidth = 95;
+      const stickyWidth = window.innerWidth <= 640 ? 78 : 90;
       const currentScroll = scrollContainer.scrollLeft;
       const hourCols = document.querySelectorAll('th[id^="col-hour-"]');
       if (!hourCols.length) return;
@@ -1158,7 +1210,7 @@
       const targetLeft = Math.min(maxLeft, Math.max(0, progress * totalWrapperWidth));
       selector.style.left = `${targetLeft}px`;
     } else {
-      const stickyWidth = 110;
+      const stickyWidth = window.innerWidth <= 640 ? 82 : 105;
       const currentScroll = scrollContainer.scrollLeft;
       const dayCols = document.querySelectorAll('th[id^="col-day-"]');
       if (!dayCols.length) return;
@@ -1234,8 +1286,6 @@
         winddirection: Array.from({ length: 168 }, () => 220 + Math.floor(Math.random() * 30)),
         pictocode: Array.from({ length: 168 }, () => 2),
         precipitation_probability: Array.from({ length: 168 }, (_, i) => (i % 24 >= 14 && i % 24 <= 17 && Math.floor(i / 24) === 4 ? 20 : 0)),
-        totalcloudcover: Array.from({ length: 168 }, (_, i) => Math.round(20 + Math.sin(i / 8) * 35)),
-        sealevelpressure: Array.from({ length: 168 }, (_, i) => Math.round(1008 + Math.cos(i / 24) * 4)),
         precipitation: Array.from({ length: 168 }, () => 0)
       }
     };
@@ -1249,7 +1299,7 @@
 
     statusText.textContent = 'Updating...';
     if (statusBadge) {
-      statusBadge.className = 'status-badge updating';
+      statusBadge.className = 'status-badge micro updating';
     }
     statusDot.style.backgroundColor = '#d97706';
 
@@ -1260,9 +1310,9 @@
 
       if (json && (json.data_day || json.data_1h)) {
         weatherData = json;
-        statusText.textContent = 'Meteoblue Live';
+        statusText.textContent = 'Meteoblue';
         if (statusBadge) {
-          statusBadge.className = 'status-badge live';
+          statusBadge.className = 'status-badge micro live';
         }
         statusDot.style.backgroundColor = '#24a148';
       } else {
@@ -1273,7 +1323,7 @@
       weatherData = getFallbackMockData();
       statusText.textContent = 'Demo Mode';
       if (statusBadge) {
-        statusBadge.className = 'status-badge demo';
+        statusBadge.className = 'status-badge micro demo';
       }
       statusDot.style.backgroundColor = '#0f62fe';
     }
@@ -1310,7 +1360,6 @@
       scrollContainer.addEventListener('scroll', syncTimelineOnTableScroll, { passive: true });
     }
 
-    // 'Daily' button activates the detailed hourly view
     if (tabDaily) {
       tabDaily.addEventListener('click', () => {
         if (currentMode === 'hour') return;
@@ -1322,7 +1371,6 @@
       });
     }
 
-    // '7 Day' button activates the summarized 7-day view
     if (tab7Day) {
       tab7Day.addEventListener('click', () => {
         if (currentMode === 'day') return;
@@ -1344,7 +1392,6 @@
       syncTimelineOnTableScroll();
     });
 
-    // Initialize
     loadWeatherData();
   }
 
