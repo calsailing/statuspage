@@ -66,7 +66,7 @@
     color: #ffffff;
   }
 
-  /* Micro Footer Status Pill & Refresh Button */
+  /* Micro Footer Status Pill */
   .footer-actions {
     display: inline-flex;
     align-items: center;
@@ -158,7 +158,7 @@
     white-space: nowrap;
   }
 
-  /* Sticky first column with elevation shadow for mobile scrolling */
+  /* Sticky first column */
   table.structured-forecast th:first-child,
   table.structured-forecast td:first-child {
     position: sticky;
@@ -217,20 +217,6 @@
     color: #525252;
     display: block;
     letter-spacing: -0.02em;
-  }
-
-  table.structured-forecast.hourly-view .hour-time.current-hour {
-    color: #0f62fe;
-    font-weight: 600;
-  }
-
-  .now-dot {
-    display: block;
-    width: 4px;
-    height: 4px;
-    background-color: #0f62fe;
-    border-radius: 50%;
-    margin: 1px auto 0 auto;
   }
 
   table.structured-forecast.hourly-view .row-temp td {
@@ -316,17 +302,17 @@
   }
 
   /* Wind Colors */
-  .wind-calm     { background-color: #eef8fc !important; color: #161616 !important; }
-  .wind-light    { background-color: #dcf4fb !important; color: #161616 !important; }
-  .wind-mod      { background-color: #b4e7fa !important; color: #161616 !important; }
-  .wind-breeze   { background-color: #abf0d4 !important; color: #161616 !important; }
-  .wind-green    { background-color: #80ff80 !important; color: #161616 !important; }
-  .wind-yellow   { background-color: #ffea29 !important; color: #161616 !important; }
-  .wind-lt-orange{ background-color: #ffba42 !important; color: #161616 !important; }
-  .wind-dk-orange{ background-color: #ff8c1a !important; color: #161616 !important; }
-  .wind-red      { background-color: #e52222 !important; color: #ffffff !important; }
-  .wind-dk-red   { background-color: #b70c18 !important; color: #ffffff !important; }
-  .wind-purple   { background-color: #9f135b !important; color: #ffffff !important; }
+  .wind-calm      { background-color: #eef8fc !important; color: #161616 !important; }
+  .wind-light     { background-color: #dcf4fb !important; color: #161616 !important; }
+  .wind-mod       { background-color: #b4e7fa !important; color: #161616 !important; }
+  .wind-breeze    { background-color: #abf0d4 !important; color: #161616 !important; }
+  .wind-green     { background-color: #80ff80 !important; color: #161616 !important; }
+  .wind-yellow    { background-color: #ffea29 !important; color: #161616 !important; }
+  .wind-lt-orange { background-color: #ffba42 !important; color: #161616 !important; }
+  .wind-dk-orange { background-color: #ff8c1a !important; color: #161616 !important; }
+  .wind-red       { background-color: #e52222 !important; color: #ffffff !important; }
+  .wind-dk-red    { background-color: #b70c18 !important; color: #ffffff !important; }
+  .wind-purple    { background-color: #9f135b !important; color: #ffffff !important; }
 
   .wind-arrow {
     display: inline-block;
@@ -597,7 +583,7 @@
     color: #78a9ff;
   }
 
-  /* Mobile Responsive Fine-Tuning */
+  /* Mobile Responsive */
   @media (max-width: 640px) {
     .app-card {
       border: none;
@@ -732,17 +718,14 @@
 
 <script>
 /* #raw */
-  const METEOBLUE_ENDPOINT = 'https://my.meteoblue.com/packages/basic-1h_basic-day?apikey=HImRZ4w2iEX9eOWT&lat=37.855&lon=-122.312&asl=52&format=json';
-  const CACHE_KEY_DATA = 'meteoblue_forecast_data';
-  const CACHE_KEY_TIME = 'meteoblue_forecast_timestamp';
-  const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes cache window
+  // Server-side cached forecast endpoint
+  const METEOBLUE_CACHE_URL = 'https://status.cal-sailing.org/meteoblue_cache.json';
 
   let weatherData = null;
-  let currentMode = 'hour'; // 'hour' is the Daily view; 'day' is the 7 Day view
+  let currentMode = 'hour'; // 'hour' = Daily view; 'day' = 7 Day view
   let isProgrammaticScrolling = false;
   let programmaticScrollTimeout = null;
 
-  // Unit conversion helpers
   function toKnots(speedVal, unitStr) {
     if (speedVal === null || speedVal === undefined) return null;
     const u = (unitStr || 'ms').toLowerCase();
@@ -921,7 +904,6 @@
   function getCurrentHourStartIndex(times) {
     if (!times || !times.length) return 0;
     const now = new Date();
-    // 55-minute buffer so the ongoing current hour remains displayed
     const threshold = now.getTime() - (55 * 60 * 1000);
 
     for (let i = 0; i < times.length; i++) {
@@ -994,7 +976,7 @@
     });
     thead.appendChild(groupHeaderRow);
 
-    // Hourly Subheader Row (Starting from current hour)
+    // Hourly Subheader Row
     const hourHeaderRow = document.createElement('tr');
     hourHeaderRow.innerHTML = `<th>Hour</th>`;
     for (let i = startIdx; i < numHours; i++) {
@@ -1297,7 +1279,6 @@
       barsContainer.appendChild(bar);
     }
 
-    // Touch and click scrubber logic for timeline
     const timelineWrapper = document.getElementById('timelineWrapper');
     if (timelineWrapper) {
       const handleTimelineScrub = (clientX) => {
@@ -1328,7 +1309,6 @@
     const localNowPrefix = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}`;
     const localNowIsoPrefix = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}`;
 
-    // Direct string match against local YYYY-MM-DD HH
     for (let i = 0; i < times.length; i++) {
       const t = times[i];
       if (t.startsWith(localNowPrefix) || t.startsWith(localNowIsoPrefix)) {
@@ -1336,7 +1316,6 @@
       }
     }
 
-    // Proximity fallback based on timestamp difference
     const nowMs = now.getTime();
     let closestIdx = 0;
     let minDiff = Infinity;
@@ -1543,51 +1522,6 @@
     const statusDot = document.getElementById('statusDot');
     const footerTimestamp = document.getElementById('footerTimestamp');
 
-    // 1. Check local browser cache first
-    let cachedPayload = null;
-    let cachedTime = 0;
-    try {
-      const storedTime = localStorage.getItem(CACHE_KEY_TIME);
-      const storedData = localStorage.getItem(CACHE_KEY_DATA);
-      if (storedTime && storedData) {
-        cachedTime = parseInt(storedTime, 10);
-        cachedPayload = JSON.parse(storedData);
-      }
-    } catch (err) {
-      console.warn('LocalStorage read unavailable:', err);
-    }
-
-    const nowMs = Date.now();
-    const isCacheValid = cachedPayload && (nowMs - cachedTime < CACHE_TTL_MS);
-
-    if (isCacheValid) {
-      weatherData = cachedPayload;
-      statusText.textContent = 'Meteoblue';
-      if (statusBadge) {
-        statusBadge.className = 'status-badge micro live';
-      }
-      statusDot.style.backgroundColor = '#24a148';
-
-      renderForecast();
-      renderWindOverview();
-
-      setTimeout(() => {
-        if (currentMode === 'hour') {
-          const curIdx = getCurrentHourIndex();
-          scrollToHour(curIdx, false);
-        } else {
-          updateTimelineSelector(0);
-        }
-      }, 50);
-
-      const issueDate = new Date(cachedTime);
-      const timeStr = issueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-      const dateStr = issueDate.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' });
-      footerTimestamp.textContent = `Issued: ${dateStr} ${timeStr}`;
-      return;
-    }
-
-    // 2. Fetch fresh data if cache is expired or absent
     statusText.textContent = 'Updating...';
     if (statusBadge) {
       statusBadge.className = 'status-badge micro updating';
@@ -1595,59 +1529,40 @@
     statusDot.style.backgroundColor = '#d97706';
 
     let fetchTimestamp = Date.now();
+    let json = null;
 
     try {
-      const response = await fetch(METEOBLUE_ENDPOINT, { cache: 'no-cache' });
-      if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-      const json = await response.json();
+      const response = await fetch(METEOBLUE_CACHE_URL, { cache: 'no-store' });
+      if (response.ok) {
+        json = await response.json();
+      }
 
       if (json && (json.data_day || json.data_1h)) {
         weatherData = json;
         fetchTimestamp = Date.now();
 
-        // Save fresh response to localStorage
-        try {
-          localStorage.setItem(CACHE_KEY_DATA, JSON.stringify(json));
-          localStorage.setItem(CACHE_KEY_TIME, String(fetchTimestamp));
-        } catch (saveErr) {
-          console.warn('LocalStorage save failed:', saveErr);
-        }
-
         statusText.textContent = 'Meteoblue';
         if (statusBadge) {
           statusBadge.className = 'status-badge micro live';
         }
         statusDot.style.backgroundColor = '#24a148';
       } else {
-        throw new Error('Unexpected JSON schema');
+        throw new Error('Unexpected JSON schema from cache');
       }
-    } catch (err) {
-      console.warn('Direct fetch failed:', err.message);
+    } catch (cacheErr) {
+      console.warn('Server cache fetch failed:', cacheErr.message);
 
-      // If network fails but stale cache exists, prefer stale data over mock demo
-      if (cachedPayload) {
-        console.info('Serving stale cached forecast data due to fetch error');
-        weatherData = cachedPayload;
-        fetchTimestamp = cachedTime;
-        statusText.textContent = 'Meteoblue';
-        if (statusBadge) {
-          statusBadge.className = 'status-badge micro live';
-        }
-        statusDot.style.backgroundColor = '#24a148';
-      } else {
-        weatherData = getFallbackMockData();
-        statusText.textContent = 'Demo Mode';
-        if (statusBadge) {
-          statusBadge.className = 'status-badge micro demo';
-        }
-        statusDot.style.backgroundColor = '#0f62fe';
+      weatherData = getFallbackMockData();
+      statusText.textContent = 'Demo Mode';
+      if (statusBadge) {
+        statusBadge.className = 'status-badge micro demo';
       }
+      statusDot.style.backgroundColor = '#0f62fe';
     }
 
     renderForecast();
     renderWindOverview();
 
-    // Start Daily forecast aligned at the current time
     setTimeout(() => {
       if (currentMode === 'hour') {
         const curIdx = getCurrentHourIndex();
