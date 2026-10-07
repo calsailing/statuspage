@@ -15,11 +15,12 @@
   .app-card {
     font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background: #ffffff;
-    border: 1px solid var(--cds-ui-border);
-    border-radius: 4px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-    max-width: 1040px;
-    margin: 0 auto;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
     overflow: hidden;
     color: var(--cds-text-primary);
     box-sizing: border-box;
@@ -473,9 +474,11 @@
   /* Mobile Responsive Fine-Tuning */
   @media (max-width: 640px) {
     .app-card {
+      border: none;
       border-radius: 0;
-      border-left: none;
-      border-right: none;
+      box-shadow: none;
+      width: 100%;
+      max-width: 100%;
     }
 
     .view-switcher-container {
