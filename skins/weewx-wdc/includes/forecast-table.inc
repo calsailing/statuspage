@@ -119,35 +119,6 @@
     flex-shrink: 0;
   }
 
-  .btn-micro-action {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 0.18rem 0.45rem;
-    font-size: 0.62rem;
-    font-weight: 500;
-    color: #4b5563;
-    background: #ffffff;
-    border: 1px solid #d4d4d8;
-    border-radius: 3px;
-    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.03);
-    cursor: pointer;
-    line-height: 1.1;
-    transition: all 0.15s ease-in-out;
-    outline: none;
-  }
-
-  .btn-micro-action:hover {
-    background: #f4f4f5;
-    border-color: #a1a1aa;
-    color: #18181b;
-  }
-
-  .btn-micro-action:active {
-    background: #e4e4e7;
-    transform: translateY(1px);
-  }
-
   .table-scroll-container {
     width: 100%;
     overflow-x: auto;
@@ -613,20 +584,6 @@
     color: #a8a8a8;
   }
 
-  html.dark .btn-micro-action {
-    background: #262626;
-    border-color: #525252;
-    color: #e0e0e0;
-  }
-  html.dark .btn-micro-action:hover {
-    background: #333333;
-    border-color: #71717a;
-    color: #ffffff;
-  }
-  html.dark .btn-micro-action:active {
-    background: #3f3f46;
-  }
-
   html.dark .status-badge.micro.live {
     background-color: rgba(36, 161, 72, 0.22);
     color: #42be65;
@@ -769,14 +726,6 @@
         <span class="status-dot" id="statusDot"></span>
         <span id="statusText">Meteoblue</span>
       </a>
-      <button id="btnRefresh" class="btn-micro-action" type="button" title="Refresh Forecast Data">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="23 4 23 10 17 10"></polyline>
-          <polyline points="1 20 1 14 7 14"></polyline>
-          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-        </svg>
-        <span>Refresh</span>
-      </button>
     </div>
   </div>
 </div>
@@ -1657,7 +1606,6 @@
   function initForecastApp() {
     const tabDaily = document.getElementById('tabDaily');
     const tab7Day = document.getElementById('tab7Day');
-    const btnRefresh = document.getElementById('btnRefresh');
     const scrollContainer = document.querySelector('.table-scroll-container');
 
     if (scrollContainer) {
@@ -1686,12 +1634,6 @@
         if (tabDaily) tabDaily.classList.remove('active');
         renderForecast();
         updateTimelineSelector(0);
-      });
-    }
-
-    if (btnRefresh) {
-      btnRefresh.addEventListener('click', () => {
-        loadWeatherData();
       });
     }
 
