@@ -1469,6 +1469,8 @@
       hourlyTimes.push(ht.toISOString().substring(0, 16).replace('T', ' '));
     }
 
+    const isoNow = now.toISOString().substring(0, 16).replace('T', ' ');
+
     return {
       units: {
         temperature: '°C',
@@ -1479,7 +1481,8 @@
       metadata: {
         latitude: 37.855,
         longitude: -122.312,
-        modelrun_utc: now.toISOString()
+        modelrun_utc: isoNow,
+        modelrun_updatetime_utc: isoNow
       },
       data_day: {
         time: dailyTimes,
@@ -1516,6 +1519,19 @@
     };
   }
 
+  function parseUtcTimestamp(utcString) {
+    if (!utcString) return null;
+    let cleanStr = String(utcString).trim();
+    if (cleanStr.includes(' ')) {
+      cleanStr = cleanStr.replace(' ', 'T');
+    }
+    if (!cleanStr.endsWith('Z') && !cleanStr.includes('+') && !cleanStr.slice(10).includes('-')) {
+      cleanStr += 'Z';
+    }
+    const d = new Date(cleanStr);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
   async function loadWeatherData() {
     const statusBadge = document.getElementById('statusBadge');
     const statusText = document.getElementById('statusText');
@@ -1528,7 +1544,6 @@
     }
     statusDot.style.backgroundColor = '#d97706';
 
-    let fetchTimestamp = Date.now();
     let json = null;
 
     try {
@@ -1539,7 +1554,6 @@
 
       if (json && (json.data_day || json.data_1h)) {
         weatherData = json;
-        fetchTimestamp = Date.now();
 
         statusText.textContent = 'Meteoblue';
         if (statusBadge) {
@@ -1572,9 +1586,19 @@
       }
     }, 50);
 
-    const issueDate = new Date(fetchTimestamp);
-    const timeNow = issueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-    const dateNow = issueDate.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' });
+    // Parse modelrun_updatetime_utc from metadata with fallback to modelrun_utc or current time
+    let modelRunDate = null;
+    const rawUpdateUtc = weatherData?.metadata?.modelrun_updatetime_utc 
+      || weatherData?.metadata?.modelrun_utc 
+      || weatherData?.modelrun_updatetime_utc;
+
+    if (rawUpdateUtc) {
+      modelRunDate = parseUtcTimestamp(rawUpdateUtc);
+    }
+
+    const displayDate = modelRunDate || new Date();
+    const timeNow = displayDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    const dateNow = displayDate.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' });
     footerTimestamp.textContent = `Issued: ${dateNow} ${timeNow}`;
   }
 
