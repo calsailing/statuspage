@@ -264,7 +264,7 @@
 
   .wind-histo-val {
     font-size: 0.72rem;
-    font-weight: 500;
+    font-weight: 400;
     color: #161616;
     line-height: 1.1;
     margin-bottom: 2px;
@@ -295,19 +295,27 @@
 
   table.structured-forecast.seven-day-view th,
   table.structured-forecast.seven-day-view td {
+    min-width: 52px;
+    padding: 0.35rem 0.2rem;
+    font-size: 0.76rem;
+  }
+
+  table.structured-forecast.seven-day-view th:first-child,
+  table.structured-forecast.seven-day-view td:first-child {
     min-width: 82px;
-    padding: 0.5rem 0.35rem;
+    max-width: 82px;
+    padding: 0.35rem 0.3rem;
   }
 
   table.structured-forecast.seven-day-view .day-name {
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     font-weight: 600;
     color: #161616;
     display: block;
   }
 
   table.structured-forecast.seven-day-view .day-date {
-    font-size: 0.75rem;
+    font-size: 0.68rem;
     color: #525252;
     display: block;
   }
@@ -494,12 +502,24 @@
       font-size: 0.7rem;
     }
 
+    table.structured-forecast.seven-day-view th,
+    table.structured-forecast.seven-day-view td {
+      min-width: 44px;
+      padding: 0.25rem 0.15rem;
+      font-size: 0.68rem;
+    }
+
     table.structured-forecast.seven-day-view th:first-child,
     table.structured-forecast.seven-day-view td:first-child {
-      min-width: 82px;
-      max-width: 82px;
-      padding: 0.4rem 0.35rem;
-      font-size: 0.72rem;
+      min-width: 72px;
+      max-width: 72px;
+      padding: 0.3rem 0.25rem;
+      font-size: 0.68rem;
+    }
+
+    table.structured-forecast.seven-day-view .weather-icon-cell svg {
+      width: 20px;
+      height: 20px;
     }
 
     .overview-hint {
@@ -565,7 +585,7 @@
   <!-- Footer with Metadata and Micro Actions -->
   <div class="issued-footer">
     <div class="footer-meta">
-      <span id="footerLocation">Cal Sailing Club, Berkeley Marina (37.855°N, -122.312°W)</span>
+      <span id="footerLocation">37.855°N, -122.312°W</span>
       <span id="footerTimestamp">Updated: Loading...</span>
     </div>
     <div class="footer-actions">
@@ -866,7 +886,7 @@
       }
       const td = document.createElement('td');
       td.className = getWindClass(gustKt);
-      td.innerHTML = `<span style="font-weight:700; font-size:0.75rem;">${gustKt !== null ? gustKt : '-'}</span>`;
+      td.innerHTML = `<span style="font-weight:400; font-size:0.75rem;">${gustKt !== null ? gustKt : '-'}</span>`;
       gustRow.appendChild(td);
     }
     tbody.appendChild(gustRow);
@@ -958,7 +978,7 @@
         ? ((minKt === maxKt) ? `${minKt}` : `${minKt} - ${maxKt}`)
         : (maxKt !== null ? `${maxKt}` : '-');
       td.innerHTML = `
-        <div style="font-size:0.95rem; font-weight:600;">${spdText}</div>
+        <div style="font-size:0.82rem; font-weight:400;">${spdText}</div>
         ${createWindArrowSvg(dirDeg)}
       `;
       windRow.appendChild(td);
@@ -991,7 +1011,7 @@
 
       const td = document.createElement('td');
       td.className = getWindClass(gustVal);
-      td.innerHTML = `<span style="font-weight:600;">${gustVal !== null ? gustVal : '-'}</span>`;
+      td.innerHTML = `<span style="font-weight:400; font-size:0.8rem;">${gustVal !== null ? gustVal : '-'}</span>`;
       gustRow.appendChild(td);
     }
     tbody.appendChild(gustRow);
@@ -1003,7 +1023,7 @@
       const code = data.pictocode ? data.pictocode[i] : 2;
       const iconSvg = getPictocodeIcon(code);
       const td = document.createElement('td');
-      td.innerHTML = `<div class="weather-icon-cell" style="width:34px; height:34px; margin:0 auto;">${iconSvg}</div>`;
+      td.innerHTML = `<div class="weather-icon-cell" style="width:24px; height:24px; margin:0 auto;">${iconSvg}</div>`;
       outlookRow.appendChild(td);
     }
     tbody.appendChild(outlookRow);
@@ -1018,8 +1038,8 @@
       const loColor = getTemperatureColor(minF);
       const td = document.createElement('td');
       td.innerHTML = `
-        <span style="color: ${hiColor.bg}; font-weight:700;">${maxF !== null ? maxF : '-'}</span><br/>
-        <span style="color: ${loColor.bg}; font-weight:600;">${minF !== null ? minF : '-'}</span>
+        <span style="color: ${hiColor.bg}; font-weight:400;">${maxF !== null ? maxF : '-'}</span><br/>
+        <span style="color: ${loColor.bg}; font-weight:400;">${minF !== null ? minF : '-'}</span>
       `;
       tempRow.appendChild(td);
     }
@@ -1031,7 +1051,7 @@
     for (let i = 0; i < numDays; i++) {
       const times = getSunTimes(data.time[i]);
       const td = document.createElement('td');
-      td.innerHTML = `${times.sunrise}<br/>${times.sunset}`;
+      td.innerHTML = `<span style="font-size:0.68rem; line-height:1.2; display:block;">${times.sunrise}<br/>${times.sunset}</span>`;
       sunRow.appendChild(td);
     }
     tbody.appendChild(sunRow);
@@ -1210,7 +1230,7 @@
       const targetLeft = Math.min(maxLeft, Math.max(0, progress * totalWrapperWidth));
       selector.style.left = `${targetLeft}px`;
     } else {
-      const stickyWidth = window.innerWidth <= 640 ? 82 : 105;
+      const stickyWidth = window.innerWidth <= 640 ? 72 : 82;
       const currentScroll = scrollContainer.scrollLeft;
       const dayCols = document.querySelectorAll('th[id^="col-day-"]');
       if (!dayCols.length) return;
@@ -1331,7 +1351,7 @@
     renderForecast();
     renderWindOverview();
 
-    const timeNow = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const timeNow = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
     const dateNow = new Date().toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' });
     footerTimestamp.textContent = `Issued: ${dateNow} ${timeNow}`;
   }
