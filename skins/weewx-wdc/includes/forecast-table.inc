@@ -84,7 +84,16 @@
     letter-spacing: -0.01em;
     border: none;
     line-height: 1.1;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, opacity 0.15s ease;
+  }
+
+  .status-badge.micro:hover {
+    opacity: 0.88;
+    text-decoration: none;
+    color: inherit;
   }
 
   .status-badge.micro.live {
@@ -485,6 +494,152 @@
     flex-wrap: wrap;
   }
 
+  /* Dark Mode Support (active exclusively when <html class="dark">) */
+  html.dark {
+    --cds-ui-background: #161616;
+    --cds-text-primary: #f4f4f4;
+    --cds-text-secondary: #c6c6c6;
+    --cds-ui-border: #393939;
+  }
+
+  html.dark .app-card {
+    background-color: #161616;
+    color: #f4f4f4;
+  }
+
+  html.dark .view-switcher-container {
+    background-color: #161616;
+    border-bottom-color: #393939;
+  }
+
+  html.dark .carbon-switcher {
+    border-color: #525252;
+    background-color: #262626;
+  }
+
+  html.dark .carbon-switcher-btn {
+    background: #262626;
+    color: #f4f4f4;
+  }
+
+  html.dark .carbon-switcher-btn.active {
+    background: #f4f4f4;
+    color: #161616;
+  }
+
+  html.dark .table-scroll-container {
+    background: #161616;
+    scrollbar-color: #525252 #262626;
+  }
+  html.dark .table-scroll-container::-webkit-scrollbar-track {
+    background: #262626;
+  }
+  html.dark .table-scroll-container::-webkit-scrollbar-thumb {
+    background-color: #525252;
+  }
+
+  html.dark table.structured-forecast th,
+  html.dark table.structured-forecast td {
+    border-bottom-color: #2e2e2e;
+    border-right-color: #2e2e2e;
+  }
+
+  html.dark table.structured-forecast th:first-child,
+  html.dark table.structured-forecast td:first-child {
+    background-color: #161616;
+    color: #f4f4f4;
+    border-right-color: #525252;
+    box-shadow: 2px 0 6px rgba(0, 0, 0, 0.45);
+  }
+
+  html.dark .unit-label {
+    color: #a8a8a8;
+  }
+
+  html.dark table.structured-forecast.hourly-view .day-group-header {
+    color: #f4f4f4;
+    border-bottom-color: #393939;
+    border-right-color: #393939;
+  }
+
+  html.dark table.structured-forecast.hourly-view .hour-time {
+    color: #a8a8a8;
+  }
+
+  html.dark table.structured-forecast.hourly-view .wind-histo-val {
+    color: #f4f4f4;
+  }
+
+  html.dark table.structured-forecast.seven-day-view .day-name {
+    color: #f4f4f4;
+  }
+
+  html.dark table.structured-forecast.seven-day-view .day-date {
+    color: #a8a8a8;
+  }
+
+  html.dark .wind-overview-section {
+    background: #161616;
+    border-top-color: #393939;
+  }
+
+  html.dark .overview-title {
+    color: #c6c6c6;
+  }
+
+  html.dark .peak-badge {
+    background-color: #262626;
+    color: #e0e0e0;
+  }
+
+  html.dark .timeline-wrapper {
+    background: #262626;
+    border-color: #393939;
+  }
+
+  html.dark .timeline-days-labels {
+    background: #161616;
+    border-top-color: #393939;
+  }
+
+  html.dark .timeline-day-label {
+    color: #a8a8a8;
+    border-right-color: #262626;
+  }
+
+  html.dark .issued-footer {
+    background: #1c1c1c;
+    border-top-color: #2e2e2e;
+    color: #a8a8a8;
+  }
+
+  html.dark .btn-micro-action {
+    background: #262626;
+    border-color: #525252;
+    color: #e0e0e0;
+  }
+  html.dark .btn-micro-action:hover {
+    background: #333333;
+    border-color: #71717a;
+    color: #ffffff;
+  }
+  html.dark .btn-micro-action:active {
+    background: #3f3f46;
+  }
+
+  html.dark .status-badge.micro.live {
+    background-color: rgba(36, 161, 72, 0.22);
+    color: #42be65;
+  }
+  html.dark .status-badge.micro.updating {
+    background-color: rgba(217, 119, 6, 0.25);
+    color: #fcd34d;
+  }
+  html.dark .status-badge.micro.demo {
+    background-color: rgba(15, 98, 254, 0.22);
+    color: #78a9ff;
+  }
+
   /* Mobile Responsive Fine-Tuning */
   @media (max-width: 640px) {
     .app-card {
@@ -544,23 +699,28 @@
     }
 
     .issued-footer {
-      flex-direction: column;
-      align-items: flex-start;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: nowrap;
       gap: 0.35rem;
-      padding: 0.4rem 0.6rem;
+      padding: 0.35rem 0.6rem;
     }
 
     .footer-meta {
       font-size: 0.64rem;
-      line-height: 1.3;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.15rem;
+      line-height: 1.1;
+      flex-direction: row;
+      align-items: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .footer-actions {
-      align-self: flex-end;
-      margin-top: -0.25rem;
+      align-self: center;
+      margin-top: 0;
+      flex-shrink: 0;
     }
   }
 </style>
@@ -602,14 +762,13 @@
   <!-- Footer with Metadata and Micro Actions -->
   <div class="issued-footer">
     <div class="footer-meta">
-      <span id="footerLocation">37.855°N, -122.312°W</span>
       <span id="footerTimestamp">Updated: Loading...</span>
     </div>
     <div class="footer-actions">
-      <div class="status-badge micro live" id="statusBadge" title="Data Source Status">
+      <a href="https://docs.meteoblue.com/en/weather-apis/forecast-api/overview" target="_blank" rel="noopener noreferrer" class="status-badge micro live" id="statusBadge" title="View Meteoblue API Documentation">
         <span class="status-dot" id="statusDot"></span>
         <span id="statusText">Meteoblue</span>
-      </div>
+      </a>
       <button id="btnRefresh" class="btn-micro-action" type="button" title="Refresh Forecast Data">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="23 4 23 10 17 10"></polyline>
