@@ -555,14 +555,14 @@
   <!-- Top Bar with Centered Carbon Switcher -->
   <div class="view-switcher-container">
     <div class="carbon-switcher">
-      <button id="tabDaily" class="carbon-switcher-btn active" type="button">Daily</button>
-      <button id="tab7Day" class="carbon-switcher-btn" type="button">7 Day</button>
+      <button id="tab7Day" class="carbon-switcher-btn active" type="button">7 Day</button>
+      <button id="tabDaily" class="carbon-switcher-btn" type="button">Daily</button>
     </div>
   </div>
 
   <!-- Table Container with Horizontal Scroll -->
   <div class="table-scroll-container">
-    <table id="forecastTable" class="structured-forecast hourly-view">
+    <table id="forecastTable" class="structured-forecast seven-day-view">
       <thead id="tableHead"></thead>
       <tbody id="tableBody"></tbody>
     </table>
@@ -613,7 +613,7 @@
   const METEOBLUE_ENDPOINT = 'https://my.meteoblue.com/packages/basic-1h_basic-day?apikey=HImRZ4w2iEX9eOWT&lat=37.855&lon=-122.312&asl=52&format=json';
 
   let weatherData = null;
-  let currentMode = 'hour'; // 'hour' is the Daily view; 'day' is the 7 Day view
+  let currentMode = 'day'; // 'day' is the 7 Day view; 'hour' is the Daily view
   let isProgrammaticScrolling = false;
   let programmaticScrollTimeout = null;
 
@@ -1353,6 +1353,7 @@
 
     renderForecast();
     renderWindOverview();
+    updateTimelineSelector(0);
 
     const timeNow = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
     const dateNow = new Date().toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' });
