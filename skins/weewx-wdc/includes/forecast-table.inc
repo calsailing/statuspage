@@ -10,6 +10,15 @@
     --cds-text-secondary: #525252;
     --cds-ui-border: #e0e0e0;
     --cds-interactive-01: #0f62fe;
+    --club-open-hour-bg: rgba(34, 197, 94, 0.15);
+  }
+
+  html.dark {
+    --cds-ui-background: #161616;
+    --cds-text-primary: #f4f4f4;
+    --cds-text-secondary: #c6c6c6;
+    --cds-ui-border: #393939;
+    --club-open-hour-bg: rgba(34, 197, 94, 0.15);
   }
 
   .app-card {
@@ -163,17 +172,17 @@
   table.structured-forecast td:first-child {
     position: sticky;
     left: 0;
-    z-index: 10;
+    z-index: 25;
     background-color: #ffffff;
     text-align: left;
     font-weight: 400;
     color: var(--cds-text-primary);
-    border-right: 2px solid #8d8d8d;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.04);
-    min-width: 105px;
-    max-width: 105px;
-    padding-left: 0.55rem;
-    padding-right: 0.35rem;
+    border-right: 1px solid #d4d4d4;
+    box-shadow: 4px 0 8px -2px rgba(0, 0, 0, 0.08);
+    min-width: 68px;
+    max-width: 68px;
+    padding-left: 0.4rem;
+    padding-right: 0.25rem;
   }
 
   .unit-label {
@@ -194,10 +203,10 @@
 
   table.structured-forecast.hourly-view th:first-child,
   table.structured-forecast.hourly-view td:first-child {
-    min-width: 90px;
-    max-width: 90px;
-    padding: 0.35rem 0.45rem;
-    font-size: 0.73rem;
+    min-width: 68px;
+    max-width: 68px;
+    padding: 0.3rem 0.25rem;
+    font-size: 0.7rem;
   }
 
   table.structured-forecast.hourly-view .day-group-header {
@@ -217,6 +226,13 @@
     color: #525252;
     display: block;
     letter-spacing: -0.02em;
+    position: relative;
+    z-index: 12;
+  }
+
+  .row-hour-header th {
+    transition: background-color 0.2s ease;
+    position: relative;
   }
 
   table.structured-forecast.hourly-view .row-temp td {
@@ -231,7 +247,76 @@
     vertical-align: bottom !important;
     padding: 0 !important;
     background-color: transparent !important;
-    overflow: hidden;
+    position: relative;
+    overflow: visible;
+  }
+
+  /* Light green fill between Open and Dock schedule lines */
+  .wind-sched-fill {
+    position: absolute;
+    top: 0;
+    background-color: var(--club-open-hour-bg);
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* Vertical line indicating exact Open / Dock times */
+  .wind-sched-line {
+    position: absolute;
+    top: 0;
+    width: 2px;
+    z-index: 11;
+    pointer-events: none;
+  }
+
+  .wind-sched-line.line-open {
+    background-color: rgba(22, 163, 74, 0.7);
+  }
+
+  .wind-sched-line.line-dock {
+    background-color: rgba(234, 88, 12, 0.7);
+  }
+
+  /* Inline Open / Dock badge flags positioned right on the wind row */
+  .wind-sched-marker {
+    position: absolute;
+    top: -3px;
+    z-index: 12;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  /* Open time box is placed BEFORE the line, overlapping it slightly */
+  .wind-sched-marker.marker-open {
+    transform: translateX(-100%);
+    margin-left: 1px;
+  }
+
+  /* Dock time box is placed AFTER the line, overlapping it slightly */
+  .wind-sched-marker.marker-dock {
+    transform: translateX(0);
+    margin-left: 1px;
+  }
+
+  .wind-club-flag {
+    font-size: 0.58rem;
+    font-weight: 600;
+    line-height: 1.15;
+    padding: 0.12rem 0.32rem;
+    border-radius: 2px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+    pointer-events: none;
+    letter-spacing: -0.01em;
+  }
+
+  .wind-club-flag.flag-open {
+    background-color: #22c55e;
+    color: #000000;
+  }
+
+  .wind-club-flag.flag-dock {
+    background-color: #f97316;
+    color: #000000;
   }
 
   .wind-histo-container {
@@ -241,6 +326,8 @@
     justify-content: flex-end;
     height: 111px;
     width: 100%;
+    position: relative;
+    z-index: 2;
   }
 
   .wind-histo-val {
@@ -283,9 +370,10 @@
 
   table.structured-forecast.seven-day-view th:first-child,
   table.structured-forecast.seven-day-view td:first-child {
-    min-width: 82px;
-    max-width: 82px;
-    padding: 0.35rem 0.3rem;
+    min-width: 68px;
+    max-width: 68px;
+    padding: 0.35rem 0.25rem;
+    font-size: 0.7rem;
   }
 
   table.structured-forecast.seven-day-view .day-name {
@@ -451,14 +539,7 @@
     flex-wrap: wrap;
   }
 
-  /* Dark Mode Support (active exclusively when <html class="dark">) */
-  html.dark {
-    --cds-ui-background: #161616;
-    --cds-text-primary: #f4f4f4;
-    --cds-text-secondary: #c6c6c6;
-    --cds-ui-border: #393939;
-  }
-
+  /* Dark Mode Scoped Overrides */
   html.dark .app-card {
     background-color: #161616;
     color: #f4f4f4;
@@ -505,8 +586,8 @@
   html.dark table.structured-forecast td:first-child {
     background-color: #161616;
     color: #f4f4f4;
-    border-right-color: #525252;
-    box-shadow: 2px 0 6px rgba(0, 0, 0, 0.45);
+    border-right-color: #333333;
+    box-shadow: 4px 0 10px -2px rgba(0, 0, 0, 0.5);
   }
 
   html.dark .unit-label {
@@ -533,6 +614,24 @@
 
   html.dark table.structured-forecast.seven-day-view .day-date {
     color: #a8a8a8;
+  }
+
+  html.dark .wind-sched-line.line-open {
+    background-color: rgba(74, 222, 128, 0.8);
+  }
+
+  html.dark .wind-sched-line.line-dock {
+    background-color: rgba(251, 146, 60, 0.8);
+  }
+
+  html.dark .wind-club-flag.flag-open {
+    background-color: #4ade80;
+    color: #000000;
+  }
+
+  html.dark .wind-club-flag.flag-dock {
+    background-color: #fb923c;
+    color: #000000;
   }
 
   html.dark .wind-overview-section {
@@ -611,10 +710,10 @@
 
     table.structured-forecast.hourly-view th:first-child,
     table.structured-forecast.hourly-view td:first-child {
-      min-width: 78px;
-      max-width: 78px;
-      padding: 0.3rem 0.35rem;
-      font-size: 0.7rem;
+      min-width: 58px;
+      max-width: 58px;
+      padding: 0.25rem 0.2rem;
+      font-size: 0.65rem;
     }
 
     table.structured-forecast.seven-day-view th,
@@ -626,10 +725,10 @@
 
     table.structured-forecast.seven-day-view th:first-child,
     table.structured-forecast.seven-day-view td:first-child {
-      min-width: 72px;
-      max-width: 72px;
-      padding: 0.3rem 0.25rem;
-      font-size: 0.68rem;
+      min-width: 58px;
+      max-width: 58px;
+      padding: 0.25rem 0.2rem;
+      font-size: 0.65rem;
     }
 
     table.structured-forecast.seven-day-view .weather-icon-cell svg {
@@ -725,6 +824,8 @@
   let currentMode = 'hour'; // 'hour' = Daily view; 'day' = 7 Day view
   let isProgrammaticScrolling = false;
   let programmaticScrollTimeout = null;
+  const clubStatusCache = {};
+  const clubScheduleCache = clubStatusCache; // Alias for backward compatibility
 
   function toKnots(speedVal, unitStr) {
     if (speedVal === null || speedVal === undefined) return null;
@@ -901,6 +1002,40 @@
     }
   }
 
+  function getClubSchedule(dateStr) {
+    if (clubStatusCache[dateStr]) {
+      return clubStatusCache[dateStr];
+    }
+
+    const dParts = dateStr.split('-');
+    const year = parseInt(dParts[0], 10);
+    const month = parseInt(dParts[1], 10) - 1;
+    const day = parseInt(dParts[2], 10);
+    const dateObj = new Date(year, month, day);
+    const dayOfWeek = dateObj.getDay(); // 0 = Sun, 6 = Sat
+    const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+
+    const sun = getSunTimes(dateStr);
+    const openTimeStr = isWeekend ? '10:00' : '13:00';
+    const dockTimeStr = sun.sunset || '18:41';
+
+    const parseToHourFloat = (str) => {
+      const parts = str.split(':');
+      return parseInt(parts[0], 10) + (parseInt(parts[1], 10) / 60);
+    };
+
+    const schedule = {
+      isClosed: false,
+      openTime: openTimeStr,
+      dockTime: dockTimeStr,
+      openHour: parseToHourFloat(openTimeStr),
+      dockHour: parseToHourFloat(dockTimeStr)
+    };
+
+    clubStatusCache[dateStr] = schedule;
+    return schedule;
+  }
+
   function getCurrentHourStartIndex(times) {
     if (!times || !times.length) return 0;
     const now = new Date();
@@ -925,6 +1060,160 @@
       }
     }
     return 0;
+  }
+
+  async function fetchClubStatusForDate(dateStr) {
+    if (clubStatusCache[dateStr]) {
+      return clubStatusCache[dateStr];
+    }
+
+    const cleanKey = dateStr.replace(/-/g, '');
+    if (window.clubStatusCache && window.clubStatusCache[cleanKey]) {
+      clubStatusCache[dateStr] = window.clubStatusCache[cleanKey];
+      return clubStatusCache[dateStr];
+    }
+
+    const domain = window.location.hostname.includes('cal-sailing.org') ? window.location.hostname : 'www.cal-sailing.org';
+    const targetUrl = `https://${domain}/index.php?option=com_csctides&view=gettidedatalist&task=gettidedatalist&tmpl=component&output=json&tidedate=${dateStr}`;
+
+    try {
+      let rawText = null;
+      try {
+        const resp = await fetch(targetUrl);
+        if (resp.ok) rawText = await resp.text();
+      } catch (directErr) {
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+        const pResp = await fetch(proxyUrl);
+        if (pResp.ok) {
+          const pData = await pResp.json();
+          rawText = pData.contents;
+        }
+      }
+
+      if (rawText) {
+        const jsonString = rawText.replace(/<pre.*?>|<\/pre>/g, '');
+        const responseData = JSON.parse(jsonString);
+        const clubData = responseData.data;
+
+        if (clubData) {
+          const parseTime = (timeStr) => {
+            if (!timeStr) return null;
+            timeStr = timeStr.toLowerCase().trim();
+            if (timeStr === 'sunset') return 'sunset';
+            if (timeStr === 'noon') return '12:00';
+            const pm = timeStr.includes('pm');
+            const parts = timeStr.replace(/am|pm/i, '').trim().split(':');
+            let hours = parseInt(parts[0], 10);
+            const minutes = parts.length > 1 ? parseInt(parts[1], 10) : 0;
+            if (isNaN(hours)) return null;
+            if (pm && hours < 12) hours += 12;
+            else if (!pm && hours === 12) hours = 0;
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+          };
+
+          const isClosed = clubData.clubclosed === true || clubData.clubclosed === 'true';
+          const sunsetTime = parseTime(clubData.sunsettime);
+          const openTime = parseTime(clubData.opentime);
+          const dockTime = parseTime(clubData.docktime);
+
+          let midDayDock = null;
+          let midDayOpen = null;
+          if (clubData.middayclosetext && clubData.middayclosetext !== 'null') {
+            const times = clubData.middayclosetext.match(/(\d{1,2}:\d{2}\s*(am|pm))/gi);
+            if (times && times.length >= 2) {
+              midDayDock = parseTime(times[0]);
+              midDayOpen = parseTime(times[1]);
+            }
+          }
+
+          const sunTimes = getSunTimes(dateStr);
+          const sunsetFormatted = sunsetTime || sunTimes.sunset || "18:41";
+          const finalDockTime = (dockTime === 'sunset' || !dockTime) ? sunsetFormatted : dockTime;
+
+          const dObj = new Date(dateStr + 'T12:00:00Z');
+          const dayOfWeek = dObj.getUTCDay();
+          const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+          const finalOpenTime = openTime || (isWeekend ? "10:00" : "13:00");
+
+          const parseToHourFloat = (str) => {
+            if (!str) return null;
+            const parts = str.split(':');
+            return parseInt(parts[0], 10) + (parseInt(parts[1], 10) / 60);
+          };
+
+          const parsed = {
+            isClosed,
+            openTime: finalOpenTime,
+            dockTime: finalDockTime,
+            openHour: parseToHourFloat(finalOpenTime),
+            dockHour: parseToHourFloat(finalDockTime),
+            midDayDock,
+            midDayOpen,
+            sunsetTime: sunsetFormatted
+          };
+          clubStatusCache[dateStr] = parsed;
+          return parsed;
+        }
+      }
+    } catch (e) {
+      // Fallback calculation will handle below
+    }
+
+    const sunTimes = getSunTimes(dateStr);
+    const dObj = new Date(dateStr + 'T12:00:00Z');
+    const dayOfWeek = dObj.getUTCDay();
+    const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+
+    const parseToHourFloat = (str) => {
+      if (!str) return null;
+      const parts = str.split(':');
+      return parseInt(parts[0], 10) + (parseInt(parts[1], 10) / 60);
+    };
+
+    const openTimeStr = isWeekend ? "10:00" : "13:00";
+    const dockTimeStr = sunTimes.sunset || "18:41";
+
+    const fallback = {
+      isClosed: false,
+      openTime: openTimeStr,
+      dockTime: dockTimeStr,
+      openHour: parseToHourFloat(openTimeStr),
+      dockHour: parseToHourFloat(dockTimeStr),
+      midDayDock: null,
+      midDayOpen: null,
+      midDayDockHour: null,
+      midDayOpenHour: null,
+      sunsetTime: dockTimeStr
+    };
+
+    clubStatusCache[dateStr] = fallback;
+    return fallback;
+  }
+
+  function getHourHeaderBackground(hourNum, sched) {
+    if (!sched || sched.isClosed || sched.openHour === null || sched.dockHour === null) return '';
+    const oH = sched.openHour;
+    const dH = sched.dockHour;
+
+    if (hourNum + 1 <= oH || hourNum >= dH) return '';
+
+    if (hourNum >= oH && hourNum + 1 <= dH) {
+      return 'background-color: var(--club-open-hour-bg);';
+    }
+
+    if (hourNum < oH && hourNum + 1 > oH) {
+      const startPct = Math.round((oH - hourNum) * 100);
+      if (hourNum + 1 <= dH) {
+        return `background: linear-gradient(to right, transparent ${startPct}%, var(--club-open-hour-bg) ${startPct}%);`;
+      }
+    }
+
+    if (hourNum < dH && hourNum + 1 > dH) {
+      const endPct = Math.round((dH - hourNum) * 100);
+      return `background: linear-gradient(to right, var(--club-open-hour-bg) ${endPct}%, transparent ${endPct}%);`;
+    }
+
+    return '';
   }
 
   function renderHourlyTable(thead, tbody) {
@@ -978,20 +1267,46 @@
 
     // Hourly Subheader Row
     const hourHeaderRow = document.createElement('tr');
+    hourHeaderRow.className = 'row-hour-header';
     hourHeaderRow.innerHTML = `<th>Hour</th>`;
     for (let i = startIdx; i < numHours; i++) {
       const th = document.createElement('th');
       th.id = `col-hour-${i}`;
       const timeStr = data.time[i];
       const hourNum = parseInt(timeStr.substring(11, 13), 10) || 0;
-      th.innerHTML = `<span class="hour-time">${String(hourNum).padStart(2, '0')}</span>`;
+      const dayStr = timeStr.substring(0, 10);
+      const sched = getClubSchedule(dayStr);
+
+      const bgStyle = getHourHeaderBackground(hourNum, sched);
+      if (bgStyle) {
+        th.style.cssText = bgStyle;
+      }
+
+      let headerLinesHtml = '';
+      if (sched && !sched.isClosed && sched.openHour !== null && sched.dockHour !== null) {
+        const openCellHour = Math.floor(sched.openHour);
+        const dockCellHour = Math.floor(sched.dockHour);
+        const openFraction = sched.openHour - openCellHour;
+        const dockFraction = sched.dockHour - dockCellHour;
+        const openPct = Math.round(openFraction * 100);
+        const dockPct = Math.round(dockFraction * 100);
+
+        if (hourNum === openCellHour) {
+          headerLinesHtml += `<div class="wind-sched-line line-open" style="left: ${openPct}%; top: 0; bottom: 0;"></div>`;
+        }
+        if (hourNum === dockCellHour) {
+          headerLinesHtml += `<div class="wind-sched-line line-dock" style="left: ${dockPct}%; top: 0; bottom: 0;"></div>`;
+        }
+      }
+
+      th.innerHTML = `${headerLinesHtml}<span class="hour-time">${String(hourNum).padStart(2, '0')}</span>`;
       hourHeaderRow.appendChild(th);
     }
     thead.appendChild(hourHeaderRow);
 
-    // 1. Wind (kts) Row
+    // 1. Wind (kts) Row with Schedule Badges, Fill & Lines
     const windRow = document.createElement('tr');
-    windRow.innerHTML = `<td>Wind (kts)<span class="unit-label">direction</span></td>`;
+    windRow.innerHTML = `<td>Wind<span class="unit-label">(kts)</span></td>`;
     for (let i = startIdx; i < numHours; i++) {
       const spdKt = toKnots(data.windspeed ? data.windspeed[i] : null, units.windspeed);
       const dirDeg = (data.winddirection && data.winddirection[i] !== undefined) ? data.winddirection[i] : 230;
@@ -1001,7 +1316,66 @@
       const barHeight = Math.max(30, Math.min(88, Math.round(28 + ((spdKt || 0) / 24) * 58)));
       const windClass = getWindClass(spdKt);
 
+      const timeStr = data.time[i];
+      const dayStr = timeStr.substring(0, 10);
+      const hourNum = parseInt(timeStr.substring(11, 13), 10) || 0;
+      const sched = getClubSchedule(dayStr);
+
+      let scheduleHtml = '';
+      if (sched && !sched.isClosed && sched.openHour !== null && sched.dockHour !== null) {
+        const openCellHour = Math.floor(sched.openHour);
+        const dockCellHour = Math.floor(sched.dockHour);
+
+        const openFraction = sched.openHour - openCellHour;
+        const dockFraction = sched.dockHour - dockCellHour;
+
+        const openPct = Math.round(openFraction * 100);
+        const dockPct = Math.round(dockFraction * 100);
+
+        // Fill area between the Open and Dock lines with the same light green
+        if (hourNum >= openCellHour && hourNum <= dockCellHour) {
+          let fillLeft = '0%';
+          let fillWidth = '100%';
+
+          if (hourNum === openCellHour && hourNum === dockCellHour) {
+            fillLeft = `${openPct}%`;
+            fillWidth = `${Math.max(0, dockPct - openPct)}%`;
+          } else if (hourNum === openCellHour) {
+            fillLeft = `${openPct}%`;
+            fillWidth = `${100 - openPct}%`;
+          } else if (hourNum === dockCellHour) {
+            fillLeft = '0%';
+            fillWidth = `${dockPct}%`;
+          }
+
+          if (fillWidth !== '0%') {
+            scheduleHtml += `<div class="wind-sched-fill" style="left: ${fillLeft}; width: ${fillWidth}; bottom: ${barHeight}px;"></div>`;
+          }
+        }
+
+        // Render Open line and box at exact opening time
+        if (hourNum === openCellHour) {
+          scheduleHtml += `
+            <div class="wind-sched-line line-open" style="left: ${openPct}%; bottom: ${barHeight}px;"></div>
+            <div class="wind-sched-marker marker-open" style="left: ${openPct}%;">
+              <div class="wind-club-flag flag-open" title="Club Opens: ${sched.openTime}">Open ${sched.openTime}</div>
+            </div>
+          `;
+        }
+
+        // Render Dock line and box at exact sunset/dock time
+        if (hourNum === dockCellHour) {
+          scheduleHtml += `
+            <div class="wind-sched-line line-dock" style="left: ${dockPct}%; bottom: ${barHeight}px;"></div>
+            <div class="wind-sched-marker marker-dock" style="left: ${dockPct}%;">
+              <div class="wind-club-flag flag-dock" title="Dock Time: ${sched.dockTime}">Dock ${sched.dockTime}</div>
+            </div>
+          `;
+        }
+      }
+
       td.innerHTML = `
+        ${scheduleHtml}
         <div class="wind-histo-container">
           <span class="wind-histo-val">${spdKt !== null ? spdKt : '-'}</span>
           <div class="wind-histo-bar ${windClass}" style="height: ${barHeight}px;">
@@ -1013,9 +1387,9 @@
     }
     tbody.appendChild(windRow);
 
-    // 2. Gust Speed Row
+    // 2. Gust Row
     const gustRow = document.createElement('tr');
-    gustRow.innerHTML = `<td>Gust Speed<span class="unit-label">in knots</span></td>`;
+    gustRow.innerHTML = `<td>Gust</td>`;
     for (let i = startIdx; i < numHours; i++) {
       let gustKt = (data.gust && data.gust[i] !== undefined && data.gust[i] !== null)
         ? toKnots(data.gust[i], units.windspeed)
@@ -1031,9 +1405,9 @@
     }
     tbody.appendChild(gustRow);
 
-    // 3. Outlook Row
+    // 3. Sky Row
     const skyRow = document.createElement('tr');
-    skyRow.innerHTML = `<td>Outlook</td>`;
+    skyRow.innerHTML = `<td>Sky</td>`;
     for (let i = startIdx; i < numHours; i++) {
       const code = (data.pictocode && data.pictocode[i] !== undefined) ? data.pictocode[i] : 2;
       const td = document.createElement('td');
@@ -1105,7 +1479,7 @@
 
     // 1. Wind (kts) Row
     const windRow = document.createElement('tr');
-    windRow.innerHTML = `<td>Wind (kts)<span class="unit-label">direction</span></td>`;
+    windRow.innerHTML = `<td>Wind<span class="unit-label">(kts)</span></td>`;
     for (let i = 0; i < numDays; i++) {
       const minKt = toKnots(data.windspeed_min ? data.windspeed_min[i] : null, units.windspeed);
       const maxKt = toKnots(data.windspeed_max ? data.windspeed_max[i] : null, units.windspeed);
@@ -1125,9 +1499,9 @@
     }
     tbody.appendChild(windRow);
 
-    // 2. Gust Speed Row
+    // 2. Gust Row
     const gustRow = document.createElement('tr');
-    gustRow.innerHTML = `<td>Gust Speed<span class="unit-label">in knots</span></td>`;
+    gustRow.innerHTML = `<td>Gust</td>`;
     for (let i = 0; i < numDays; i++) {
       let gustVal = null;
       if (data.gust_max && data.gust_max[i] !== undefined) {
@@ -1156,9 +1530,9 @@
     }
     tbody.appendChild(gustRow);
 
-    // 3. Outlook Row
+    // 3. Sky Row
     const outlookRow = document.createElement('tr');
-    outlookRow.innerHTML = `<td>Outlook</td>`;
+    outlookRow.innerHTML = `<td>Sky</td>`;
     for (let i = 0; i < numDays; i++) {
       const code = data.pictocode ? data.pictocode[i] : 2;
       const iconSvg = getPictocodeIcon(code);
@@ -1342,7 +1716,7 @@
     isProgrammaticScrolling = true;
     if (programmaticScrollTimeout) clearTimeout(programmaticScrollTimeout);
 
-    const stickyWidth = window.innerWidth <= 640 ? 78 : 90;
+    const stickyWidth = window.innerWidth <= 640 ? 58 : 68;
     const targetLeft = Math.max(0, targetCol.offsetLeft - stickyWidth);
 
     if (smooth) {
@@ -1415,8 +1789,9 @@
     selector.style.width = `${dayWidth}px`;
     selector.style.display = 'block';
 
+    const stickyWidth = window.innerWidth <= 640 ? 58 : 68;
+
     if (currentMode === 'hour') {
-      const stickyWidth = window.innerWidth <= 640 ? 78 : 90;
       const currentScroll = scrollContainer.scrollLeft;
       const hourCols = document.querySelectorAll('th[id^="col-hour-"]');
       if (!hourCols.length) return;
@@ -1435,7 +1810,6 @@
       const targetLeft = Math.min(maxLeft, Math.max(0, progress * totalWrapperWidth));
       selector.style.left = `${targetLeft}px`;
     } else {
-      const stickyWidth = window.innerWidth <= 640 ? 72 : 82;
       const currentScroll = scrollContainer.scrollLeft;
       const dayCols = document.querySelectorAll('th[id^="col-day-"]');
       if (!dayCols.length) return;
@@ -1574,6 +1948,16 @@
       statusDot.style.backgroundColor = '#0f62fe';
     }
 
+    const datesToPreload = new Set();
+    if (weatherData.data_day?.time) {
+      weatherData.data_day.time.forEach(t => datesToPreload.add(t.substring(0, 10)));
+    }
+    if (weatherData.data_1h?.time) {
+      weatherData.data_1h.time.forEach(t => datesToPreload.add(t.substring(0, 10)));
+    }
+
+    await Promise.all(Array.from(datesToPreload).map(dStr => fetchClubStatusForDate(dStr)));
+
     renderForecast();
     renderWindOverview();
 
@@ -1586,7 +1970,6 @@
       }
     }, 50);
 
-    // Parse modelrun_updatetime_utc from metadata with fallback to modelrun_utc or current time
     let modelRunDate = null;
     const rawUpdateUtc = weatherData?.metadata?.modelrun_updatetime_utc 
       || weatherData?.metadata?.modelrun_utc 
