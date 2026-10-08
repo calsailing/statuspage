@@ -998,18 +998,9 @@
       </svg>`;
     }
 
-    // Overcast / Cloudy (Daily: 4; Hourly: 19, 20, 21, 22) - Pure cloud with no drops
-    if (c === 4 || (c >= 19 && c <= 22)) {
-      return `<svg viewBox="0 0 24 24" width="20" height="20" fill="none">
-        <path d="M6.5 18h11a4 4 0 0 0 .5-7.97 5 5 0 0 0-9.8-1.53A4 4 0 0 0 6.5 18z" fill="#eceff1" stroke="#607d8b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>`;
-    }
-
-    // Partly Cloudy / Sunny Intervals (Daily: 2, 3; Hourly: 2, 3, 5, 6, 7, 8, 9)
+    // Overcast / Cloudy / Partly Cloudy (Clean cloud with no drops or sun rays)
     return `<svg viewBox="0 0 24 24" width="20" height="20" fill="none">
-      <path d="M15 3v2M18.5 4.5l-1.4 1.4M21 8h-2M18.5 11.5l1.4 1.4" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round"/>
-      <circle cx="15" cy="8" r="3" fill="#fbbf24" stroke="#f59e0b" stroke-width="0.8"/>
-      <path d="M5.5 18h10a3.5 3.5 0 0 0 .4-6.98 4.2 4.2 0 0 0-8.1-1.32A3.5 3.5 0 0 0 5.5 18z" fill="#eceff1" stroke="#607d8b" stroke-width="1.4" stroke-linejoin="round"/>
+      <path d="M6.5 18h11a4 4 0 0 0 .5-7.97 5 5 0 0 0-9.8-1.53A4 4 0 0 0 6.5 18z" fill="#eceff1" stroke="#607d8b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>`;
   }
 
