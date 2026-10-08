@@ -1955,6 +1955,11 @@
     const timelineWrapper = document.getElementById('timelineWrapper');
     if (!selector || !timelineWrapper) return;
 
+    if (currentMode === 'day') {
+      selector.style.display = 'none';
+      return;
+    }
+
     const totalWidth = timelineWrapper.clientWidth || 680;
     const dayWidth = totalWidth / 7;
     selector.style.display = 'block';
@@ -1968,6 +1973,11 @@
     const selector = document.getElementById('timelineSelector');
     const timelineWrapper = document.getElementById('timelineWrapper');
     if (!scrollContainer || !selector || !timelineWrapper) return;
+
+    if (currentMode === 'day') {
+      selector.style.display = 'none';
+      return;
+    }
 
     const totalWrapperWidth = timelineWrapper.clientWidth || 680;
     const dayWidth = totalWrapperWidth / 7;
@@ -1993,22 +2003,6 @@
       const progress = activeHourIndex / Math.max(1, totalHours);
       const maxLeft = totalWrapperWidth - dayWidth;
       const targetLeft = Math.min(maxLeft, Math.max(0, progress * totalWrapperWidth));
-      selector.style.left = `${targetLeft}px`;
-    } else {
-      const currentScroll = scrollContainer.scrollLeft;
-      const dayCols = document.querySelectorAll('th[id^="col-day-"]');
-      if (!dayCols.length) return;
-
-      let activeDayIndex = 0;
-      for (let i = 0; i < dayCols.length; i++) {
-        const col = dayCols[i];
-        if (col.offsetLeft + col.offsetWidth > currentScroll + stickyWidth + 20) {
-          activeDayIndex = i;
-          break;
-        }
-      }
-      const maxLeft = totalWrapperWidth - dayWidth;
-      const targetLeft = Math.min(maxLeft, Math.max(0, activeDayIndex * dayWidth));
       selector.style.left = `${targetLeft}px`;
     }
   }
@@ -2181,6 +2175,8 @@
     } else {
       table.className = 'structured-forecast seven-day-view';
       render7DayTable(thead, tbody);
+      const selector = document.getElementById('timelineSelector');
+      if (selector) selector.style.display = 'none';
     }
   }
 
