@@ -837,7 +837,7 @@
       <span id="footerTimestamp">Updated: Loading...</span>
     </div>
     <div class="footer-actions">
-      <a href="https://docs.meteoblue.com/en/weather-apis/forecast-api/overview" target="_blank" rel="noopener noreferrer" class="status-badge micro live" id="statusBadge" title="View Meteoblue API Documentation">
+      <a href="https://docs.meteoblue.com/en/weather-apis/forecast-api/overview#what-is-the-meteoblue-learning-multimodel-mlm" target="_blank" rel="noopener noreferrer" class="status-badge micro live" id="statusBadge" title="View Meteoblue API Documentation">
         <span class="status-dot" id="statusDot"></span>
         <span id="statusText">Meteoblue</span>
       </a>
