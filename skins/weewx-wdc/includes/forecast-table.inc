@@ -379,6 +379,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: help;
   }
   table.structured-forecast.hourly-view .weather-icon-cell svg {
     width: 20px;
@@ -1012,6 +1013,72 @@
     </svg>`;
   }
 
+  function getPictocodeDescription(code, isDaily = false) {
+    const c = Number(code) || 1;
+    if (isDaily) {
+      const dailyMap = {
+        1: 'Sunny, clear sky',
+        2: 'Sunny with few clouds',
+        3: 'Partly cloudy',
+        4: 'Overcast',
+        5: 'Fog',
+        6: 'Overcast with rain',
+        7: 'Mixed with showers',
+        8: 'Showers, thunderstorms likely',
+        9: 'Overcast with snow',
+        10: 'Mixed with snow showers',
+        11: 'Mostly cloudy with snow and rain',
+        12: 'Overcast with light rain',
+        13: 'Overcast with light snow',
+        14: 'Mostly cloudy with rain',
+        15: 'Mostly cloudy with snow',
+        16: 'Mostly cloudy with light rain',
+        17: 'Mostly cloudy with light snow'
+      };
+      if (dailyMap[c]) return dailyMap[c];
+    }
+
+    const hourlyMap = {
+      1: 'Clear sky',
+      2: 'Clear with few cirrus',
+      3: 'Clear with cirrus',
+      4: 'Clear with few low clouds',
+      5: 'Clear with low clouds and cirrus',
+      6: 'Clear with low clouds and cirrus',
+      7: 'Partly cloudy',
+      8: 'Partly cloudy with few cirrus',
+      9: 'Partly cloudy with cirrus',
+      10: 'Mixed with possible thunderstorms',
+      11: 'Mixed with possible thunderstorms',
+      12: 'Mixed with possible thunderstorms',
+      13: 'Clear but hazy',
+      14: 'Hazy with few cirrus',
+      15: 'Hazy with cirrus',
+      16: 'Fog / low stratus',
+      17: 'Fog / low stratus with cirrus',
+      18: 'Fog / low stratus with cirrus',
+      19: 'Mostly cloudy',
+      20: 'Mostly cloudy with cirrus',
+      21: 'Mostly cloudy with cirrus',
+      22: 'Overcast',
+      23: 'Overcast with rain',
+      24: 'Overcast with snow',
+      25: 'Overcast with heavy rain',
+      26: 'Overcast with heavy snow',
+      27: 'Rain, thunderstorms likely',
+      28: 'Light rain, thunderstorms likely',
+      29: 'Storm with heavy snow',
+      30: 'Heavy rain, thunderstorms likely',
+      31: 'Mixed with showers',
+      32: 'Mixed with snow showers',
+      33: 'Overcast with light rain',
+      34: 'Overcast with light snow',
+      35: 'Overcast with snow and rain'
+    };
+
+    return hourlyMap[c] || (c === 1 ? 'Clear sky' : 'Partly cloudy');
+  }
+
   function getSunTimes(dateStr) {
     try {
       const parts = dateStr.split('-');
@@ -1532,8 +1599,10 @@
     skyRow.innerHTML = `<td>Sky</td>`;
     for (let i = startIdx; i < numHours; i++) {
       const code = (data.pictocode && data.pictocode[i] !== undefined) ? data.pictocode[i] : 2;
+      const desc = getPictocodeDescription(code, false);
       const td = document.createElement('td');
-      td.innerHTML = `<div class="weather-icon-cell">${getPictocodeIcon(code)}</div>`;
+      td.title = desc;
+      td.innerHTML = `<div class="weather-icon-cell" title="${desc}">${getPictocodeIcon(code)}</div>`;
       skyRow.appendChild(td);
     }
     tbody.appendChild(skyRow);
@@ -1657,9 +1726,11 @@
     outlookRow.innerHTML = `<td>Sky</td>`;
     for (let i = 0; i < numDays; i++) {
       const code = data.pictocode ? data.pictocode[i] : 2;
+      const desc = getPictocodeDescription(code, true);
       const iconSvg = getPictocodeIcon(code);
       const td = document.createElement('td');
-      td.innerHTML = `<div class="weather-icon-cell" style="width:24px; height:24px; margin:0 auto;">${iconSvg}</div>`;
+      td.title = desc;
+      td.innerHTML = `<div class="weather-icon-cell" title="${desc}" style="width:24px; height:24px; margin:0 auto; cursor:help;">${iconSvg}</div>`;
       outlookRow.appendChild(td);
     }
     tbody.appendChild(outlookRow);
