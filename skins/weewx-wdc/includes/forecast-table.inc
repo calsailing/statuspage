@@ -11,6 +11,7 @@
     --cds-ui-border: #e0e0e0;
     --cds-interactive-01: #0f62fe;
     --club-open-hour-bg: rgba(34, 197, 94, 0.15);
+    --night-hour-bg: #f3f4f6;
   }
 
   html.dark {
@@ -19,6 +20,7 @@
     --cds-text-secondary: #c6c6c6;
     --cds-ui-border: #393939;
     --club-open-hour-bg: rgba(34, 197, 94, 0.15);
+    --night-hour-bg: #111827;
   }
 
   .app-card {
@@ -256,6 +258,15 @@
     position: absolute;
     top: 0;
     background-color: var(--club-open-hour-bg);
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* Light grey fill for night hours */
+  .wind-night-fill {
+    position: absolute;
+    top: 0;
+    background-color: var(--night-hour-bg);
     z-index: 1;
     pointer-events: none;
   }
@@ -996,9 +1007,21 @@
         return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
       };
 
-      return { sunrise: formatMinutes(sunriseUtcMinutes), sunset: formatMinutes(sunsetUtcMinutes) };
+      const sunriseStr = formatMinutes(sunriseUtcMinutes);
+      const sunsetStr = formatMinutes(sunsetUtcMinutes);
+      const parseToHourFloat = (str) => {
+        const p = str.split(':');
+        return parseInt(p[0], 10) + (parseInt(p[1], 10) / 60);
+      };
+
+      return {
+        sunrise: sunriseStr,
+        sunset: sunsetStr,
+        sunriseHour: parseToHourFloat(sunriseStr),
+        sunsetHour: parseToHourFloat(sunsetStr)
+      };
     } catch (e) {
-      return { sunrise: '07:11', sunset: '18:41' };
+      return { sunrise: '07:11', sunset: '18:41', sunriseHour: 7.183, sunsetHour: 18.683 };
     }
   }
 
@@ -1029,7 +1052,11 @@
       openTime: openTimeStr,
       dockTime: dockTimeStr,
       openHour: parseToHourFloat(openTimeStr),
-      dockHour: parseToHourFloat(dockTimeStr)
+      dockHour: parseToHourFloat(dockTimeStr),
+      sunriseTime: sun.sunrise,
+      sunsetTime: sun.sunset,
+      sunriseHour: sun.sunriseHour,
+      sunsetHour: sun.sunsetHour
     };
 
     clubStatusCache[dateStr] = schedule;
@@ -1149,7 +1176,10 @@
             dockHour: parseToHourFloat(finalDockTime),
             midDayDock,
             midDayOpen,
-            sunsetTime: sunsetFormatted
+            sunsetTime: sunsetFormatted,
+            sunriseTime: sunTimes.sunrise,
+            sunriseHour: sunTimes.sunriseHour,
+            sunsetHour: parseToHourFloat(sunsetFormatted)
           };
           clubStatusCache[dateStr] = parsed;
           return parsed;
@@ -1183,7 +1213,10 @@
       midDayOpen: null,
       midDayDockHour: null,
       midDayOpenHour: null,
-      sunsetTime: dockTimeStr
+      sunsetTime: dockTimeStr,
+      sunriseTime: sunTimes.sunrise,
+      sunriseHour: sunTimes.sunriseHour,
+      sunsetHour: sunTimes.sunsetHour
     };
 
     clubStatusCache[dateStr] = fallback;
@@ -1191,26 +1224,54 @@
   }
 
   function getHourHeaderBackground(hourNum, sched) {
-    if (!sched || sched.isClosed || sched.openHour === null || sched.dockHour === null) return '';
-    const oH = sched.openHour;
-    const dH = sched.dockHour;
+    if (!sched) return '';
+    const oH = (!sched.isClosed && sched.openHour !== null) ? sched.openHour : null;
+    const dH = (!sched.isClosed && sched.dockHour !== null) ? sched.dockHour : null;
+    const srH = sched.sunriseHour !== undefined && sched.sunriseHour !== null ? sched.sunriseHour : 7.18;
+    const ssH = sched.sunsetHour !== undefined && sched.sunsetHour !== null ? sched.sunsetHour : 18.68;
 
-    if (hourNum + 1 <= oH || hourNum >= dH) return '';
-
-    if (hourNum >= oH && hourNum + 1 <= dH) {
-      return 'background-color: var(--club-open-hour-bg);';
+    // Full night before sunrise
+    if (hourNum + 1 <= srH) {
+      return 'background-color: var(--night-hour-bg);';
     }
 
-    if (hourNum < oH && hourNum + 1 > oH) {
-      const startPct = Math.round((oH - hourNum) * 100);
-      if (hourNum + 1 <= dH) {
-        return `background: linear-gradient(to right, transparent ${startPct}%, var(--club-open-hour-bg) ${startPct}%);`;
+    // Sunrise transition hour
+    if (hourNum < srH && hourNum + 1 > srH) {
+      const srPct = Math.round((srH - hourNum) * 100);
+      return `background: linear-gradient(to right, var(--night-hour-bg) ${srPct}%, transparent ${srPct}%);`;
+    }
+
+    // Full night after sunset
+    if (hourNum >= ssH) {
+      return 'background-color: var(--night-hour-bg);';
+    }
+
+    // Sunset transition hour
+    if (hourNum < ssH && hourNum + 1 > ssH) {
+      const ssPct = Math.round((ssH - hourNum) * 100);
+      if (dH !== null && Math.abs(dH - ssH) < 0.1 && hourNum >= (oH || 0)) {
+        return `background: linear-gradient(to right, var(--club-open-hour-bg) ${ssPct}%, var(--night-hour-bg) ${ssPct}%);`;
       }
+      return `background: linear-gradient(to right, transparent ${ssPct}%, var(--night-hour-bg) ${ssPct}%);`;
     }
 
-    if (hourNum < dH && hourNum + 1 > dH) {
-      const endPct = Math.round((dH - hourNum) * 100);
-      return `background: linear-gradient(to right, var(--club-open-hour-bg) ${endPct}%, transparent ${endPct}%);`;
+    // Club open hours during daylight
+    if (oH !== null && dH !== null) {
+      if (hourNum >= oH && hourNum + 1 <= dH) {
+        return 'background-color: var(--club-open-hour-bg);';
+      }
+
+      if (hourNum < oH && hourNum + 1 > oH) {
+        const startPct = Math.round((oH - hourNum) * 100);
+        if (hourNum + 1 <= dH) {
+          return `background: linear-gradient(to right, transparent ${startPct}%, var(--club-open-hour-bg) ${startPct}%);`;
+        }
+      }
+
+      if (hourNum < dH && hourNum + 1 > dH) {
+        const endPct = Math.round((dH - hourNum) * 100);
+        return `background: linear-gradient(to right, var(--club-open-hour-bg) ${endPct}%, transparent ${endPct}%);`;
+      }
     }
 
     return '';
@@ -1321,6 +1382,24 @@
       const hourNum = parseInt(timeStr.substring(11, 13), 10) || 0;
       const sched = getClubSchedule(dayStr);
 
+      let nightHtml = '';
+      if (sched) {
+        const srH = sched.sunriseHour !== undefined && sched.sunriseHour !== null ? sched.sunriseHour : 7.18;
+        const ssH = sched.sunsetHour !== undefined && sched.sunsetHour !== null ? sched.sunsetHour : 18.68;
+
+        if (hourNum + 1 <= srH) {
+          nightHtml = `<div class="wind-night-fill" style="left: 0%; width: 100%; bottom: ${barHeight}px;"></div>`;
+        } else if (hourNum < srH && hourNum + 1 > srH) {
+          const srPct = Math.round((srH - hourNum) * 100);
+          nightHtml = `<div class="wind-night-fill" style="left: 0%; width: ${srPct}%; bottom: ${barHeight}px;"></div>`;
+        } else if (hourNum >= ssH) {
+          nightHtml = `<div class="wind-night-fill" style="left: 0%; width: 100%; bottom: ${barHeight}px;"></div>`;
+        } else if (hourNum < ssH && hourNum + 1 > ssH) {
+          const ssPct = Math.round((ssH - hourNum) * 100);
+          nightHtml = `<div class="wind-night-fill" style="left: ${ssPct}%; width: ${100 - ssPct}%; bottom: ${barHeight}px;"></div>`;
+        }
+      }
+
       let scheduleHtml = '';
       if (sched && !sched.isClosed && sched.openHour !== null && sched.dockHour !== null) {
         const openCellHour = Math.floor(sched.openHour);
@@ -1375,6 +1454,7 @@
       }
 
       td.innerHTML = `
+        ${nightHtml}
         ${scheduleHtml}
         <div class="wind-histo-container">
           <span class="wind-histo-val">${spdKt !== null ? spdKt : '-'}</span>
