@@ -288,17 +288,17 @@
   .wind-sched-line {
     position: absolute;
     top: 0;
-    width: 2px;
+    width: 1px;
     z-index: 11;
     pointer-events: none;
   }
 
   .wind-sched-line.line-open {
-    background-color: rgba(22, 163, 74, 0.7);
+    background-color: #22c55e;
   }
 
   .wind-sched-line.line-dock {
-    background-color: rgba(234, 88, 12, 0.7);
+    background-color: #f97316;
   }
 
   /* Inline Open / Dock badge flags positioned right on the wind row */
@@ -310,16 +310,16 @@
     white-space: nowrap;
   }
 
-  /* Open time box is placed BEFORE the line, overlapping it slightly */
+  /* Open time box is placed BEFORE the line, covering it by ~4px */
   .wind-sched-marker.marker-open {
     transform: translateX(-100%);
-    margin-left: 1.5px;
+    margin-left: 4px;
   }
 
-  /* Dock time box is placed AFTER the line, overlapping it slightly */
+  /* Dock time box is placed AFTER the line, covering it by ~4px */
   .wind-sched-marker.marker-dock {
     transform: translateX(0);
-    margin-left: 0.5px;
+    margin-left: -4px;
   }
 
   .wind-club-flag {
@@ -327,7 +327,7 @@
     font-weight: 600;
     line-height: 1.15;
     padding: 0.12rem 0.32rem;
-    border-radius: 2px;
+    border-radius: 0;
     box-shadow: none;
     pointer-events: none;
     letter-spacing: -0.01em;
@@ -647,11 +647,11 @@
   }
 
   html.dark .wind-sched-line.line-open {
-    background-color: rgba(74, 222, 128, 0.8);
+    background-color: #4ade80;
   }
 
   html.dark .wind-sched-line.line-dock {
-    background-color: rgba(251, 146, 60, 0.8);
+    background-color: #fb923c;
   }
 
   html.dark .wind-club-flag.flag-open {
