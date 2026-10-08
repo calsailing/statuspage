@@ -958,20 +958,20 @@
     `;
   }
 
-  function getPictocodeIcon(code) {
+  function getPictocodeIcon(code, isDaily = false) {
     const c = Number(code) || 1;
-    // 1: Clear / Sunny
-    if (c === 1) {
+    // Clear / Sunny (Daily: 1, 2; Hourly: 1, 2, 3)
+    if (isDaily ? (c === 1 || c === 2) : (c === 1 || c === 2 || c === 3)) {
       return `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#e57e00" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>`;
     }
 
     // Fog / Mist / Haze (Daily: 5; Hourly: 13, 14, 15, 16, 17, 18)
-    if (c === 5 || (c >= 13 && c <= 18)) {
+    if (isDaily ? (c === 5) : (c >= 13 && c <= 18)) {
       return `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#78909c" stroke-width="2" stroke-linecap="round"><line x1="4" y1="8" x2="20" y2="8"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="5" y1="16" x2="19" y2="16"/></svg>`;
     }
 
     // Thunderstorms (Daily: 8; Hourly: 10, 11, 12, 27, 28, 30)
-    if (c === 8 || (c >= 10 && c <= 12) || c === 27 || c === 28 || c === 30) {
+    if (isDaily ? (c === 8) : ((c >= 10 && c <= 12) || c === 27 || c === 28 || c === 30)) {
       return `<svg viewBox="0 0 24 24" width="20" height="20" fill="none">
         <path d="M6 14h11a3.5 3.5 0 0 0 .5-6.96 4.5 4.5 0 0 0-8.2-2.2A4 4 0 0 0 6 14z" fill="#cfd8dc" stroke="#546e7a" stroke-width="1.4" stroke-linejoin="round"/>
         <polygon points="12,13 9.5,17.5 12.5,17.5 11,22 15.5,16.5 12.5,16.5" fill="#f59e0b" stroke="#d97706" stroke-width="0.8" stroke-linejoin="round"/>
@@ -979,7 +979,7 @@
     }
 
     // Snow / Sleet (Daily: 9, 10, 11, 13, 15, 17; Hourly: 24, 26, 29, 32, 34, 35)
-    if (c === 9 || c === 10 || c === 11 || c === 15 || c === 24 || c === 26 || c === 29 || c === 32 || c === 34 || c === 35) {
+    if (isDaily ? (c === 9 || c === 10 || c === 11 || c === 13 || c === 15 || c === 17) : (c === 24 || c === 26 || c === 29 || c === 32 || c === 34 || c === 35)) {
       return `<svg viewBox="0 0 24 24" width="20" height="20" fill="none">
         <path d="M6 14h11a3.5 3.5 0 0 0 .5-6.96 4.5 4.5 0 0 0-8.2-2.2A4 4 0 0 0 6 14z" fill="#eceff1" stroke="#546e7a" stroke-width="1.4" stroke-linejoin="round"/>
         <line x1="8" y1="18" x2="8" y2="20" stroke="#90caf9" stroke-width="2" stroke-linecap="round"/>
@@ -989,7 +989,7 @@
     }
 
     // Rain / Showers (Daily: 6, 7, 12, 14, 16; Hourly: 23, 25, 31, 33)
-    if (c === 6 || c === 7 || c === 12 || c === 14 || c === 16 || c === 23 || c === 25 || c === 31 || c === 33) {
+    if (isDaily ? (c === 6 || c === 7 || c === 12 || c === 14 || c === 16) : (c === 23 || c === 25 || c === 31 || c === 33)) {
       return `<svg viewBox="0 0 24 24" width="20" height="20" fill="none">
         <path d="M6 14h11a3.5 3.5 0 0 0 .5-6.96 4.5 4.5 0 0 0-8.2-2.2A4 4 0 0 0 6 14z" fill="#eceff1" stroke="#546e7a" stroke-width="1.4" stroke-linejoin="round"/>
         <line x1="8" y1="17.5" x2="6.8" y2="21" stroke="#0284c7" stroke-width="1.8" stroke-linecap="round"/>
@@ -998,7 +998,8 @@
       </svg>`;
     }
 
-    // Overcast / Cloudy / Partly Cloudy (Clean cloud with no drops or sun rays)
+    // Overcast / Cloudy / Partly Cloudy (Clean cloud with NO rain drops, lines, or sun rays)
+    // Daily: 3, 4; Hourly: 4, 5, 6, 7, 8, 9, 19, 20, 21, 22
     return `<svg viewBox="0 0 24 24" width="20" height="20" fill="none">
       <path d="M6.5 18h11a4 4 0 0 0 .5-7.97 5 5 0 0 0-9.8-1.53A4 4 0 0 0 6.5 18z" fill="#eceff1" stroke="#607d8b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>`;
@@ -1593,7 +1594,7 @@
       const desc = getPictocodeDescription(code, false);
       const td = document.createElement('td');
       td.title = desc;
-      td.innerHTML = `<div class="weather-icon-cell" title="${desc}">${getPictocodeIcon(code)}</div>`;
+      td.innerHTML = `<div class="weather-icon-cell" title="${desc}">${getPictocodeIcon(code, false)}</div>`;
       skyRow.appendChild(td);
     }
     tbody.appendChild(skyRow);
