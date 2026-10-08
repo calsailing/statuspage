@@ -187,6 +187,19 @@
     padding-right: 0.25rem;
   }
 
+  /* Subtle drop shadow extending to the right of the sticky labels column */
+  table.structured-forecast th:first-child::after,
+  table.structured-forecast td:first-child::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: -6px;
+    bottom: -1px;
+    width: 6px;
+    pointer-events: none;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0));
+  }
+
   .unit-label {
     display: block;
     font-size: 0.65rem;
@@ -245,7 +258,7 @@
 
   /* Wind histogram in Daily hourly view */
   table.structured-forecast.hourly-view .wind-histo-cell {
-    height: 111px;
+    height: 139px;
     vertical-align: bottom !important;
     padding: 0 !important;
     background-color: transparent !important;
@@ -300,13 +313,13 @@
   /* Open time box is placed BEFORE the line, overlapping it slightly */
   .wind-sched-marker.marker-open {
     transform: translateX(-100%);
-    margin-left: 1px;
+    margin-left: 1.5px;
   }
 
   /* Dock time box is placed AFTER the line, overlapping it slightly */
   .wind-sched-marker.marker-dock {
     transform: translateX(0);
-    margin-left: 1px;
+    margin-left: 0.5px;
   }
 
   .wind-club-flag {
@@ -315,7 +328,7 @@
     line-height: 1.15;
     padding: 0.12rem 0.32rem;
     border-radius: 2px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+    box-shadow: none;
     pointer-events: none;
     letter-spacing: -0.01em;
   }
@@ -335,7 +348,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: flex-end;
-    height: 111px;
+    height: 139px;
     width: 100%;
     position: relative;
     z-index: 2;
@@ -599,6 +612,11 @@
     color: #f4f4f4;
     border-right-color: #333333;
     box-shadow: 4px 0 10px -2px rgba(0, 0, 0, 0.5);
+  }
+
+  html.dark table.structured-forecast th:first-child::after,
+  html.dark table.structured-forecast td:first-child::after {
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0));
   }
 
   html.dark .unit-label {
@@ -941,32 +959,56 @@
 
   function getPictocodeIcon(code) {
     const c = Number(code) || 1;
+    // 1: Clear / Sunny
     if (c === 1) {
-      return `<svg viewBox="0 0 24 24" fill="none" stroke="#e57e00" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>`;
+      return `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#e57e00" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>`;
     }
-    if (c >= 2 && c <= 4) {
-      return `<svg viewBox="0 0 24 24" fill="none">
-        <path d="M16 4v-2M19.5 5.5l1.4-1.4M21 9h2M19.5 12.5l1.4 1.4" stroke="#f59e0b" stroke-width="1.6" stroke-linecap="round"/>
-        <circle cx="16" cy="9" r="3" fill="#f59e0b" stroke="#d97706" stroke-width="0.6"/>
-        <path d="M6 19h11a3.5 3.5 0 0 0 .5-6.96 4.5 4.5 0 0 0-8.2-2.2A4 4 0 0 0 6 19z" fill="#eceff1" stroke="#546e7a" stroke-width="1.4" stroke-linejoin="round"/>
+
+    // Fog / Mist / Haze (Daily: 5; Hourly: 13, 14, 15, 16, 17, 18)
+    if (c === 5 || (c >= 13 && c <= 18)) {
+      return `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#78909c" stroke-width="2" stroke-linecap="round"><line x1="4" y1="8" x2="20" y2="8"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="5" y1="16" x2="19" y2="16"/></svg>`;
+    }
+
+    // Thunderstorms (Daily: 8; Hourly: 10, 11, 12, 27, 28, 30)
+    if (c === 8 || (c >= 10 && c <= 12) || c === 27 || c === 28 || c === 30) {
+      return `<svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+        <path d="M6 14h11a3.5 3.5 0 0 0 .5-6.96 4.5 4.5 0 0 0-8.2-2.2A4 4 0 0 0 6 14z" fill="#cfd8dc" stroke="#546e7a" stroke-width="1.4" stroke-linejoin="round"/>
+        <polygon points="12,13 9.5,17.5 12.5,17.5 11,22 15.5,16.5 12.5,16.5" fill="#f59e0b" stroke="#d97706" stroke-width="0.8" stroke-linejoin="round"/>
       </svg>`;
     }
-    if (c >= 5 && c <= 6) {
-      return `<svg viewBox="0 0 24 24" fill="#eceff1" stroke="#546e7a" stroke-width="2" stroke-linecap="round"><path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/></svg>`;
+
+    // Snow / Sleet (Daily: 9, 10, 11, 13, 15, 17; Hourly: 24, 26, 29, 32, 34, 35)
+    if (c === 9 || c === 10 || c === 11 || c === 15 || c === 24 || c === 26 || c === 29 || c === 32 || c === 34 || c === 35) {
+      return `<svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+        <path d="M6 14h11a3.5 3.5 0 0 0 .5-6.96 4.5 4.5 0 0 0-8.2-2.2A4 4 0 0 0 6 14z" fill="#eceff1" stroke="#546e7a" stroke-width="1.4" stroke-linejoin="round"/>
+        <line x1="8" y1="18" x2="8" y2="20" stroke="#90caf9" stroke-width="2" stroke-linecap="round"/>
+        <line x1="12" y1="18" x2="12" y2="20" stroke="#90caf9" stroke-width="2" stroke-linecap="round"/>
+        <line x1="16" y1="18" x2="16" y2="20" stroke="#90caf9" stroke-width="2" stroke-linecap="round"/>
+      </svg>`;
     }
-    if ((c >= 7 && c <= 11) || (c >= 13 && c <= 17)) {
-      return `<svg viewBox="0 0 24 24" fill="none" stroke="#0072c3" stroke-width="2" stroke-linecap="round"><path d="M20 16.58A5 5 0 0018 7h-1.26A8 8 0 104 15.25" fill="#eceff1" stroke="#546e7a"/><path d="M8 19v2M12 18v2M16 19v2"/></svg>`;
+
+    // Rain / Showers (Daily: 6, 7, 12, 14, 16; Hourly: 23, 25, 31, 33)
+    if (c === 6 || c === 7 || c === 12 || c === 14 || c === 16 || c === 23 || c === 25 || c === 31 || c === 33) {
+      return `<svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+        <path d="M6 14h11a3.5 3.5 0 0 0 .5-6.96 4.5 4.5 0 0 0-8.2-2.2A4 4 0 0 0 6 14z" fill="#eceff1" stroke="#546e7a" stroke-width="1.4" stroke-linejoin="round"/>
+        <line x1="8" y1="17.5" x2="6.8" y2="21" stroke="#0284c7" stroke-width="1.8" stroke-linecap="round"/>
+        <line x1="12" y1="17.5" x2="10.8" y2="21" stroke="#0284c7" stroke-width="1.8" stroke-linecap="round"/>
+        <line x1="16" y1="17.5" x2="14.8" y2="21" stroke="#0284c7" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>`;
     }
-    if (c >= 25 && c <= 32) {
-      return `<svg viewBox="0 0 24 24" fill="none" stroke="#f1c21b" stroke-width="2" stroke-linecap="round"><path d="M19 14h-1.26A8 8 0 106 14" fill="#cfd8dc" stroke="#455a64"/><polyline points="13 10 9 16 14 16 11 22"/></svg>`;
+
+    // Overcast / Cloudy (Daily: 4; Hourly: 19, 20, 21, 22) - Pure cloud with no drops
+    if (c === 4 || (c >= 19 && c <= 22)) {
+      return `<svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+        <path d="M6.5 18h11a4 4 0 0 0 .5-7.97 5 5 0 0 0-9.8-1.53A4 4 0 0 0 6.5 18z" fill="#eceff1" stroke="#607d8b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>`;
     }
-    if (c === 12) {
-      return `<svg viewBox="0 0 24 24" fill="none" stroke="#78909c" stroke-width="2" stroke-linecap="round"><line x1="3" y1="10" x2="21" y2="10"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="6" y1="18" x2="18" y2="18"/></svg>`;
-    }
-    return `<svg viewBox="0 0 24 24" fill="none">
-      <path d="M16 4v-2M19.5 5.5l1.4-1.4M21 9h2M19.5 12.5l1.4 1.4" stroke="#f59e0b" stroke-width="1.6" stroke-linecap="round"/>
-      <circle cx="16" cy="9" r="3" fill="#f59e0b" stroke="#d97706" stroke-width="0.6"/>
-      <path d="M6 19h11a3.5 3.5 0 0 0 .5-6.96 4.5 4.5 0 0 0-8.2-2.2A4 4 0 0 0 6 19z" fill="#eceff1" stroke="#546e7a" stroke-width="1.4" stroke-linejoin="round"/>
+
+    // Partly Cloudy / Sunny Intervals (Daily: 2, 3; Hourly: 2, 3, 5, 6, 7, 8, 9)
+    return `<svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+      <path d="M15 3v2M18.5 4.5l-1.4 1.4M21 8h-2M18.5 11.5l1.4 1.4" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round"/>
+      <circle cx="15" cy="8" r="3" fill="#fbbf24" stroke="#f59e0b" stroke-width="0.8"/>
+      <path d="M5.5 18h10a3.5 3.5 0 0 0 .4-6.98 4.2 4.2 0 0 0-8.1-1.32A3.5 3.5 0 0 0 5.5 18z" fill="#eceff1" stroke="#607d8b" stroke-width="1.4" stroke-linejoin="round"/>
     </svg>`;
   }
 
@@ -1374,7 +1416,7 @@
       const td = document.createElement('td');
       td.className = 'wind-histo-cell';
 
-      const barHeight = Math.max(30, Math.min(88, Math.round(28 + ((spdKt || 0) / 24) * 58)));
+      const barHeight = Math.max(38, Math.min(110, Math.round(35 + ((spdKt || 0) / 24) * 73)));
       const windClass = getWindClass(spdKt);
 
       const timeStr = data.time[i];
