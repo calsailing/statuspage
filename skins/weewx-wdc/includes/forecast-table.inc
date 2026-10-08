@@ -1073,7 +1073,7 @@
       return clubStatusCache[dateStr];
     }
 
-    const domain = window.location.hostname.includes('cal-sailing.org') ? window.location.hostname : 'www.cal-sailing.org';
+    const domain = window.location.hostname.includes('test.cal-sailing.org') ? 'test.cal-sailing.org' : 'www.cal-sailing.org';
     const targetUrl = `https://${domain}/index.php?option=com_csctides&view=gettidedatalist&task=gettidedatalist&tmpl=component&output=json&tidedate=${dateStr}`;
 
     try {
