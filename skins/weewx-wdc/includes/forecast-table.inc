@@ -437,6 +437,7 @@
     padding: 0.55rem 0.75rem 0.45rem 0.75rem;
     user-select: none;
     -webkit-user-select: none;
+    touch-action: none;
   }
 
   .overview-header {
@@ -481,7 +482,7 @@
     height: 74px;
     overflow: hidden;
     cursor: pointer;
-    touch-action: pan-y;
+    touch-action: none;
   }
 
   .timeline-bars-container {
@@ -522,6 +523,7 @@
     border-right: none;
   }
 
+  /* Rigid, non-expanding selector box with zero transition lag */
   .timeline-selector {
     position: absolute;
     top: 0;
@@ -530,8 +532,9 @@
     background-color: rgba(15, 98, 254, 0.12);
     border-radius: 3px;
     pointer-events: none;
-    transition: left 0.08s ease-out, width 0.15s ease;
     z-index: 5;
+    box-sizing: border-box;
+    will-change: left;
   }
 
   .issued-footer {
@@ -1164,7 +1167,7 @@
     const month = parseInt(dParts[1], 10) - 1;
     const day = parseInt(dParts[2], 10);
     const dateObj = new Date(year, month, day);
-    const dayOfWeek = dateObj.getDay(); // 0 = Sun, 6 = Sat
+    const dayOfWeek = dateObj.getDay();
     const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
 
     const sun = getSunTimes(dateStr);
@@ -1338,9 +1341,7 @@
           return parsed;
         }
       }
-    } catch (e) {
-      // Fallback calculation will handle below
-    }
+    } catch (e) {}
 
     const sunTimes = getSunTimes(dateStr);
     const dObj = new Date(dateStr + 'T12:00:00Z');
@@ -1383,23 +1384,19 @@
     const srH = sched.sunriseHour !== undefined && sched.sunriseHour !== null ? sched.sunriseHour : 7.18;
     const ssH = sched.sunsetHour !== undefined && sched.sunsetHour !== null ? sched.sunsetHour : 18.68;
 
-    // Full night before sunrise
     if (hourNum + 1 <= srH) {
       return 'background-color: var(--night-hour-bg);';
     }
 
-    // Sunrise transition hour
     if (hourNum < srH && hourNum + 1 > srH) {
       const srPct = Math.round((srH - hourNum) * 100);
       return `background: linear-gradient(to right, var(--night-hour-bg) ${srPct}%, transparent ${srPct}%);`;
     }
 
-    // Full night after sunset
     if (hourNum >= ssH) {
       return 'background-color: var(--night-hour-bg);';
     }
 
-    // Sunset transition hour
     if (hourNum < ssH && hourNum + 1 > ssH) {
       const ssPct = Math.round((ssH - hourNum) * 100);
       if (dH !== null && Math.abs(dH - ssH) < 0.1 && hourNum >= (oH || 0)) {
@@ -1408,7 +1405,6 @@
       return `background: linear-gradient(to right, transparent ${ssPct}%, var(--night-hour-bg) ${ssPct}%);`;
     }
 
-    // Club open hours during daylight
     if (oH !== null && dH !== null) {
       if (hourNum >= oH && hourNum + 1 <= dH) {
         return 'background-color: var(--club-open-hour-bg);';
@@ -1498,6 +1494,7 @@
     }
     thead.appendChild(hourHeaderRow);
 
+    // 1. Wind Row
     const windRow = document.createElement('tr');
     windRow.innerHTML = `<td>Wind<span class="unit-label">(kts)</span></td>`;
     for (let i = startIdx; i < numHours; i++) {
@@ -1812,7 +1809,6 @@
     const startIdx = getCurrentHourStartIndex(hourly.time);
     const daySpans = getHourlyDaySpans(hourly.time, startIdx, totalHours);
 
-    // Render day labels with proportional flex widths matching active hourly spans
     daySpans.forEach((ds) => {
       const lbl = document.createElement('div');
       lbl.className = 'timeline-day-label';
@@ -1820,10 +1816,6 @@
       const dObj = new Date(ds.dayStr + 'T12:00:00Z');
       lbl.textContent = dObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' });
       lbl.title = `Jump to ${ds.dayStr}`;
-      lbl.onclick = (e) => {
-        e.stopPropagation();
-        handleTimelineScrub(e.clientX, true);
-      };
       labelsContainer.appendChild(lbl);
     });
 
@@ -1842,7 +1834,6 @@
     const peakGust = Math.max(...gustsKnots, 10);
     if (peakBadge) peakBadge.textContent = `Peak: ${peakGust} kts`;
 
-    // Render timeline bars starting strictly at current hour (startIdx)
     for (let h = startIdx; h < totalHours; h++) {
       const val = gustsKnots[h - startIdx];
       const bar = document.createElement('div');
@@ -1851,37 +1842,66 @@
       bar.style.height = `${heightPct}%`;
       bar.style.backgroundColor = getWindHexColor(val);
       bar.title = `${hourly.time[h].replace('T', ' ')}: Gust ${val} kts`;
-
-      bar.onclick = (e) => {
-        e.stopPropagation();
-        jumpToTimelineDay(0, h, true, true);
-      };
       barsContainer.appendChild(bar);
     }
 
     const timelineWrapper = document.getElementById('timelineWrapper');
-    function handleTimelineScrub(clientX, isDirectTap = false) {
-      if (!timelineWrapper) return;
-      const rect = timelineWrapper.getBoundingClientRect();
-      const clickX = Math.max(0, Math.min(rect.width, clientX - rect.left));
-      const total = Math.min((weatherData?.data_1h?.time?.length || 168), 168);
-      const start = getCurrentHourStartIndex(weatherData?.data_1h?.time);
-      const activeHours = total - start;
-      if (activeHours <= 0) return;
-
-      const targetOffset = Math.min(activeHours - 1, Math.floor((clickX / rect.width) * activeHours));
-      const targetHour = start + targetOffset;
-      jumpToTimelineDay(0, targetHour, !isDirectTap, true);
-    }
-
     if (timelineWrapper) {
-      timelineWrapper.onclick = (e) => handleTimelineScrub(e.clientX, true);
+      let isPointerDown = false;
 
-      timelineWrapper.addEventListener('touchmove', (e) => {
-        if (e.touches && e.touches.length > 0) {
-          handleTimelineScrub(e.touches[0].clientX, false);
-        }
-      }, { passive: true });
+      const handleScrub = (clientX) => {
+        const scrollContainer = document.querySelector('.table-scroll-container');
+        if (!timelineWrapper || !scrollContainer) return;
+        const rect = timelineWrapper.getBoundingClientRect();
+        if (rect.width <= 0) return;
+
+        const clickX = Math.max(0, Math.min(rect.width, clientX - rect.left));
+        const totalWrapperWidth = rect.width;
+
+        const stickyWidth = window.innerWidth <= 640 ? 52 : 68;
+        const visibleDataWidth = Math.max(1, scrollContainer.clientWidth - stickyWidth);
+        const totalDataWidth = Math.max(visibleDataWidth, scrollContainer.scrollWidth - stickyWidth);
+        const maxScroll = Math.max(0, scrollContainer.scrollWidth - scrollContainer.clientWidth);
+
+        if (maxScroll <= 0) return;
+
+        const widthRatio = Math.min(1, Math.max(0.04, visibleDataWidth / totalDataWidth));
+        const selectorWidth = Math.round(widthRatio * totalWrapperWidth);
+        const maxSelectorTravel = Math.max(0, totalWrapperWidth - selectorWidth);
+
+        // Center selector around the click/drag coordinate
+        let targetSelectorLeft = clickX - (selectorWidth / 2);
+        targetSelectorLeft = Math.max(0, Math.min(maxSelectorTravel, targetSelectorLeft));
+
+        const scrollFraction = maxSelectorTravel > 0 ? (targetSelectorLeft / maxSelectorTravel) : 0;
+        scrollContainer.scrollLeft = scrollFraction * maxScroll;
+
+        syncTimelineOnTableScroll();
+      };
+
+      timelineWrapper.onpointerdown = (e) => {
+        isPointerDown = true;
+        try {
+          timelineWrapper.setPointerCapture(e.pointerId);
+        } catch (_) {}
+        handleScrub(e.clientX);
+      };
+
+      timelineWrapper.onpointermove = (e) => {
+        if (!isPointerDown) return;
+        handleScrub(e.clientX);
+      };
+
+      const endPointer = (e) => {
+        if (!isPointerDown) return;
+        isPointerDown = false;
+        try {
+          timelineWrapper.releasePointerCapture(e.pointerId);
+        } catch (_) {}
+      };
+
+      timelineWrapper.onpointerup = endPointer;
+      timelineWrapper.onpointercancel = endPointer;
     }
   }
 
@@ -1989,50 +2009,25 @@
       return;
     }
 
-    const totalWrapperWidth = timelineWrapper.clientWidth || 680;
-    const totalHours = Math.min((weatherData.data_1h?.time?.length || 168), 168);
-    const startIdx = getCurrentHourStartIndex(weatherData.data_1h?.time);
-    const visibleTimelineHours = totalHours - startIdx;
-    if (visibleTimelineHours <= 0) return;
+    const totalWrapperWidth = timelineWrapper.clientWidth;
+    if (!totalWrapperWidth) return;
 
     const stickyWidth = window.innerWidth <= 640 ? 52 : 68;
-    const hourCols = document.querySelectorAll('th[id^="col-hour-"]');
-    if (!hourCols.length) return;
+    const visibleDataWidth = Math.max(1, scrollContainer.clientWidth - stickyWidth);
+    const totalDataWidth = Math.max(visibleDataWidth, scrollContainer.scrollWidth - stickyWidth);
+    const maxScroll = Math.max(0, scrollContainer.scrollWidth - scrollContainer.clientWidth);
 
-    const cRect = scrollContainer.getBoundingClientRect();
-    const visibleLeftEdge = cRect.left + stickyWidth;
-    const visibleRightEdge = cRect.right;
+    // Continuous constant width calculation prevents expanding/contracting during motion
+    const widthRatio = Math.min(1, Math.max(0.04, visibleDataWidth / totalDataWidth));
+    const selectorWidth = Math.round(widthRatio * totalWrapperWidth);
+    const maxSelectorTravel = Math.max(0, totalWrapperWidth - selectorWidth);
 
-    let firstVisibleHour = -1;
-    let lastVisibleHour = -1;
-
-    for (let i = 0; i < hourCols.length; i++) {
-      const col = hourCols[i];
-      const r = col.getBoundingClientRect();
-      const hIdx = parseInt(col.id.replace('col-hour-', ''), 10);
-      if (isNaN(hIdx)) continue;
-
-      if (r.right > visibleLeftEdge && r.left < visibleRightEdge) {
-        if (firstVisibleHour === -1) firstVisibleHour = hIdx;
-        lastVisibleHour = hIdx;
-      }
-    }
-
-    if (firstVisibleHour === -1) {
-      firstVisibleHour = startIdx;
-      lastVisibleHour = Math.min(totalHours - 1, startIdx + 12);
-    }
-
-    const offsetFirstHour = Math.max(0, firstVisibleHour - startIdx);
-    const offsetLastHour = Math.max(offsetFirstHour, lastVisibleHour - startIdx);
-    const hoursSpan = Math.max(1, (offsetLastHour - offsetFirstHour + 1));
-
-    const widthPct = Math.min(1, Math.max(0.04, hoursSpan / visibleTimelineHours));
-    const leftPct = Math.min(1 - widthPct, Math.max(0, offsetFirstHour / visibleTimelineHours));
+    const scrollFraction = maxScroll > 0 ? Math.max(0, Math.min(1, scrollContainer.scrollLeft / maxScroll)) : 0;
+    const selectorLeft = Math.round(scrollFraction * maxSelectorTravel);
 
     selector.style.display = 'block';
-    selector.style.width = `${Math.round(widthPct * totalWrapperWidth)}px`;
-    selector.style.left = `${Math.round(leftPct * totalWrapperWidth)}px`;
+    selector.style.width = `${selectorWidth}px`;
+    selector.style.left = `${selectorLeft}px`;
   }
 
   function getFallbackMockData() {
