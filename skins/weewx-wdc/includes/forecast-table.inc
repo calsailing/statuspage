@@ -77,7 +77,6 @@
     color: #ffffff;
   }
 
-  /* Micro Footer Status Pill */
   .footer-actions {
     display: inline-flex;
     align-items: center;
@@ -169,7 +168,6 @@
     white-space: nowrap;
   }
 
-  /* Sticky first column */
   table.structured-forecast th:first-child,
   table.structured-forecast td:first-child {
     position: sticky;
@@ -187,7 +185,6 @@
     padding-right: 0.25rem;
   }
 
-  /* Subtle drop shadow extending to the right of the sticky labels column */
   table.structured-forecast th:first-child::after,
   table.structured-forecast td:first-child::after {
     content: "";
@@ -256,7 +253,6 @@
     height: 20px;
   }
 
-  /* Wind histogram in Daily hourly view */
   table.structured-forecast.hourly-view .wind-histo-cell {
     height: 139px;
     vertical-align: bottom !important;
@@ -266,7 +262,6 @@
     overflow: visible;
   }
 
-  /* Light green fill between Open and Dock schedule lines */
   .wind-sched-fill {
     position: absolute;
     top: 0;
@@ -275,7 +270,6 @@
     pointer-events: none;
   }
 
-  /* Light grey fill for night hours */
   .wind-night-fill {
     position: absolute;
     top: 0;
@@ -284,7 +278,6 @@
     pointer-events: none;
   }
 
-  /* Vertical line indicating exact Open / Dock times */
   .wind-sched-line {
     position: absolute;
     top: 0;
@@ -301,7 +294,6 @@
     background-color: #f97316;
   }
 
-  /* Inline Open / Dock badge flags positioned right on the wind row */
   .wind-sched-marker {
     position: absolute;
     top: -3px;
@@ -310,13 +302,11 @@
     white-space: nowrap;
   }
 
-  /* Open time box is placed BEFORE the line, covering it by ~4px */
   .wind-sched-marker.marker-open {
     transform: translateX(-100%);
     margin-left: 4px;
   }
 
-  /* Dock time box is placed AFTER the line, covering it by ~4px */
   .wind-sched-marker.marker-dock {
     transform: translateX(0);
     margin-left: -4px;
@@ -414,7 +404,6 @@
     display: block;
   }
 
-  /* Wind Colors */
   .wind-calm      { background-color: #eef8fc !important; color: #161616 !important; }
   .wind-light     { background-color: #dcf4fb !important; color: #161616 !important; }
   .wind-mod       { background-color: #b4e7fa !important; color: #161616 !important; }
@@ -712,7 +701,6 @@
     color: #78a9ff;
   }
 
-  /* Mobile Responsive */
   @media (max-width: 640px) {
     .app-card {
       border: none;
@@ -837,7 +825,7 @@
       <span id="footerTimestamp">Updated: Loading...</span>
     </div>
     <div class="footer-actions">
-      <a href="https://docs.meteoblue.com/en/weather-apis/forecast-api/overview#what-is-the-meteoblue-learning-multimodel-mlm" target="_blank" rel="noopener noreferrer" class="status-badge micro live" id="statusBadge" title="View Meteoblue API Documentation">
+      <a href="https://docs.meteoblue.com/en/weather-apis/forecast-api/overview#what-is-the-meteoblue-learning-multimodel-mlm" target="_blank" rel="noopener noreferrer" class="status-badge micro live" id="statusBadge" title="View Meteoblue Learning MultiModel (mLM) Documentation">
         <span class="status-dot" id="statusDot"></span>
         <span id="statusText">Meteoblue</span>
       </a>
@@ -847,7 +835,6 @@
 
 <script>
 /* #raw */
-  // Server-side cached forecast endpoint
   const METEOBLUE_CACHE_URL = 'https://status.cal-sailing.org/meteoblue_cache.json';
 
   let weatherData = null;
@@ -855,7 +842,6 @@
   let isProgrammaticScrolling = false;
   let programmaticScrollTimeout = null;
   const clubStatusCache = {};
-  const clubScheduleCache = clubStatusCache; // Alias for backward compatibility
 
   function toKnots(speedVal, unitStr) {
     if (speedVal === null || speedVal === undefined) return null;
@@ -1201,8 +1187,7 @@
       return clubStatusCache[dateStr];
     }
 
-    const domain = window.location.hostname.includes('test.cal-sailing.org') ? 'test.cal-sailing.org' : 'www.cal-sailing.org';
-    const targetUrl = `https://${domain}/index.php?option=com_csctides&view=gettidedatalist&task=gettidedatalist&tmpl=component&output=json&tidedate=${dateStr}`;
+    const targetUrl = `https://www.cal-sailing.org/index.php?option=com_csctides&view=gettidedatalist&task=gettidedatalist&tmpl=component&output=json&tidedate=${dateStr}`;
 
     try {
       let rawText = null;
@@ -1512,7 +1497,6 @@
         const openPct = Math.round(openFraction * 100);
         const dockPct = Math.round(dockFraction * 100);
 
-        // Fill area between the Open and Dock lines with the same light green
         if (hourNum >= openCellHour && hourNum <= dockCellHour) {
           let fillLeft = '0%';
           let fillWidth = '100%';
@@ -1533,7 +1517,6 @@
           }
         }
 
-        // Render Open line and box at exact opening time
         if (hourNum === openCellHour) {
           scheduleHtml += `
             <div class="wind-sched-line line-open" style="left: ${openPct}%; bottom: ${barHeight}px;"></div>
@@ -1543,7 +1526,6 @@
           `;
         }
 
-        // Render Dock line and box at exact sunset/dock time
         if (hourNum === dockCellHour) {
           scheduleHtml += `
             <div class="wind-sched-line line-dock" style="left: ${dockPct}%; bottom: ${barHeight}px;"></div>
@@ -1719,7 +1701,7 @@
     for (let i = 0; i < numDays; i++) {
       const code = data.pictocode ? data.pictocode[i] : 2;
       const desc = getPictocodeDescription(code, true);
-      const iconSvg = getPictocodeIcon(code);
+      const iconSvg = getPictocodeIcon(code, true);
       const td = document.createElement('td');
       td.title = desc;
       td.innerHTML = `<div class="weather-icon-cell" title="${desc}" style="width:24px; height:24px; margin:0 auto; cursor:help;">${iconSvg}</div>`;
@@ -1840,20 +1822,20 @@
 
     const timelineWrapper = document.getElementById('timelineWrapper');
     if (timelineWrapper) {
-      const handleTimelineScrub = (clientX) => {
+      const handleTimelineScrub = (clientX, isDirectTap = false) => {
         const rect = timelineWrapper.getBoundingClientRect();
         const clickX = Math.max(0, Math.min(rect.width, clientX - rect.left));
         const total = Math.min((weatherData?.data_1h?.time?.length || 168), 168);
         const targetHour = Math.min(total - 1, Math.floor((clickX / rect.width) * total));
         const dayIdx = Math.floor(targetHour / 24);
-        jumpToTimelineDay(dayIdx, targetHour);
+        jumpToTimelineDay(dayIdx, targetHour, !isDirectTap);
       };
 
-      timelineWrapper.onclick = (e) => handleTimelineScrub(e.clientX);
+      timelineWrapper.onclick = (e) => handleTimelineScrub(e.clientX, true);
 
       timelineWrapper.addEventListener('touchmove', (e) => {
         if (e.touches && e.touches.length > 0) {
-          handleTimelineScrub(e.touches[0].clientX);
+          handleTimelineScrub(e.touches[0].clientX, false);
         }
       }, { passive: true });
     }
@@ -1910,15 +1892,15 @@
       scrollContainer.scrollLeft = targetLeft;
     }
 
-    const dayIdx = Math.floor(hourIdx / 24);
-    updateTimelineSelector(dayIdx);
+    updateTimelineSelector(Math.floor(hourIdx / 24));
 
     programmaticScrollTimeout = setTimeout(() => {
       isProgrammaticScrolling = false;
-    }, 750);
+      syncTimelineOnTableScroll();
+    }, smooth ? 450 : 50);
   }
 
-  function jumpToTimelineDay(dayIndex, hourIndex = null) {
+  function jumpToTimelineDay(dayIndex, hourIndex = null, smooth = true) {
     if (currentMode === 'day') {
       currentMode = 'hour';
       const tabDaily = document.getElementById('tabDaily');
@@ -1930,45 +1912,19 @@
       renderForecast();
     }
 
-    isProgrammaticScrolling = true;
-    if (programmaticScrollTimeout) clearTimeout(programmaticScrollTimeout);
-
     const startIdx = weatherData?.data_1h?.time ? getCurrentHourStartIndex(weatherData.data_1h.time) : 0;
     let targetHourIdx = hourIndex !== null ? hourIndex : dayIndex * 24;
     if (targetHourIdx < startIdx) targetHourIdx = startIdx;
 
-    setTimeout(() => {
-      const targetCol = document.getElementById(`col-hour-${targetHourIdx}`);
-      if (targetCol) {
-        targetCol.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
-      }
-      updateTimelineSelector(dayIndex);
-    }, 40);
-
-    programmaticScrollTimeout = setTimeout(() => {
-      isProgrammaticScrolling = false;
-    }, 750);
+    scrollToHour(targetHourIdx, smooth);
   }
 
   function updateTimelineSelector(dayIndex) {
-    const selector = document.getElementById('timelineSelector');
-    const timelineWrapper = document.getElementById('timelineWrapper');
-    if (!selector || !timelineWrapper) return;
-
-    if (currentMode === 'day') {
-      selector.style.display = 'none';
-      return;
-    }
-
-    const totalWidth = timelineWrapper.clientWidth || 680;
-    const dayWidth = totalWidth / 7;
-    selector.style.display = 'block';
-    selector.style.width = `${dayWidth}px`;
-    selector.style.left = `${dayIndex * dayWidth}px`;
+    syncTimelineOnTableScroll();
   }
 
   function syncTimelineOnTableScroll() {
-    if (isProgrammaticScrolling || !weatherData) return;
+    if (!weatherData) return;
     const scrollContainer = document.querySelector('.table-scroll-container');
     const selector = document.getElementById('timelineSelector');
     const timelineWrapper = document.getElementById('timelineWrapper');
@@ -1980,31 +1936,44 @@
     }
 
     const totalWrapperWidth = timelineWrapper.clientWidth || 680;
-    const dayWidth = totalWrapperWidth / 7;
-    selector.style.width = `${dayWidth}px`;
-    selector.style.display = 'block';
+    const totalHours = Math.min((weatherData.data_1h?.time?.length || 168), 168);
+    if (!totalHours) return;
 
     const stickyWidth = window.innerWidth <= 640 ? 58 : 68;
+    const hourCols = document.querySelectorAll('th[id^="col-hour-"]');
+    if (!hourCols.length) return;
 
-    if (currentMode === 'hour') {
-      const currentScroll = scrollContainer.scrollLeft;
-      const hourCols = document.querySelectorAll('th[id^="col-hour-"]');
-      if (!hourCols.length) return;
+    const cRect = scrollContainer.getBoundingClientRect();
+    const visibleLeftEdge = cRect.left + stickyWidth;
+    const visibleRightEdge = cRect.right;
 
-      let activeHourIndex = 0;
-      for (let i = 0; i < hourCols.length; i++) {
-        const col = hourCols[i];
-        if (col.offsetLeft + col.offsetWidth > currentScroll + stickyWidth + 10) {
-          activeHourIndex = i;
-          break;
-        }
+    let firstVisibleHour = -1;
+    let lastVisibleHour = -1;
+
+    for (let i = 0; i < hourCols.length; i++) {
+      const col = hourCols[i];
+      const r = col.getBoundingClientRect();
+      const hIdx = parseInt(col.id.replace('col-hour-', ''), 10);
+      if (isNaN(hIdx)) continue;
+
+      if (r.right > visibleLeftEdge && r.left < visibleRightEdge) {
+        if (firstVisibleHour === -1) firstVisibleHour = hIdx;
+        lastVisibleHour = hIdx;
       }
-      const totalHours = Math.min((weatherData.data_1h?.time?.length || 168), 168);
-      const progress = activeHourIndex / Math.max(1, totalHours);
-      const maxLeft = totalWrapperWidth - dayWidth;
-      const targetLeft = Math.min(maxLeft, Math.max(0, progress * totalWrapperWidth));
-      selector.style.left = `${targetLeft}px`;
     }
+
+    if (firstVisibleHour === -1) {
+      firstVisibleHour = 0;
+      lastVisibleHour = Math.min(totalHours - 1, 23);
+    }
+
+    const hoursSpan = Math.max(1, (lastVisibleHour - firstVisibleHour + 1));
+    const widthPct = Math.min(1, Math.max(0.04, hoursSpan / totalHours));
+    const leftPct = Math.min(1 - widthPct, Math.max(0, firstVisibleHour / totalHours));
+
+    selector.style.display = 'block';
+    selector.style.width = `${Math.round(widthPct * totalWrapperWidth)}px`;
+    selector.style.left = `${Math.round(leftPct * totalWrapperWidth)}px`;
   }
 
   function getFallbackMockData() {
