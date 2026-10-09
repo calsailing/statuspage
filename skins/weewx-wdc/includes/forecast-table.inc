@@ -507,7 +507,6 @@
   }
 
   .timeline-day-label {
-    flex: 1;
     text-align: center;
     font-size: 0.63rem;
     font-weight: 600;
@@ -516,6 +515,8 @@
     border-right: 1px solid #f0f0f0;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
   }
   .timeline-day-label:last-child {
     border-right: none;
@@ -984,7 +985,7 @@
       </svg>`;
     }
 
-    // Overcast / Cloudy / Partly Cloudy (Clean cloud with NO rain drops, lines, or sun rays)
+    // Overcast / Cloudy / Partly Cloudy (Clean cloud with NO rain drops or angled sun lines)
     // Daily: 3, 4; Hourly: 4, 5, 6, 7, 8, 9, 19, 20, 21, 22
     return `<svg viewBox="0 0 24 24" width="20" height="20" fill="none">
       <path d="M6.5 18h11a4 4 0 0 0 .5-7.97 5 5 0 0 0-9.8-1.53A4 4 0 0 0 6.5 18z" fill="#eceff1" stroke="#607d8b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -1174,6 +1175,31 @@
       }
     }
     return 0;
+  }
+
+  function getHourlyDaySpans(times, startIdx, numHours) {
+    const daySpans = [];
+    let currentDayStr = null;
+    let currentSpan = 0;
+    let currentFirstIdx = startIdx;
+
+    for (let i = startIdx; i < numHours; i++) {
+      const dayStr = times[i].substring(0, 10);
+      if (dayStr !== currentDayStr) {
+        if (currentDayStr !== null) {
+          daySpans.push({ dayStr: currentDayStr, span: currentSpan, firstHour: currentFirstIdx });
+        }
+        currentDayStr = dayStr;
+        currentSpan = 1;
+        currentFirstIdx = i;
+      } else {
+        currentSpan++;
+      }
+    }
+    if (currentSpan > 0) {
+      daySpans.push({ dayStr: currentDayStr, span: currentSpan, firstHour: currentFirstIdx });
+    }
+    return daySpans;
   }
 
   async function fetchClubStatusForDate(dateStr) {
@@ -1373,27 +1399,7 @@
     thead.innerHTML = '';
     tbody.innerHTML = '';
 
-    const daySpans = [];
-    let currentDayStr = null;
-    let currentSpan = 0;
-    let currentFirstIdx = startIdx;
-
-    for (let i = startIdx; i < numHours; i++) {
-      const dayStr = data.time[i].substring(0, 10);
-      if (dayStr !== currentDayStr) {
-        if (currentDayStr !== null) {
-          daySpans.push({ dayStr: currentDayStr, span: currentSpan, firstHour: currentFirstIdx });
-        }
-        currentDayStr = dayStr;
-        currentSpan = 1;
-        currentFirstIdx = i;
-      } else {
-        currentSpan++;
-      }
-    }
-    if (currentSpan > 0) {
-      daySpans.push({ dayStr: currentDayStr, span: currentSpan, firstHour: currentFirstIdx });
-    }
+    const daySpans = getHourlyDaySpans(data.time, startIdx, numHours);
 
     // Group Header Row
     const groupHeaderRow = document.createElement('tr');
@@ -1763,28 +1769,26 @@
     if (!hourly || !hourly.time) return;
 
     const totalHours = Math.min(hourly.time.length, 168);
-    const dayData = weatherData.data_day;
-    const numDays = Math.min((dayData?.time?.length || 7), 7);
+    const startIdx = getCurrentHourStartIndex(hourly.time);
+    const daySpans = getHourlyDaySpans(hourly.time, startIdx, totalHours);
 
-    for (let d = 0; d < numDays; d++) {
+    // Render day labels with proportional flex widths matching active hourly spans
+    daySpans.forEach((ds) => {
       const lbl = document.createElement('div');
       lbl.className = 'timeline-day-label';
-      const dateStr = dayData ? dayData.time[d] : hourly.time[d * 24]?.substring(0, 10);
-      if (dateStr) {
-        const dObj = new Date(dateStr + 'T12:00:00Z');
-        lbl.textContent = dObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' });
-      } else {
-        lbl.textContent = `Day ${d + 1}`;
-      }
+      lbl.style.flex = `${ds.span}`;
+      const dObj = new Date(ds.dayStr + 'T12:00:00Z');
+      lbl.textContent = dObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' });
+      lbl.title = `Jump to ${ds.dayStr}`;
       lbl.onclick = (e) => {
         e.stopPropagation();
-        jumpToTimelineDay(d, d * 24);
+        jumpToTimelineDay(0, ds.firstHour);
       };
       labelsContainer.appendChild(lbl);
-    }
+    });
 
     const gustsKnots = [];
-    for (let h = 0; h < totalHours; h++) {
+    for (let h = startIdx; h < totalHours; h++) {
       let g = (hourly.gust && hourly.gust[h] !== null && hourly.gust[h] !== undefined)
         ? toKnots(hourly.gust[h], units.windspeed)
         : null;
@@ -1798,24 +1802,19 @@
     const peakGust = Math.max(...gustsKnots, 10);
     if (peakBadge) peakBadge.textContent = `Peak: ${peakGust} kts`;
 
-    const startIdx = getCurrentHourStartIndex(hourly.time);
-
-    for (let h = 0; h < totalHours; h++) {
-      const val = gustsKnots[h];
+    // Render timeline bars starting strictly at current hour (startIdx)
+    for (let h = startIdx; h < totalHours; h++) {
+      const val = gustsKnots[h - startIdx];
       const bar = document.createElement('div');
       bar.className = 'timeline-bar';
       const heightPct = Math.max(12, Math.round((val / (peakGust * 1.1)) * 100));
       bar.style.height = `${heightPct}%`;
       bar.style.backgroundColor = getWindHexColor(val);
-      if (h < startIdx) {
-        bar.style.opacity = '0.35';
-      }
       bar.title = `${hourly.time[h].replace('T', ' ')}: Gust ${val} kts`;
 
-      const dayIdx = Math.floor(h / 24);
       bar.onclick = (e) => {
         e.stopPropagation();
-        jumpToTimelineDay(dayIdx, h);
+        jumpToTimelineDay(0, h);
       };
       barsContainer.appendChild(bar);
     }
@@ -1826,9 +1825,13 @@
         const rect = timelineWrapper.getBoundingClientRect();
         const clickX = Math.max(0, Math.min(rect.width, clientX - rect.left));
         const total = Math.min((weatherData?.data_1h?.time?.length || 168), 168);
-        const targetHour = Math.min(total - 1, Math.floor((clickX / rect.width) * total));
-        const dayIdx = Math.floor(targetHour / 24);
-        jumpToTimelineDay(dayIdx, targetHour, !isDirectTap);
+        const start = getCurrentHourStartIndex(weatherData?.data_1h?.time);
+        const activeHours = total - start;
+        if (activeHours <= 0) return;
+
+        const targetOffset = Math.min(activeHours - 1, Math.floor((clickX / rect.width) * activeHours));
+        const targetHour = start + targetOffset;
+        jumpToTimelineDay(0, targetHour, !isDirectTap);
       };
 
       timelineWrapper.onclick = (e) => handleTimelineScrub(e.clientX, true);
@@ -1892,7 +1895,7 @@
       scrollContainer.scrollLeft = targetLeft;
     }
 
-    updateTimelineSelector(Math.floor(hourIdx / 24));
+    updateTimelineSelector(0);
 
     programmaticScrollTimeout = setTimeout(() => {
       isProgrammaticScrolling = false;
@@ -1937,7 +1940,9 @@
 
     const totalWrapperWidth = timelineWrapper.clientWidth || 680;
     const totalHours = Math.min((weatherData.data_1h?.time?.length || 168), 168);
-    if (!totalHours) return;
+    const startIdx = getCurrentHourStartIndex(weatherData.data_1h?.time);
+    const visibleTimelineHours = totalHours - startIdx;
+    if (visibleTimelineHours <= 0) return;
 
     const stickyWidth = window.innerWidth <= 640 ? 58 : 68;
     const hourCols = document.querySelectorAll('th[id^="col-hour-"]');
@@ -1963,13 +1968,16 @@
     }
 
     if (firstVisibleHour === -1) {
-      firstVisibleHour = 0;
-      lastVisibleHour = Math.min(totalHours - 1, 23);
+      firstVisibleHour = startIdx;
+      lastVisibleHour = Math.min(totalHours - 1, startIdx + 12);
     }
 
-    const hoursSpan = Math.max(1, (lastVisibleHour - firstVisibleHour + 1));
-    const widthPct = Math.min(1, Math.max(0.04, hoursSpan / totalHours));
-    const leftPct = Math.min(1 - widthPct, Math.max(0, firstVisibleHour / totalHours));
+    const offsetFirstHour = Math.max(0, firstVisibleHour - startIdx);
+    const offsetLastHour = Math.max(offsetFirstHour, lastVisibleHour - startIdx);
+    const hoursSpan = Math.max(1, (offsetLastHour - offsetFirstHour + 1));
+
+    const widthPct = Math.min(1, Math.max(0.04, hoursSpan / visibleTimelineHours));
+    const leftPct = Math.min(1 - widthPct, Math.max(0, offsetFirstHour / visibleTimelineHours));
 
     selector.style.display = 'block';
     selector.style.width = `${Math.round(widthPct * totalWrapperWidth)}px`;
