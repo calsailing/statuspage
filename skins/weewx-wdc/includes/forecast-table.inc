@@ -1127,7 +1127,12 @@
   const STALE_AFTER_HOURS = 12;             // warn when the model run is older than this
   const REFRESH_INTERVAL_MS = 15 * 60 * 1000;
   const RESUME_REFRESH_AFTER_MS = 5 * 60 * 1000;
-  const GUST_ESTIMATE_FACTOR = 1.35;        // only used (and flagged "~") when the feed has no gust data
+  const GUST_ESTIMATE_FACTOR = 1.35;        // used only when the feed has no gust value for an hour
+
+  // Gusts can arrive as one value per 3 hours in data_3h.gust. Each value is
+  // repeated for the hours it covers: 'start' means the value at 12:00 covers
+  // 12:00, 13:00 and 14:00; 'end' means it covers 10:00, 11:00 and 12:00.
+  const GUST_3H_COVERS = 'start';
 
   // Club hours come from www.cal-sailing.org. If the browser blocks that request
   // (for example CORS on another origin), the table shows the standard schedule
@@ -2112,8 +2117,36 @@
   }
 
   // ===========================================================================
-  // Data accessors (no invented values: estimates are flagged, gaps stay empty)
+  // Data accessors (gaps stay empty; estimates are marked in tooltips)
   // ===========================================================================
+  // Fills data_1h.gust from data_3h.gust. Real hourly gust values are kept; only
+  // hours without one are filled. Values stay in the feed's own wind unit.
+  function expandThreeHourGusts(json) {
+    const h1 = json && json.data_1h;
+    const h3 = json && json.data_3h;
+    if (!h1 || !h1.time || !h3 || !h3.time || !h3.gust) return;
+
+    const slots = new Map();
+    h3.time.forEach((t, i) => {
+      const v = h3.gust[i];
+      const ms = wallStringToMs(t);
+      if (!isNaN(ms) && v !== null && v !== undefined && !isNaN(Number(v))) slots.set(ms, Number(v));
+    });
+    if (!slots.size) return;
+
+    const out = h1.gust ? h1.gust.slice() : new Array(h1.time.length).fill(null);
+    h1.time.forEach((t, i) => {
+      if (out[i] !== null && out[i] !== undefined) return;
+      const ms = wallStringToMs(t);
+      if (isNaN(ms)) return;
+      for (let k = 0; k < 3; k++) {
+        const key = ms + (GUST_3H_COVERS === 'start' ? -k : k) * 3600000;
+        if (slots.has(key)) { out[i] = slots.get(key); return; }
+      }
+    });
+    h1.gust = out;
+  }
+
   function getHourlyGust(data, units, i) {
     const raw = data.gust ? data.gust[i] : null;
     if (raw !== null && raw !== undefined) {
@@ -2888,6 +2921,7 @@
         json = JSON.parse(resp.text);
       }
       if (!json || !(json.data_day || json.data_1h)) throw new Error('Unexpected JSON schema from cache');
+      expandThreeHourGusts(json);
     } catch (err) {
       failure = err;
       console.warn('Forecast fetch failed:', err && err.message ? err.message : err);
