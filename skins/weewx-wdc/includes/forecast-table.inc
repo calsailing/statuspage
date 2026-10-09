@@ -12,6 +12,8 @@
     --cds-interactive-01: #0f62fe;
     --club-open-hour-bg: rgba(34, 197, 94, 0.15);
     --night-hour-bg: #f3f4f6;
+    --skeleton-base: #ececec;
+    --skeleton-highlight: #f8f8f8;
   }
 
   html.dark {
@@ -21,6 +23,8 @@
     --cds-ui-border: #393939;
     --club-open-hour-bg: rgba(34, 197, 94, 0.15);
     --night-hour-bg: #111827;
+    --skeleton-base: #262626;
+    --skeleton-highlight: #333333;
   }
 
   .app-card {
@@ -40,6 +44,53 @@
   .app-card * {
     box-sizing: border-box;
     -webkit-font-smoothing: antialiased;
+  }
+
+  /* Skeleton Shimmer Keyframes and Classes */
+  @keyframes skeleton-shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      var(--skeleton-base) 0%,
+      var(--skeleton-highlight) 50%,
+      var(--skeleton-base) 100%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite linear;
+    border-radius: 2px;
+  }
+
+  .skeleton-pill {
+    display: inline-block;
+    height: 11px;
+    width: 18px;
+    margin: 0 auto;
+  }
+
+  .skeleton-pill.wide {
+    width: 32px;
+  }
+
+  .skeleton-circle {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    margin: 0 auto;
+  }
+
+  .skeleton-bar-fill {
+    width: 80%;
+    margin: 0 auto;
+    border-radius: 2px 2px 0 0;
   }
 
   .view-switcher-container {
@@ -535,6 +586,7 @@
     z-index: 5;
     box-sizing: border-box;
     will-change: left;
+    display: none;
   }
 
   .issued-footer {
@@ -871,9 +923,9 @@
       <span id="footerTimestamp">Updated: Loading...</span>
     </div>
     <div class="footer-actions">
-      <a href="https://docs.meteoblue.com/en/weather-apis/forecast-api/overview#what-is-the-meteoblue-learning-multimodel-mlm" target="_blank" rel="noopener noreferrer" class="status-badge micro live" id="statusBadge" title="View Meteoblue Learning MultiModel (mLM) Documentation">
-        <span class="status-dot" id="statusDot"></span>
-        <span id="statusText">Meteoblue</span>
+      <a href="https://docs.meteoblue.com/en/weather-apis/forecast-api/overview#what-is-the-meteoblue-learning-multimodel-mlm" target="_blank" rel="noopener noreferrer" class="status-badge micro updating" id="statusBadge" title="View Meteoblue Learning MultiModel (mLM) Documentation">
+        <span class="status-dot" id="statusDot" style="background-color: #d97706;"></span>
+        <span id="statusText">Loading...</span>
       </a>
     </div>
   </div>
@@ -888,6 +940,134 @@
   let isProgrammaticScrolling = false;
   let programmaticScrollTimeout = null;
   const clubStatusCache = {};
+
+  function renderTableSkeleton() {
+    const thead = document.getElementById('tableHead');
+    const tbody = document.getElementById('tableBody');
+    const barsContainer = document.getElementById('timelineBars');
+    const labelsContainer = document.getElementById('timelineLabels');
+    if (!thead || !tbody) return;
+
+    if (currentMode === 'hour') {
+      const colCount = 72; // Representative 3-day window for immediate layout stabilization
+      let groupThs = '';
+      for (let d = 0; d < 3; d++) {
+        groupThs += `<th class="day-group-header" colspan="24"><div class="skeleton-shimmer skeleton-pill wide" style="height:12px; width:65px;"></div></th>`;
+      }
+      let hourThs = '';
+      for (let c = 0; c < colCount; c++) {
+        hourThs += `<th><div class="skeleton-shimmer skeleton-pill" style="height:9px; width:14px;"></div></th>`;
+      }
+
+      thead.innerHTML = `
+        <tr><th></th>${groupThs}</tr>
+        <tr class="row-hour-header"><th>Hour</th>${hourThs}</tr>
+      `;
+
+      // 1. Wind Row
+      let windTds = '';
+      for (let c = 0; c < colCount; c++) {
+        const mockBarHeight = Math.round(35 + ((c * 7) % 55));
+        windTds += `
+          <td class="wind-histo-cell">
+            <div class="wind-histo-container">
+              <div class="skeleton-shimmer skeleton-pill" style="height:9px; width:14px; margin-bottom:4px;"></div>
+              <div class="wind-histo-bar" style="height:${mockBarHeight}px; border-top:none;">
+                <div class="skeleton-shimmer skeleton-bar-fill" style="height:100%; opacity:0.65;"></div>
+              </div>
+            </div>
+          </td>`;
+      }
+
+      // 2. Gust Row
+      let gustTds = '';
+      for (let c = 0; c < colCount; c++) {
+        gustTds += `<td><div class="skeleton-shimmer skeleton-pill" style="height:10px; width:15px;"></div></td>`;
+      }
+
+      // 3. Sky Row
+      let skyTds = '';
+      for (let c = 0; c < colCount; c++) {
+        skyTds += `<td><div class="skeleton-shimmer skeleton-circle"></div></td>`;
+      }
+
+      // 4. Temp Row
+      let tempTds = '';
+      for (let c = 0; c < colCount; c++) {
+        tempTds += `<td><div class="skeleton-shimmer skeleton-pill" style="height:10px; width:16px;"></div></td>`;
+      }
+
+      // 5. Rain % Row
+      let popTds = '';
+      for (let c = 0; c < colCount; c++) {
+        popTds += `<td><div class="skeleton-shimmer skeleton-pill" style="height:9px; width:12px;"></div></td>`;
+      }
+
+      tbody.innerHTML = `
+        <tr><td>Wind<span class="unit-label">(kts)</span></td>${windTds}</tr>
+        <tr><td>Gust</td>${gustTds}</tr>
+        <tr><td>Sky</td>${skyTds}</tr>
+        <tr class="row-temp"><td>°F</td>${tempTds}</tr>
+        <tr><td>Rain %</td>${popTds}</tr>
+      `;
+    } else {
+      // 7-Day Skeleton
+      let dayThs = '';
+      for (let d = 0; d < 7; d++) {
+        dayThs += `<th>
+          <div class="skeleton-shimmer skeleton-pill" style="height:11px; width:26px; margin-bottom:3px;"></div>
+          <div class="skeleton-shimmer skeleton-pill" style="height:9px; width:22px;"></div>
+        </th>`;
+      }
+      thead.innerHTML = `<tr><th></th>${dayThs}</tr>`;
+
+      const makeRow = (label, isDouble = false, isCircle = false) => {
+        let cells = '';
+        for (let d = 0; d < 7; d++) {
+          if (isCircle) {
+            cells += `<td><div class="skeleton-shimmer skeleton-circle" style="width:20px; height:20px;"></div></td>`;
+          } else if (isDouble) {
+            cells += `<td>
+              <div class="skeleton-shimmer skeleton-pill" style="height:10px; width:18px; margin-bottom:3px;"></div>
+              <div class="skeleton-shimmer skeleton-pill" style="height:10px; width:18px;"></div>
+            </td>`;
+          } else {
+            cells += `<td><div class="skeleton-shimmer skeleton-pill" style="height:11px; width:22px;"></div></td>`;
+          }
+        }
+        return `<tr><td>${label}</td>${cells}</tr>`;
+      };
+
+      tbody.innerHTML = `
+        ${makeRow('Wind<span class="unit-label">(kts)</span>')}
+        ${makeRow('Gust')}
+        ${makeRow('Sky', false, true)}
+        ${makeRow('Temp<span class="unit-label">in °F</span>', true)}
+        ${makeRow('Sunrise<br/>Sunset', true)}
+        ${makeRow('Rain %')}
+      `;
+    }
+
+    // Timeline Overview Skeleton
+    if (barsContainer && labelsContainer && barsContainer.children.length === 0) {
+      barsContainer.innerHTML = '';
+      labelsContainer.innerHTML = '';
+      for (let b = 0; b < 64; b++) {
+        const bar = document.createElement('div');
+        bar.className = 'timeline-bar';
+        const h = Math.round(18 + ((b * 9) % 55));
+        bar.innerHTML = `<div class="skeleton-shimmer" style="height:${h}%; width:90%; margin:0 auto; border-radius:2px 2px 0 0; opacity:0.6;"></div>`;
+        barsContainer.appendChild(bar);
+      }
+      for (let l = 0; l < 7; l++) {
+        const lbl = document.createElement('div');
+        lbl.className = 'timeline-day-label';
+        lbl.style.flex = '1';
+        lbl.innerHTML = `<div class="skeleton-shimmer skeleton-pill" style="height:8px; width:34px; margin-top:5px;"></div>`;
+        labelsContainer.appendChild(lbl);
+      }
+    }
+  }
 
   function toKnots(speedVal, unitStr) {
     if (speedVal === null || speedVal === undefined) return null;
@@ -2114,11 +2294,11 @@
     const statusDot = document.getElementById('statusDot');
     const footerTimestamp = document.getElementById('footerTimestamp');
 
-    statusText.textContent = 'Updating...';
+    if (statusText) statusText.textContent = 'Updating...';
     if (statusBadge) {
       statusBadge.className = 'status-badge micro updating';
     }
-    statusDot.style.backgroundColor = '#d97706';
+    if (statusDot) statusDot.style.backgroundColor = '#d97706';
 
     let json = null;
 
@@ -2131,11 +2311,11 @@
       if (json && (json.data_day || json.data_1h)) {
         weatherData = json;
 
-        statusText.textContent = 'Meteoblue';
+        if (statusText) statusText.textContent = 'Meteoblue';
         if (statusBadge) {
           statusBadge.className = 'status-badge micro live';
         }
-        statusDot.style.backgroundColor = '#24a148';
+        if (statusDot) statusDot.style.backgroundColor = '#24a148';
       } else {
         throw new Error('Unexpected JSON schema from cache');
       }
@@ -2143,11 +2323,11 @@
       console.warn('Server cache fetch failed:', cacheErr.message);
 
       weatherData = getFallbackMockData();
-      statusText.textContent = 'Demo Mode';
+      if (statusText) statusText.textContent = 'Demo Mode';
       if (statusBadge) {
         statusBadge.className = 'status-badge micro demo';
       }
-      statusDot.style.backgroundColor = '#0f62fe';
+      if (statusDot) statusDot.style.backgroundColor = '#0f62fe';
     }
 
     const datesToPreload = new Set();
@@ -2184,13 +2364,18 @@
     const displayDate = modelRunDate || new Date();
     const timeNow = displayDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
     const dateNow = displayDate.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' });
-    footerTimestamp.textContent = `Issued: ${dateNow} ${timeNow}`;
+    if (footerTimestamp) footerTimestamp.textContent = `Issued: ${dateNow} ${timeNow}`;
   }
 
   function renderForecast() {
     const table = document.getElementById('forecastTable');
     const thead = document.getElementById('tableHead');
     const tbody = document.getElementById('tableBody');
+
+    if (!weatherData) {
+      renderTableSkeleton();
+      return;
+    }
 
     if (currentMode === 'hour') {
       table.className = 'structured-forecast hourly-view';
@@ -2207,6 +2392,9 @@
     const tabDaily = document.getElementById('tabDaily');
     const tab7Day = document.getElementById('tab7Day');
     const scrollContainer = document.querySelector('.table-scroll-container');
+
+    // Immediately render full skeleton layout so page geometry is fixed on initial paint
+    renderTableSkeleton();
 
     if (scrollContainer) {
       scrollContainer.addEventListener('scroll', syncTimelineOnTableScroll, { passive: true });
