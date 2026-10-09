@@ -554,7 +554,6 @@
     flex-wrap: wrap;
   }
 
-  /* Dark Mode Scoped Overrides */
   html.dark .app-card {
     background-color: #161616;
     color: #f4f4f4;
@@ -727,32 +726,75 @@
       padding: 0.35rem 0.5rem;
     }
 
-    table.structured-forecast.hourly-view th:first-child,
-    table.structured-forecast.hourly-view td:first-child {
-      min-width: 58px;
-      max-width: 58px;
-      padding: 0.25rem 0.2rem;
-      font-size: 0.65rem;
+    /* Narrower sticky label column on mobile */
+    table.structured-forecast th:first-child,
+    table.structured-forecast td:first-child {
+      min-width: 52px !important;
+      max-width: 52px !important;
+      padding: 0.25rem 0.2rem !important;
+      font-size: 0.64rem !important;
     }
 
+    table.structured-forecast.hourly-view th:first-child,
+    table.structured-forecast.hourly-view td:first-child {
+      min-width: 52px !important;
+      max-width: 52px !important;
+      padding: 0.25rem 0.2rem !important;
+      font-size: 0.64rem !important;
+    }
+
+    /* Compact hourly columns on mobile so more hours fit */
+    table.structured-forecast.hourly-view th,
+    table.structured-forecast.hourly-view td {
+      min-width: 24px;
+      max-width: 26px;
+      padding: 0.2rem 0;
+      font-size: 0.68rem;
+    }
+
+    /* Streamlined, narrower day columns for 7-Day view on mobile */
     table.structured-forecast.seven-day-view th,
     table.structured-forecast.seven-day-view td {
-      min-width: 44px;
-      padding: 0.25rem 0.15rem;
+      min-width: 37px;
+      max-width: 44px;
+      padding: 0.25rem 0.1rem;
       font-size: 0.68rem;
     }
 
     table.structured-forecast.seven-day-view th:first-child,
     table.structured-forecast.seven-day-view td:first-child {
-      min-width: 58px;
-      max-width: 58px;
-      padding: 0.25rem 0.2rem;
-      font-size: 0.65rem;
+      min-width: 52px !important;
+      max-width: 52px !important;
+      padding: 0.25rem 0.2rem !important;
+      font-size: 0.64rem !important;
+    }
+
+    table.structured-forecast.seven-day-view .day-name {
+      font-size: 0.72rem;
+      letter-spacing: -0.02em;
+    }
+
+    table.structured-forecast.seven-day-view .day-date {
+      font-size: 0.62rem;
+      letter-spacing: -0.03em;
+    }
+
+    table.structured-forecast.seven-day-view .weather-icon-cell {
+      height: 22px;
     }
 
     table.structured-forecast.seven-day-view .weather-icon-cell svg {
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
+    }
+
+    table.structured-forecast.seven-day-view .wind-arrow svg {
+      width: 10px;
+      height: 10px;
+    }
+
+    table.structured-forecast.seven-day-view .wind-deg {
+      font-size: 0.58rem;
     }
 
     .overview-hint {
@@ -986,7 +1028,6 @@
     }
 
     // Overcast / Cloudy / Partly Cloudy (Clean cloud with NO rain drops)
-    // Daily: 3, 4; Hourly: 4, 5, 6, 7, 8, 9, 19, 20, 21, 22
     return `<svg viewBox="0 0 24 24" width="20" height="20" fill="none">
       <path d="M6.5 18h11a4 4 0 0 0 .5-7.97 5 5 0 0 0-9.8-1.53A4 4 0 0 0 6.5 18z" fill="#eceff1" stroke="#607d8b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>`;
@@ -1457,7 +1498,6 @@
     }
     thead.appendChild(hourHeaderRow);
 
-    // 1. Wind (kts) Row with Schedule Badges, Fill & Lines
     const windRow = document.createElement('tr');
     windRow.innerHTML = `<td>Wind<span class="unit-label">(kts)</span></td>`;
     for (let i = startIdx; i < numHours; i++) {
@@ -1660,10 +1700,10 @@
       td.className = getWindClass(maxVal);
 
       const spdText = (minKt !== null && maxKt !== null)
-        ? ((minKt === maxKt) ? `${minKt}` : `${minKt} - ${maxKt}`)
+        ? ((minKt === maxKt) ? `${minKt}` : `${minKt}-${maxKt}`)
         : (maxKt !== null ? `${maxKt}` : '-');
       td.innerHTML = `
-        <div style="font-size:0.82rem; font-weight:400;">${spdText}</div>
+        <div style="font-size:0.75rem; font-weight:400; white-space:nowrap;">${spdText}</div>
         ${createWindArrowSvg(dirDeg)}
       `;
       windRow.appendChild(td);
@@ -1696,7 +1736,7 @@
 
       const td = document.createElement('td');
       td.className = getWindClass(gustVal);
-      td.innerHTML = `<span style="font-weight:400; font-size:0.8rem;">${gustVal !== null ? gustVal : '-'}</span>`;
+      td.innerHTML = `<span style="font-weight:400; font-size:0.75rem;">${gustVal !== null ? gustVal : '-'}</span>`;
       gustRow.appendChild(td);
     }
     tbody.appendChild(gustRow);
@@ -1710,7 +1750,7 @@
       const iconSvg = getPictocodeIcon(code, true);
       const td = document.createElement('td');
       td.title = desc;
-      td.innerHTML = `<div class="weather-icon-cell" title="${desc}" style="width:24px; height:24px; margin:0 auto; cursor:help;">${iconSvg}</div>`;
+      td.innerHTML = `<div class="weather-icon-cell" title="${desc}" style="width:22px; height:22px; margin:0 auto; cursor:help;">${iconSvg}</div>`;
       outlookRow.appendChild(td);
     }
     tbody.appendChild(outlookRow);
@@ -1738,7 +1778,7 @@
     for (let i = 0; i < numDays; i++) {
       const times = getSunTimes(data.time[i]);
       const td = document.createElement('td');
-      td.innerHTML = `<span style="font-size:0.68rem; line-height:1.2; display:block;">${times.sunrise}<br/>${times.sunset}</span>`;
+      td.innerHTML = `<span style="font-size:0.62rem; line-height:1.2; display:block;">${times.sunrise}<br/>${times.sunset}</span>`;
       sunRow.appendChild(td);
     }
     tbody.appendChild(sunRow);
@@ -1831,7 +1871,6 @@
 
       const targetOffset = Math.min(activeHours - 1, Math.floor((clickX / rect.width) * activeHours));
       const targetHour = start + targetOffset;
-      // Pass center = true so the selector centers itself on the tapped/scrubbed location
       jumpToTimelineDay(0, targetHour, !isDirectTap, true);
     }
 
@@ -1888,12 +1927,11 @@
     isProgrammaticScrolling = true;
     if (programmaticScrollTimeout) clearTimeout(programmaticScrollTimeout);
 
-    const stickyWidth = window.innerWidth <= 640 ? 58 : 68;
+    const stickyWidth = window.innerWidth <= 640 ? 52 : 68;
     const visibleDataWidth = scrollContainer.clientWidth - stickyWidth;
     
     let targetLeft;
     if (center) {
-      // Centers the target column within the visible horizontal window of the table
       targetLeft = (targetCol.offsetLeft - stickyWidth) - (visibleDataWidth / 2) + (targetCol.offsetWidth / 2);
     } else {
       targetLeft = targetCol.offsetLeft - stickyWidth;
@@ -1957,7 +1995,7 @@
     const visibleTimelineHours = totalHours - startIdx;
     if (visibleTimelineHours <= 0) return;
 
-    const stickyWidth = window.innerWidth <= 640 ? 58 : 68;
+    const stickyWidth = window.innerWidth <= 640 ? 52 : 68;
     const hourCols = document.querySelectorAll('th[id^="col-hour-"]');
     if (!hourCols.length) return;
 
