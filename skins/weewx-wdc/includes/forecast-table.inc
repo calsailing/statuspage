@@ -985,7 +985,7 @@
       </svg>`;
     }
 
-    // Overcast / Cloudy / Partly Cloudy (Clean cloud with NO rain drops or angled sun lines)
+    // Overcast / Cloudy / Partly Cloudy (Clean cloud with NO rain drops)
     // Daily: 3, 4; Hourly: 4, 5, 6, 7, 8, 9, 19, 20, 21, 22
     return `<svg viewBox="0 0 24 24" width="20" height="20" fill="none">
       <path d="M6.5 18h11a4 4 0 0 0 .5-7.97 5 5 0 0 0-9.8-1.53A4 4 0 0 0 6.5 18z" fill="#eceff1" stroke="#607d8b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -1413,7 +1413,7 @@
       th.textContent = formatted;
       th.style.cursor = 'pointer';
       th.title = 'Click to jump to this day';
-      th.onclick = () => jumpToTimelineDay(0, ds.firstHour);
+      th.onclick = () => jumpToTimelineDay(0, ds.firstHour, true, false);
       groupHeaderRow.appendChild(th);
     });
     thead.appendChild(groupHeaderRow);
@@ -1643,7 +1643,7 @@
         <span class="day-date">${dateStr}</span>
       `;
       th.style.cursor = 'pointer';
-      th.onclick = () => jumpToTimelineDay(i);
+      th.onclick = () => jumpToTimelineDay(i, null, true, false);
       headerRow.appendChild(th);
     }
     thead.appendChild(headerRow);
@@ -1782,7 +1782,7 @@
       lbl.title = `Jump to ${ds.dayStr}`;
       lbl.onclick = (e) => {
         e.stopPropagation();
-        jumpToTimelineDay(0, ds.firstHour);
+        handleTimelineScrub(e.clientX, true);
       };
       labelsContainer.appendChild(lbl);
     });
@@ -1814,26 +1814,28 @@
 
       bar.onclick = (e) => {
         e.stopPropagation();
-        jumpToTimelineDay(0, h);
+        jumpToTimelineDay(0, h, true, true);
       };
       barsContainer.appendChild(bar);
     }
 
     const timelineWrapper = document.getElementById('timelineWrapper');
+    function handleTimelineScrub(clientX, isDirectTap = false) {
+      if (!timelineWrapper) return;
+      const rect = timelineWrapper.getBoundingClientRect();
+      const clickX = Math.max(0, Math.min(rect.width, clientX - rect.left));
+      const total = Math.min((weatherData?.data_1h?.time?.length || 168), 168);
+      const start = getCurrentHourStartIndex(weatherData?.data_1h?.time);
+      const activeHours = total - start;
+      if (activeHours <= 0) return;
+
+      const targetOffset = Math.min(activeHours - 1, Math.floor((clickX / rect.width) * activeHours));
+      const targetHour = start + targetOffset;
+      // Pass center = true so the selector centers itself on the tapped/scrubbed location
+      jumpToTimelineDay(0, targetHour, !isDirectTap, true);
+    }
+
     if (timelineWrapper) {
-      const handleTimelineScrub = (clientX, isDirectTap = false) => {
-        const rect = timelineWrapper.getBoundingClientRect();
-        const clickX = Math.max(0, Math.min(rect.width, clientX - rect.left));
-        const total = Math.min((weatherData?.data_1h?.time?.length || 168), 168);
-        const start = getCurrentHourStartIndex(weatherData?.data_1h?.time);
-        const activeHours = total - start;
-        if (activeHours <= 0) return;
-
-        const targetOffset = Math.min(activeHours - 1, Math.floor((clickX / rect.width) * activeHours));
-        const targetHour = start + targetOffset;
-        jumpToTimelineDay(0, targetHour, !isDirectTap);
-      };
-
       timelineWrapper.onclick = (e) => handleTimelineScrub(e.clientX, true);
 
       timelineWrapper.addEventListener('touchmove', (e) => {
@@ -1878,7 +1880,7 @@
     return closestIdx;
   }
 
-  function scrollToHour(hourIdx, smooth = true) {
+  function scrollToHour(hourIdx, smooth = true, center = false) {
     const scrollContainer = document.querySelector('.table-scroll-container');
     const targetCol = document.getElementById(`col-hour-${hourIdx}`);
     if (!scrollContainer || !targetCol) return;
@@ -1887,7 +1889,18 @@
     if (programmaticScrollTimeout) clearTimeout(programmaticScrollTimeout);
 
     const stickyWidth = window.innerWidth <= 640 ? 58 : 68;
-    const targetLeft = Math.max(0, targetCol.offsetLeft - stickyWidth);
+    const visibleDataWidth = scrollContainer.clientWidth - stickyWidth;
+    
+    let targetLeft;
+    if (center) {
+      // Centers the target column within the visible horizontal window of the table
+      targetLeft = (targetCol.offsetLeft - stickyWidth) - (visibleDataWidth / 2) + (targetCol.offsetWidth / 2);
+    } else {
+      targetLeft = targetCol.offsetLeft - stickyWidth;
+    }
+
+    const maxScroll = Math.max(0, scrollContainer.scrollWidth - scrollContainer.clientWidth);
+    targetLeft = Math.max(0, Math.min(maxScroll, targetLeft));
 
     if (smooth) {
       scrollContainer.scrollTo({ left: targetLeft, behavior: 'smooth' });
@@ -1903,7 +1916,7 @@
     }, smooth ? 450 : 50);
   }
 
-  function jumpToTimelineDay(dayIndex, hourIndex = null, smooth = true) {
+  function jumpToTimelineDay(dayIndex, hourIndex = null, smooth = true, center = false) {
     if (currentMode === 'day') {
       currentMode = 'hour';
       const tabDaily = document.getElementById('tabDaily');
@@ -1919,7 +1932,7 @@
     let targetHourIdx = hourIndex !== null ? hourIndex : dayIndex * 24;
     if (targetHourIdx < startIdx) targetHourIdx = startIdx;
 
-    scrollToHour(targetHourIdx, smooth);
+    scrollToHour(targetHourIdx, smooth, center);
   }
 
   function updateTimelineSelector(dayIndex) {
@@ -2120,7 +2133,7 @@
     setTimeout(() => {
       if (currentMode === 'hour') {
         const curIdx = getCurrentHourIndex();
-        scrollToHour(curIdx, false);
+        scrollToHour(curIdx, false, false);
       } else {
         updateTimelineSelector(0);
       }
@@ -2175,7 +2188,7 @@
         renderForecast();
         setTimeout(() => {
           const curIdx = getCurrentHourIndex();
-          scrollToHour(curIdx, true);
+          scrollToHour(curIdx, true, false);
         }, 50);
       });
     }
@@ -2184,8 +2197,8 @@
       tab7Day.addEventListener('click', () => {
         if (currentMode === 'day') return;
         currentMode = 'day';
+        tabDaily.classList.remove('active');
         tab7Day.classList.add('active');
-        if (tabDaily) tabDaily.classList.remove('active');
         renderForecast();
         updateTimelineSelector(0);
       });
