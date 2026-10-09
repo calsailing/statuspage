@@ -918,10 +918,6 @@
     color: #6f6f6f;
   }
 
-  .est-value {
-    font-style: italic;
-  }
-
   .day-closed-tag {
     display: inline-block;
     margin-left: 0.35rem;
@@ -2152,7 +2148,7 @@
 
   function gustCellHtml(gust) {
     if (gust.kt === null) return '<span class="no-data" title="No gust data">\u2013</span>';
-    if (gust.est) return `<span class="est-value" style="font-size:0.75rem;" title="Estimated from wind speed (no gust data in the forecast)">~${gust.kt}</span>`;
+    if (gust.est) return `<span data-est="1" style="font-weight:400; font-size:0.75rem;" title="Estimated from wind speed (no gust data in the forecast)">${gust.kt}</span>`;
     return `<span style="font-weight:400; font-size:0.75rem;">${gust.kt}</span>`;
   }
 
@@ -2176,7 +2172,7 @@
     if (p.pop === null) return '<span class="no-data" title="No data">\u2013</span>';
     if (!(p.pop > 0)) return '-';
     const text = `${Math.round(p.pop)}%`;
-    return p.est ? `<span class="est-value" title="Daily chance (no hourly value in the forecast)">~${text}</span>` : text;
+    return p.est ? `<span data-est="1" title="Daily chance (no hourly value in the forecast)">${text}</span>` : text;
   }
 
   function hasPictocode(arr, i) {
@@ -2529,9 +2525,8 @@
     }
 
     let peakGust = 10;
-    let peakEst = false;
-    gusts.forEach((g) => { if (g.kt > peakGust) { peakGust = g.kt; peakEst = g.est; } });
-    if (peakBadge) peakBadge.textContent = `Peak: ${peakEst ? '~' : ''}${peakGust} kts`;
+    gusts.forEach((g) => { if (g.kt > peakGust) { peakGust = g.kt; } });
+    if (peakBadge) peakBadge.textContent = `Peak: ${peakGust} kts`;
 
     for (let h = startIdx; h < totalHours; h++) {
       const g = gusts[h - startIdx];
@@ -2540,7 +2535,7 @@
       const heightPct = Math.max(12, Math.round((g.kt / (peakGust * 1.1)) * 100));
       bar.style.height = `${heightPct}%`;
       bar.style.backgroundColor = getWindHexColor(g.kt);
-      bar.title = `${hourly.time[h].replace('T', ' ')}: Gust ${g.est ? '~' : ''}${g.kt} kts${g.est ? ' (estimated)' : ''}`;
+      bar.title = `${hourly.time[h].replace('T', ' ')}: Gust ${g.kt} kts${g.est ? ' (estimated)' : ''}`;
       barsContainer.appendChild(bar);
     }
 
