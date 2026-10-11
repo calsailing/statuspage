@@ -1,4 +1,4 @@
-<!-- Forecast table include. Settings (time zone, refresh timing, club-hours proxy) are the constants at the top of the script. Add ?demo=1 to the page URL to preview with sample data. -->
+<!-- Forecast table include. Sources: Meteoblue (status.cal-sailing.org/meteoblue_cache.json) and NOAA RRFS (status.cal-sailing.org/rrfs_forecast.json, used for the first 84 hours). Settings (time zone, refresh timing, RRFS limits, club-hours proxy) are the constants at the top of the script. Add ?demo=1 to the page URL to preview with sample data. -->
 <!-- IBM Plex Sans Font -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1011,6 +1011,10 @@
     cursor: help;
   }
 
+  .status-badge.micro[hidden] {
+    display: none;
+  }
+
   .status-badge.micro.stale {
     background-color: #fef3c7;
     color: #92400e;
@@ -1098,6 +1102,10 @@
       <span id="footerClubNote" class="footer-note" hidden></span>
     </div>
     <div class="footer-actions">
+      <a href="https://gsl.noaa.gov/rrfs/" target="_blank" rel="noopener noreferrer" class="status-badge micro live" id="rrfsBadge" title="NOAA Rapid Refresh Forecast System (RRFS)" hidden>
+        <span class="status-dot" id="rrfsDot"></span>
+        <span id="rrfsText">RRFS</span>
+      </a>
       <a href="https://docs.meteoblue.com/en/weather-apis/forecast-api/overview#what-is-the-meteoblue-learning-multimodel-mlm" target="_blank" rel="noopener noreferrer" class="status-badge micro updating" id="statusBadge" title="View Meteoblue Learning MultiModel (mLM) Documentation">
         <span class="status-dot" id="statusDot" style="background-color: #d97706;"></span>
         <span id="statusText">Loading...</span>
@@ -1121,7 +1129,7 @@
   const SITE_LON = -122.312;
 
   const FETCH_TIMEOUT_MS = 6000;            // every network request
-  const CLUB_FIRST_PAINT_WAIT_MS = 1200;    // how long first paint waits for club hours
+  const CLUB_FIRST_PAINT_WAIT_MS = 1200;    // how long first paint waits for club hours and RRFS
   const CLUB_TTL_MS = 60 * 60 * 1000;       // re-check club hours after this long
   const CLUB_RETRY_AFTER_MS = 5 * 60 * 1000;// back-off after a failed club-hours request
   const STALE_AFTER_HOURS = 12;             // warn when the model run is older than this
@@ -1143,6 +1151,14 @@
   // Add ?demo=1 to the page URL to show sample data (never used as a fallback).
   const DEMO_MODE = /[?&]demo=1(?:&|$)/.test(window.location.search);
 
+  // NOAA RRFS model. Its hours replace Meteoblue's for the first RRFS_MAX_LEAD_HOURS
+  // hours after the model run; Meteoblue is used after that. Rain % always comes
+  // from Meteoblue because RRFS has no rain probability. The pill that links to the
+  // RRFS page is in the footer markup.
+  const RRFS_URL = 'https://status.cal-sailing.org/rrfs_forecast.json';
+  const RRFS_MAX_LEAD_HOURS = 84;
+  const RRFS_STALE_AFTER_HOURS = 14;        // warn when the RRFS model run is older than this
+
   // ===========================================================================
   // State
   // ===========================================================================
@@ -1157,7 +1173,8 @@
   const clubStatusCache = {};       // dateStr -> schedule fetched from the club
   const clubFailedAt = {};          // dateStr -> timestamp of the last failed request
   const defaultScheduleCache = {};  // dateStr -> standard schedule
-  const noticeState = { error: null, refreshFailed: false, stale: null };
+  let rrfsCache = null;             // last RRFS file received: { records }
+  const noticeState = { error: null, refreshFailed: false, stale: null, rrfsStale: null };
 
   // ===========================================================================
   // Small helpers
@@ -1321,17 +1338,37 @@
       showMessage('warn', `This forecast was issued ${formatAge(n.stale.ageHours)} ago and may be out of date.`);
       return;
     }
+    if (n.rrfsStale) {
+      showMessage('warn', `The RRFS forecast (used for the first ${RRFS_MAX_LEAD_HOURS} hours) was issued ${formatAge(n.rrfsStale.ageHours)} ago and may be out of date.`);
+      return;
+    }
     clearMessage();
   }
+
+  const STATUS_COLORS = { live: '#24a148', updating: '#d97706', stale: '#d97706', error: '#da1e28', demo: '#0f62fe' };
 
   function setStatus(kind, text) {
     const badge = $id('statusBadge');
     const statusText = $id('statusText');
     const dot = $id('statusDot');
-    const colors = { live: '#24a148', updating: '#d97706', stale: '#d97706', error: '#da1e28', demo: '#0f62fe' };
     if (statusText) statusText.textContent = text;
     if (badge) badge.className = `status-badge micro ${kind}`;
-    if (dot) dot.style.backgroundColor = colors[kind] || '#24a148';
+    if (dot) dot.style.backgroundColor = STATUS_COLORS[kind] || '#24a148';
+  }
+
+  // The RRFS pill sits beside the Meteoblue one and stays hidden until RRFS has
+  // been tried (pass null to hide it).
+  function setRrfsPill(kind, text, title) {
+    const badge = $id('rrfsBadge');
+    if (!badge) return;
+    if (!kind) { badge.hidden = true; return; }
+    const label = $id('rrfsText');
+    const dot = $id('rrfsDot');
+    badge.hidden = false;
+    badge.className = `status-badge micro ${kind}`;
+    if (label) label.textContent = text;
+    if (dot) dot.style.backgroundColor = STATUS_COLORS[kind] || '#24a148';
+    if (title) badge.title = title;
   }
 
   function formatIssued(date) {
@@ -2269,6 +2306,7 @@
       const th = document.createElement('th');
       th.id = `col-hour-${i}`;
       th.dataset.time = data.time[i];
+      th.dataset.source = (data.source && data.source[i]) || 'meteoblue';
       const timeStr = data.time[i];
       const hourNum = parseInt(timeStr.substring(11, 13), 10) || 0;
       const dayStr = timeStr.substring(0, 10);
@@ -2801,6 +2839,205 @@
   }
 
   // ===========================================================================
+  // RRFS (NOAA): replaces Meteoblue for the first hours
+  // ===========================================================================
+  // rrfs_forecast.json is a list of hourly records from the newest model run:
+  // times in UTC, wind and gust in m/s. Other fields in the file are ignored: temperature, sky and rain stay Meteoblue's.
+  const METERS_PER_SECOND_TO_KNOTS = 1.94384;
+  const isNum = (x) => x !== null && x !== undefined && x !== '' && Number.isFinite(Number(x));
+
+  // Converts m/s into the forecast feed's own wind unit (the reverse of toKnots),
+  // so RRFS values can sit in the same arrays as Meteoblue's and every renderer
+  // keeps working unchanged.
+  function metersPerSecondTo(valueMs, unitStr) {
+    const u = (unitStr || 'ms').toLowerCase();
+    if (u.includes('knot') || u === 'kn' || u === 'kt') return valueMs * METERS_PER_SECOND_TO_KNOTS;
+    if (u.includes('km')) return valueMs * 3.6;
+    if (u.includes('mph')) return valueMs * 2.23694;
+    return valueMs;
+  }
+
+  // Keeps the newest model run and the hours up to RRFS_MAX_LEAD_HOURS after it,
+  // and turns UTC times into the club's wall-clock hours (the same "YYYY-MM-DD HH:MM"
+  // strings Meteoblue uses). Returns { runDate, rows } or null.
+  function normalizeRrfs(records) {
+    if (!Array.isArray(records)) return null;
+    const candidates = [];
+    let newestRunMs = null;
+    records.forEach((r) => {
+      if (!r || typeof r !== 'object') return;
+      if (r.member !== undefined && r.member !== null && String(r.member) !== '0') return;
+      const run = parseUtcTimestamp(r.forecasted_at);
+      const valid = parseUtcTimestamp(r.forecasted_time);
+      if (!run || !valid) return;
+      candidates.push({ r, run, valid });
+      if (newestRunMs === null || run.getTime() > newestRunMs) newestRunMs = run.getTime();
+    });
+    if (newestRunMs === null) return null;
+
+    const rows = [];
+    const seen = new Set();
+    candidates.forEach(({ r, run, valid }) => {
+      if (run.getTime() !== newestRunMs) return;
+      const leadHours = (valid.getTime() - newestRunMs) / 3600000;
+      if (leadHours <= 0 || leadHours > RRFS_MAX_LEAD_HOURS) return;
+
+      // No usable wind: leave this hour to Meteoblue.
+      let windMs = null;
+      if (isNum(r.wind_speed_ms)) windMs = Number(r.wind_speed_ms);
+      else if (isNum(r.uwind) && isNum(r.vwind)) windMs = Math.hypot(Number(r.uwind), Number(r.vwind));
+      if (windMs === null || windMs < 0 || windMs > 90) return;
+
+      // Direction the wind blows FROM, in degrees (same as Meteoblue).
+      let dirDeg = null;
+      if (isNum(r.wind_dir_deg)) dirDeg = ((Number(r.wind_dir_deg) % 360) + 360) % 360;
+      else if (isNum(r.uwind) && isNum(r.vwind)) dirDeg = (270 - Math.atan2(Number(r.vwind), Number(r.uwind)) * 180 / Math.PI + 360) % 360;
+
+      // The file rounds gusts to 0.1 m/s, so a calm hour can come out a hair below the wind.
+      let gustMs = (isNum(r.gust) && Number(r.gust) >= 0) ? Number(r.gust) : null;
+      if (gustMs !== null && gustMs < windMs) gustMs = windMs;
+
+      const wall = wallMsToString(getSiteWallMs(valid));
+      if (seen.has(wall)) return; // the repeated hour when clocks go back: keep the first
+      seen.add(wall);
+      rows.push({ wall, windMs, gustMs, dirDeg });
+    });
+    return rows.length ? { runDate: new Date(newestRunMs), rows } : null;
+  }
+
+  // Overlays RRFS hours on the Meteoblue hourly data. Returns a summary, or null
+  // when no RRFS hour lines up with the forecast.
+  function applyRrfsToForecast(json, rrfs) {
+    const h = json && json.data_1h;
+    if (!h || !h.time || !h.time.length || !rrfs || !rrfs.rows.length) return null;
+
+    const byWall = new Map();
+    rrfs.rows.forEach((row) => byWall.set(row.wall, row));
+    const matches = [];
+    h.time.forEach((t, i) => {
+      const row = byWall.get(String(t).substring(0, 16).replace('T', ' '));
+      if (row) matches.push([i, row]);
+    });
+    if (!matches.length) return null;
+
+    const n = h.time.length;
+    const units = json.units || {};
+    ['windspeed', 'winddirection', 'gust'].forEach((name) => {
+      if (!Array.isArray(h[name])) h[name] = new Array(n).fill(null);
+    });
+    h.source = new Array(n).fill('meteoblue');
+
+    matches.forEach(([i, row]) => {
+      h.windspeed[i] = metersPerSecondTo(row.windMs, units.windspeed);
+      h.winddirection[i] = row.dirDeg;
+      h.gust[i] = row.gustMs === null ? null : metersPerSecondTo(row.gustMs, units.windspeed);
+      h.source[i] = 'rrfs';
+    });
+
+    recomputeDailyFromHourly(json);
+    return {
+      used: matches.length,
+      firstWall: h.time[matches[0][0]],
+      lastWall: h.time[matches[matches.length - 1][0]],
+      runDate: rrfs.runDate
+    };
+  }
+
+  // For every day that now contains RRFS hours, rebuilds the daily wind range and
+  // direction from that day's hourly values, so the
+  // 7 Day view agrees with the Daily view. Days without RRFS hours keep Meteoblue's
+  // own daily values. Daily sky and rain % always stay Meteoblue's.
+  function recomputeDailyFromHourly(json) {
+    const d = json.data_day;
+    const h = json.data_1h;
+    if (!d || !d.time || !h || !h.time || !h.source) return;
+    const dayCount = d.time.length;
+    const setValue = (name, di, value) => {
+      if (!Array.isArray(d[name])) d[name] = new Array(dayCount).fill(null);
+      d[name][di] = value;
+    };
+
+    d.time.forEach((day, di) => {
+      const key = String(day).substring(0, 10);
+      let hasRrfs = false;
+      const winds = [];
+      const gusts = [];
+      let sumU = 0;
+      let sumV = 0;
+      for (let i = 0; i < h.time.length; i++) {
+        if (!String(h.time[i]).startsWith(key)) continue;
+        if (h.source[i] === 'rrfs') hasRrfs = true;
+        if (isNum(h.windspeed[i])) {
+          const speed = Number(h.windspeed[i]);
+          winds.push(speed);
+          if (isNum(h.winddirection[i])) {
+            const rad = Number(h.winddirection[i]) * Math.PI / 180;
+            sumU += -speed * Math.sin(rad);
+            sumV += -speed * Math.cos(rad);
+          }
+        }
+        if (isNum(h.gust[i])) gusts.push(Number(h.gust[i]));
+      }
+      if (!hasRrfs) return;
+
+      if (winds.length) {
+        setValue('windspeed_min', di, Math.min(...winds));
+        setValue('windspeed_max', di, Math.max(...winds));
+      }
+      if (gusts.length && Array.isArray(d.gust_max)) d.gust_max[di] = Math.max(...gusts);
+      if (Math.hypot(sumU, sumV) > 1e-9) {
+        setValue('winddirection', di, (Math.atan2(-sumU, -sumV) * 180 / Math.PI + 360) % 360);
+      }
+    });
+  }
+
+  // Resolves { ok: true, records } or { ok: false }. It never rejects, so a slow or
+  // broken RRFS file can't stop the Meteoblue forecast from showing.
+  async function fetchRrfsRecords() {
+    try {
+      const resp = await fetchTextWithTimeout(RRFS_URL, { cache: 'no-store' });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const parsed = JSON.parse(resp.text);
+      if (!Array.isArray(parsed)) throw new Error('RRFS file is not a list of hourly records');
+      return { ok: true, records: parsed };
+    } catch (e) {
+      console.warn('RRFS fetch failed:', e && e.message ? e.message : e);
+      return { ok: false };
+    }
+  }
+
+  // Merges the RRFS result into `json` and updates the pill and notice state.
+  // If this refresh failed but an earlier copy exists, the earlier copy is used.
+  function applyRrfsResult(json, result) {
+    noticeState.rrfsStale = null;
+    if (DEMO_MODE || (result && result.skipped)) { setRrfsPill(null); return; }
+
+    let records = null;
+    let fromCache = false;
+    if (result && result.ok) { records = result.records; rrfsCache = { records }; }
+    else if (rrfsCache) { records = rrfsCache.records; fromCache = true; }
+
+    if (!records) {
+      setRrfsPill('stale', 'RRFS unavailable', "The RRFS forecast couldn't be loaded, so Meteoblue is shown for all hours. Click for the RRFS page.");
+      return;
+    }
+    const info = applyRrfsToForecast(json, normalizeRrfs(records));
+    if (!info) {
+      setRrfsPill('stale', 'RRFS out of date', 'The RRFS file has no hours that line up with the current forecast, so Meteoblue is shown for all hours. Click for the RRFS page.');
+      return;
+    }
+
+    const ageHours = (Date.now() - info.runDate.getTime()) / 3600000;
+    const isStale = ageHours > RRFS_STALE_AFTER_HOURS;
+    if (isStale) noticeState.rrfsStale = { ageHours };
+    const lastDay = String(info.lastWall).substring(0, 10);
+    const through = `${formatDayLabel(lastDay, { weekday: 'short', month: 'short', day: 'numeric' })} ${String(info.lastWall).substring(11, 16)}`;
+    let title = `NOAA RRFS model run ${formatIssued(info.runDate)}. Used through ${through}; Meteoblue after that. Click for the RRFS page.`;
+    if (fromCache) title = `Couldn't refresh RRFS, so the last copy received is shown. ${title}`;
+    setRrfsPill(isStale || fromCache ? 'stale' : 'live', 'RRFS', title);
+  }
+
+  // ===========================================================================
   // Sample data (only shown with ?demo=1)
   // ===========================================================================
   function getFallbackMockData() {
@@ -2910,6 +3147,12 @@
     }
     if (!hadData) setStatus('updating', 'Updating...');
 
+    // RRFS is fetched alongside Meteoblue. It is optional: if it is slow or fails,
+    // the table is drawn from Meteoblue and updated when RRFS arrives.
+    let rrfsResult = null;
+    const rrfsPromise = DEMO_MODE ? Promise.resolve({ skipped: true }) : fetchRrfsRecords();
+    rrfsPromise.then((result) => { rrfsResult = result; });
+
     let json = null;
     let failure = null;
     try {
@@ -2955,6 +3198,7 @@
     noticeState.error = null;
     noticeState.refreshFailed = false;
     noticeState.stale = null;
+    noticeState.rrfsStale = null;
 
     const modelRunDate = getModelRunDate(json);
 
@@ -2986,10 +3230,14 @@
     else setStatus('live', 'Meteoblue');
     updateFooter();
 
-    // Club hours load in the background. First paint waits briefly so the usual
-    // fast response doesn't flash the standard schedule, but never longer.
+    // Club hours and RRFS load in the background. First paint waits briefly so the
+    // usual fast responses don't flash the standard schedule or Meteoblue-only
+    // hours, but never longer.
     const clubPromise = preloadClubHours();
-    await Promise.race([clubPromise, sleep(CLUB_FIRST_PAINT_WAIT_MS)]);
+    await Promise.race([Promise.all([clubPromise, rrfsPromise]), sleep(CLUB_FIRST_PAINT_WAIT_MS)]);
+
+    const rrfsAppliedAtPaint = !!rrfsResult;
+    if (rrfsAppliedAtPaint) applyRrfsResult(json, rrfsResult);
 
     const anchor = firstLoad ? null : captureScrollAnchor();
     renderForecast();
@@ -3014,6 +3262,15 @@
         rerenderPreservingScroll();
       }
     });
+
+    // RRFS arrived after first paint: merge it in and redraw without moving the view.
+    if (!rrfsAppliedAtPaint) {
+      rrfsPromise.then((result) => {
+        if (weatherData !== json || loadState !== 'ready') return;
+        applyRrfsResult(json, result);
+        rerenderPreservingScroll();
+      });
+    }
   }
 
   function renderForecast() {
