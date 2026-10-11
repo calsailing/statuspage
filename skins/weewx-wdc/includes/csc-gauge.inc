@@ -1032,7 +1032,7 @@
         return `${minutes}m`;
     }
 
-    function updateStatusPill(obsTimeMs) {
+    function updateStatusPill(obsTimeMs, onlineThresholdMin = 5) {
         const timeText = document.getElementById('wf-time');
         const pill = document.getElementById('wf-pill');
         if (!timeText || !pill) return;
@@ -1051,7 +1051,7 @@
         const diffMinutes = (Date.now() - obsTimeMs) / (1000 * 60);
         pill.style.display = 'inline-flex'; 
         
-        if (diffMinutes <= 5) {
+        if (diffMinutes <= onlineThresholdMin) {
             pill.className = 'wf-status-pill online';
             pill.innerHTML = '<div class="wf-dot"></div>Online';
         } else {
@@ -1267,22 +1267,29 @@
                 const curr = (fallbackData && fallbackData.current) ? fallbackData.current : fallbackData;
 
                 if (curr) {
-                    let fallbackTimeMs = Date.now();
-                    let tRaw = curr.dateTime || curr.datetime || curr.time || curr.timestamp || fallbackData.dateTime;
-                    if (tRaw && typeof tRaw === 'object' && 'value' in tRaw) {
-                        tRaw = tRaw.value;
-                    }
-                    
-                    if (tRaw) {
-                        const parsed = Number(tRaw);
-                        if (isNaN(parsed)) {
-                            fallbackTimeMs = new Date(tRaw).getTime();
-                        } else {
-                            fallbackTimeMs = parsed > 10000000000 ? parsed : parsed * 1000;
-                        }
-                    }
-                    
-                    updateStatusPill(fallbackTimeMs);
+                    // Parse a timestamp (epoch s/ms or date string) into ms, or null if unusable.
+                    const parseTimeMs = (raw) => {
+                        if (raw && typeof raw === 'object' && 'value' in raw) raw = raw.value;
+                        if (raw === undefined || raw === null || raw === '') return null;
+                        const num = Number(raw);
+                        if (!isNaN(num)) return num > 10000000000 ? num : num * 1000;
+                        // weewx writes offsets like "-0700"; Safari needs "-07:00" to parse them.
+                        const iso = String(raw).trim().replace(/([+-]\d{2})(\d{2})$/, '$1:$2');
+                        const ms = new Date(iso).getTime();
+                        return isNaN(ms) ? null : ms;
+                    };
+
+                    // Prefer weewx's "generation.time" (when the JSON was last regenerated);
+                    // fall back to any observation timestamp. If several exist, trust the oldest.
+                    const candidates = [
+                        parseTimeMs(fallbackData && fallbackData.generation && fallbackData.generation.time),
+                        parseTimeMs(curr.dateTime || curr.datetime || curr.time || curr.timestamp || (fallbackData && fallbackData.dateTime))
+                    ].filter(t => t !== null);
+                    const fallbackTimeMs = candidates.length ? Math.min(...candidates) : null;
+
+                    // weewx regenerates on its archive interval (typically 5 min), so allow
+                    // a bit more slack than the Tempest feed before calling it "Delayed".
+                    updateStatusPill(fallbackTimeMs, 12);
 
                     const getVal = (keys) => {
                         for (let k of keys) {
