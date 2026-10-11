@@ -2857,30 +2857,37 @@
     return valueMs;
   }
 
-  // Keeps the newest model run and the hours up to RRFS_MAX_LEAD_HOURS after it,
-  // and turns UTC times into the club's wall-clock hours (the same "YYYY-MM-DD HH:MM"
+  // For every forecast hour keeps the record from the newest model run that has it
+  // (the file may stitch several runs together: a newer run for the first hours,
+  // an older one after that), limited to RRFS_MAX_LEAD_HOURS after that record's own
+  // run, and turns UTC times into the club's wall-clock hours (the same "YYYY-MM-DD HH:MM"
   // strings Meteoblue uses). Returns { runDate, rows } or null.
   function normalizeRrfs(records) {
     if (!Array.isArray(records)) return null;
     const candidates = [];
-    let newestRunMs = null;
     records.forEach((r) => {
       if (!r || typeof r !== 'object') return;
       if (r.member !== undefined && r.member !== null && String(r.member) !== '0') return;
       const run = parseUtcTimestamp(r.forecasted_at);
       const valid = parseUtcTimestamp(r.forecasted_time);
       if (!run || !valid) return;
+      const leadHours = (valid.getTime() - run.getTime()) / 3600000;
+      if (leadHours <= 0 || leadHours > RRFS_MAX_LEAD_HOURS) return;
       candidates.push({ r, run, valid });
-      if (newestRunMs === null || run.getTime() > newestRunMs) newestRunMs = run.getTime();
     });
-    if (newestRunMs === null) return null;
+    // Newest run wins for each hour; then walk the hours in time order.
+    const byHour = new Map();
+    candidates.forEach((c) => {
+      const key = c.valid.getTime();
+      const cur = byHour.get(key);
+      if (!cur || c.run.getTime() > cur.run.getTime()) byHour.set(key, c);
+    });
+    const ordered = [...byHour.values()].sort((a, b) => a.valid.getTime() - b.valid.getTime());
 
     const rows = [];
     const seen = new Set();
-    candidates.forEach(({ r, run, valid }) => {
-      if (run.getTime() !== newestRunMs) return;
-      const leadHours = (valid.getTime() - newestRunMs) / 3600000;
-      if (leadHours <= 0 || leadHours > RRFS_MAX_LEAD_HOURS) return;
+    let newestRunMs = null;
+    ordered.forEach(({ r, run, valid }) => {
 
       // No usable wind: leave this hour to Meteoblue.
       let windMs = null;
@@ -2901,6 +2908,7 @@
       if (seen.has(wall)) return; // the repeated hour when clocks go back: keep the first
       seen.add(wall);
       rows.push({ wall, windMs, gustMs, dirDeg });
+      if (newestRunMs === null || run.getTime() > newestRunMs) newestRunMs = run.getTime();
     });
     return rows.length ? { runDate: new Date(newestRunMs), rows } : null;
   }
@@ -3032,7 +3040,7 @@
     if (isStale) noticeState.rrfsStale = { ageHours };
     const lastDay = String(info.lastWall).substring(0, 10);
     const through = `${formatDayLabel(lastDay, { weekday: 'short', month: 'short', day: 'numeric' })} ${String(info.lastWall).substring(11, 16)}`;
-    let title = `NOAA RRFS model run ${formatIssued(info.runDate)}. Used through ${through}; Meteoblue after that. Click for the RRFS page.`;
+    let title = `NOAA RRFS, newest model run ${formatIssued(info.runDate)}. Used through ${through}; Meteoblue after that. Click for the RRFS page.`;
     if (fromCache) title = `Couldn't refresh RRFS, so the last copy received is shown. ${title}`;
     setRrfsPill(isStale || fromCache ? 'stale' : 'live', 'RRFS', title);
   }
