@@ -1098,7 +1098,6 @@
   <!-- Footer with Metadata and Micro Actions -->
   <div class="issued-footer">
     <div class="footer-meta">
-      <span id="footerTimestamp" aria-live="polite">Updated: Loading...</span>
       <span id="footerClubNote" class="footer-note" hidden></span>
     </div>
     <div class="footer-actions">
@@ -1386,11 +1385,16 @@
     return raw ? parseUtcTimestamp(raw) : null;
   }
 
+  // The forecast issue time lives in the Meteoblue pill's tooltip.
   function updateFooter() {
-    const el = $id('footerTimestamp');
-    if (!el) return;
+    const badge = $id('statusBadge');
+    if (!badge) return;
+    const docs = 'Click for the Meteoblue documentation.';
     const d = weatherData ? getModelRunDate(weatherData) : null;
-    el.textContent = d ? `Issued: ${formatIssued(d)}` : (weatherData ? 'Issued: unknown' : (loadState === 'error' ? 'No forecast available' : 'Updated: Loading...'));
+    if (d) badge.title = `Meteoblue forecast issued ${formatIssued(d)}. ${docs}`;
+    else if (weatherData) badge.title = `Meteoblue forecast issue time unknown. ${docs}`;
+    else if (loadState === 'error') badge.title = `No forecast available. ${docs}`;
+    else badge.title = `Loading the Meteoblue forecast... ${docs}`;
   }
 
   // Tells the viewer when live club hours could not be loaded and the standard
