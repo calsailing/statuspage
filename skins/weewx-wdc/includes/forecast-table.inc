@@ -884,6 +884,21 @@
     }
   }
 
+  /* The label column's own lines are drawn inside the sticky cell (inset shadows)
+     instead of as table borders, so Open/Dock flags sliding underneath can't show
+     through the borders. */
+  table.structured-forecast th:first-child,
+  table.structured-forecast td:first-child {
+    border-bottom: 0;
+    border-right: 0;
+    box-shadow: inset -1px 0 0 #d4d4d4, inset 0 -1px 0 #e0e0e0, 4px 0 8px -2px rgba(0, 0, 0, 0.08);
+  }
+
+  html.dark table.structured-forecast th:first-child,
+  html.dark table.structured-forecast td:first-child {
+    box-shadow: inset -1px 0 0 #333333, inset 0 -1px 0 #2e2e2e, 4px 0 10px -2px rgba(0, 0, 0, 0.5);
+  }
+
   /* ------------------------------------------------------------------
      Header buttons: keyboard-accessible "jump to day" controls
      ------------------------------------------------------------------ */
@@ -1001,16 +1016,6 @@
     display: none;
   }
 
-  .footer-note[hidden] {
-    display: none;
-  }
-
-  .footer-note {
-    text-decoration: underline dotted;
-    text-underline-offset: 2px;
-    cursor: help;
-  }
-
   .status-badge.micro[hidden] {
     display: none;
   }
@@ -1099,7 +1104,6 @@
   <div class="issued-footer">
     <div class="footer-meta">
       <span id="footerTimestamp" aria-live="polite">Updated: Loading...</span>
-      <span id="footerClubNote" class="footer-note" hidden></span>
     </div>
     <div class="footer-actions">
       <a href="https://gsl.noaa.gov/rrfs/" target="_blank" rel="noopener noreferrer" class="status-badge micro live" id="rrfsBadge" title="NOAA Rapid Refresh Forecast System (RRFS)" hidden>
@@ -1173,6 +1177,7 @@
   const clubStatusCache = {};       // dateStr -> schedule fetched from the club
   const clubFailedAt = {};          // dateStr -> timestamp of the last failed request
   const defaultScheduleCache = {};  // dateStr -> standard schedule
+  let lastClubDefaultsKey = '';       // so the standard-schedule console warning isn't repeated
   let rrfsRunDate = null;           // newest RRFS model run actually used, for the footer
   let rrfsCache = null;             // last RRFS file received: { records }
   const noticeState = { error: null, refreshFailed: false, stale: null, rrfsStale: null };
@@ -1375,7 +1380,7 @@
   function formatIssued(date) {
     const opts = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false };
     try {
-      return date.toLocaleString([], Object.assign({}, opts, { timeZone: SITE_TZ, timeZoneName: 'short' }));
+      return date.toLocaleString([], Object.assign({}, opts, { timeZone: SITE_TZ }));
     } catch (e) {
       return date.toLocaleString([], opts);
     }
@@ -1406,23 +1411,21 @@
     el.textContent = newest ? `Issued: ${formatIssued(newest)}` : (weatherData ? 'Issued: unknown' : (loadState === 'error' ? 'No forecast available' : 'Updated: Loading...'));
   }
 
-  // Tells the viewer when live club hours could not be loaded and the standard
-  // schedule is being shown instead.
+  // Logs to the console (not the page) when live club hours could not be loaded and
+  // the standard schedule is being shown instead.
   function updateClubNote() {
-    const note = $id('footerClubNote');
-    if (!note) return;
-    let usingDefaults = false;
-    if (weatherData && !DEMO_MODE && loadState === 'ready') {
-      const dates = new Set();
-      if (weatherData.data_day && weatherData.data_day.time) weatherData.data_day.time.forEach((t) => dates.add(t.substring(0, 10)));
-      if (weatherData.data_1h && weatherData.data_1h.time) weatherData.data_1h.time.forEach((t) => dates.add(t.substring(0, 10)));
-      dates.forEach((d) => { if (!clubStatusCache[d]) usingDefaults = true; });
-    }
-    note.hidden = !usingDefaults;
-    if (usingDefaults) {
-      note.textContent = 'Club hours: standard schedule';
-      note.title = "Live club hours couldn't be loaded, so the standard schedule is shown: open 13:00 on weekdays and 10:00 on weekends, docking at sunset.";
-    }
+    if (!weatherData || DEMO_MODE || loadState !== 'ready') return;
+    const missing = [];
+    const dates = new Set();
+    if (weatherData.data_day && weatherData.data_day.time) weatherData.data_day.time.forEach((t) => dates.add(t.substring(0, 10)));
+    if (weatherData.data_1h && weatherData.data_1h.time) weatherData.data_1h.time.forEach((t) => dates.add(t.substring(0, 10)));
+    dates.forEach((d) => { if (!clubStatusCache[d]) missing.push(d); });
+    if (!missing.length) { lastClubDefaultsKey = ''; return; }
+    // Console only (nothing is shown on the page); logged once per distinct set of days.
+    const key = missing.join(',');
+    if (key === lastClubDefaultsKey) return;
+    lastClubDefaultsKey = key;
+    console.warn(`Club hours: live hours couldn't be loaded for ${missing.length} day(s) (${missing[0]}${missing.length > 1 ? ' to ' + missing[missing.length - 1] : ''}), so the standard schedule is shown for them: open 13:00 on weekdays and 10:00 on weekends, docking at sunset.`);
   }
 
   // ===========================================================================
@@ -2801,8 +2804,19 @@
     const hint = $id('overviewHint');
     if (hint) hint.textContent = isHour ? 'Touch or drag anywhere to scrub' : 'Tap the graph to jump to that time in Daily view';
     if (options.render !== false) {
+      // The 7 Day table is narrow, so a leftover Daily scroll position (especially a long
+      // way along the timeline, on phones) can leave the table scrolled out of view and
+      // the panel looking blank. Start the 7 Day view from the left, now and after layout.
+      const scroller = document.querySelector('.table-scroll-container');
+      const resetScroll = () => { if (scroller && currentMode === 'day') { scroller.scrollLeft = 0; } };
+      if (!isHour) resetScroll();
       renderForecast();
       updateNotice();
+      if (!isHour) {
+        resetScroll();
+        if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => { resetScroll(); requestAnimationFrame(resetScroll); });
+        setTimeout(resetScroll, 120);
+      }
     }
   }
 
