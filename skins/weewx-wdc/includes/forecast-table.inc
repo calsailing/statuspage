@@ -1098,6 +1098,7 @@
   <!-- Footer with Metadata and Micro Actions -->
   <div class="issued-footer">
     <div class="footer-meta">
+      <span id="footerTimestamp" aria-live="polite">Updated: Loading...</span>
       <span id="footerClubNote" class="footer-note" hidden></span>
     </div>
     <div class="footer-actions">
@@ -1172,6 +1173,7 @@
   const clubStatusCache = {};       // dateStr -> schedule fetched from the club
   const clubFailedAt = {};          // dateStr -> timestamp of the last failed request
   const defaultScheduleCache = {};  // dateStr -> standard schedule
+  let rrfsRunDate = null;           // newest RRFS model run actually used, for the footer
   let rrfsCache = null;             // last RRFS file received: { records }
   const noticeState = { error: null, refreshFailed: false, stale: null, rrfsStale: null };
 
@@ -1385,16 +1387,23 @@
     return raw ? parseUtcTimestamp(raw) : null;
   }
 
-  // The forecast issue time lives in the Meteoblue pill's tooltip.
+  // Footer: "Issued" shows whichever source was issued most recently (Meteoblue run
+  // or the RRFS run used). The Meteoblue pill's tooltip also gives Meteoblue's own time.
   function updateFooter() {
+    const el = $id('footerTimestamp');
     const badge = $id('statusBadge');
-    if (!badge) return;
     const docs = 'Click for the Meteoblue documentation.';
     const d = weatherData ? getModelRunDate(weatherData) : null;
-    if (d) badge.title = `Meteoblue forecast issued ${formatIssued(d)}. ${docs}`;
-    else if (weatherData) badge.title = `Meteoblue forecast issue time unknown. ${docs}`;
-    else if (loadState === 'error') badge.title = `No forecast available. ${docs}`;
-    else badge.title = `Loading the Meteoblue forecast... ${docs}`;
+    if (badge) {
+      if (d) badge.title = `Meteoblue forecast issued ${formatIssued(d)}. ${docs}`;
+      else if (weatherData) badge.title = `Meteoblue forecast issue time unknown. ${docs}`;
+      else if (loadState === 'error') badge.title = `No forecast available. ${docs}`;
+      else badge.title = `Loading the Meteoblue forecast... ${docs}`;
+    }
+    if (!el) return;
+    let newest = d;
+    if (rrfsRunDate && (!newest || rrfsRunDate.getTime() > newest.getTime())) newest = rrfsRunDate;
+    el.textContent = newest ? `Issued: ${formatIssued(newest)}` : (weatherData ? 'Issued: unknown' : (loadState === 'error' ? 'No forecast available' : 'Updated: Loading...'));
   }
 
   // Tells the viewer when live club hours could not be loaded and the standard
@@ -3021,6 +3030,11 @@
   // Merges the RRFS result into `json` and updates the pill and notice state.
   // If this refresh failed but an earlier copy exists, the earlier copy is used.
   function applyRrfsResult(json, result) {
+    rrfsRunDate = null;
+    try { applyRrfsResultInner(json, result); } finally { updateFooter(); }
+  }
+
+  function applyRrfsResultInner(json, result) {
     noticeState.rrfsStale = null;
     if (DEMO_MODE || (result && result.skipped)) { setRrfsPill(null); return; }
 
@@ -3039,6 +3053,7 @@
       return;
     }
 
+    rrfsRunDate = info.runDate;
     const ageHours = (Date.now() - info.runDate.getTime()) / 3600000;
     const isStale = ageHours > RRFS_STALE_AFTER_HOURS;
     if (isStale) noticeState.rrfsStale = { ageHours };
