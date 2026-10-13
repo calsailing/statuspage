@@ -1136,7 +1136,7 @@
   const CLUB_FIRST_PAINT_WAIT_MS = 1200;    // how long first paint waits for club hours and RRFS
   const CLUB_TTL_MS = 60 * 60 * 1000;       // re-check club hours after this long
   const CLUB_RETRY_AFTER_MS = 5 * 60 * 1000;// back-off after a failed club-hours request
-  const STALE_AFTER_HOURS = 12;             // warn when the model run is older than this
+  const STALE_AFTER_HOURS = 25;             // warn when the model run is older than this
   const REFRESH_INTERVAL_MS = 15 * 60 * 1000;
   const RESUME_REFRESH_AFTER_MS = 5 * 60 * 1000;
   const GUST_ESTIMATE_FACTOR = 1.35;        // used only when the feed has no gust value for an hour
