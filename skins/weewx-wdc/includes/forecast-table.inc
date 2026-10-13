@@ -2172,39 +2172,59 @@
   // ===========================================================================
   // Data accessors (gaps stay empty; estimates are marked in tooltips)
   // ===========================================================================
-  // Fills data_1h.gust from data_3h.gust. Real hourly gust values are kept; only
-  // hours without one are filled. Values stay in the feed's own wind unit.
+  // Meteoblue gives gusts every 3 hours but wind every hour. Each hourly gust is
+  // modeled as gust = wind x factor, where the factor is chosen per 3-hour block so the
+  // strongest-wind hour of the block gets Meteoblue's gust exactly. Hours with less
+  // wind get proportionally smaller gusts, never below the wind itself. Real hourly
+  // gust values are kept, and nothing is invented when a block's gust or the block's
+  // wind is missing. All values stay in the feed's own wind unit.
   function expandThreeHourGusts(json) {
     const h1 = json && json.data_1h;
     const h3 = json && json.data_3h;
     if (!h1 || !h1.time || !h3 || !h3.time || !h3.gust) return;
 
-    const slots = new Map();
-    h3.time.forEach((t, i) => {
-      const v = h3.gust[i];
-      const ms = wallStringToMs(t);
-      if (!isNaN(ms) && v !== null && v !== undefined && !isNaN(Number(v))) slots.set(ms, Number(v));
-    });
-    if (!slots.size) return;
-
     const out = h1.gust ? h1.gust.slice() : new Array(h1.time.length).fill(null);
-    h1.time.forEach((t, i) => {
-      if (out[i] !== null && out[i] !== undefined) return;
+    const from3h = new Array(h1.time.length).fill(null);
+    const indexByMs = new Map();
+    h1.time.forEach((t, i) => { const ms = wallStringToMs(t); if (!isNaN(ms)) indexByMs.set(ms, i); });
+    const wind = (i) => (h1.windspeed && isNum(h1.windspeed[i])) ? Number(h1.windspeed[i]) : null;
+    let any = false;
+
+    h3.time.forEach((t, n) => {
+      const raw = h3.gust[n];
       const ms = wallStringToMs(t);
-      if (isNaN(ms)) return;
+      if (isNaN(ms) || !isNum(raw)) return;
+      const G = Number(raw);
+      const block = [];
       for (let k = 0; k < 3; k++) {
-        const key = ms + (GUST_3H_COVERS === 'start' ? -k : k) * 3600000;
-        if (slots.has(key)) { out[i] = slots.get(key); return; }
+        const i = indexByMs.get(ms + (GUST_3H_COVERS === 'start' ? k : -k) * 3600000);
+        if (i !== undefined) block.push(i);
       }
+      const idx = block.filter((i) => out[i] === null || out[i] === undefined);
+      if (!idx.length) return;
+      let maxWind = 0;
+      block.forEach((i) => { const w = wind(i); if (w !== null && w > maxWind) maxWind = w; });
+      idx.forEach((i) => {
+        const w = wind(i);
+        // No wind to shape the block with (calm or missing): fall back to the block's gust.
+        out[i] = (maxWind > 0 && w !== null) ? Math.max(w, G * (w / maxWind)) : G;
+        from3h[i] = G;
+        any = true;
+      });
     });
+    if (!any) return;
     h1.gust = out;
+    h1.gust3h = from3h;
   }
 
   function getHourlyGust(data, units, i) {
     const raw = data.gust ? data.gust[i] : null;
     if (raw !== null && raw !== undefined) {
       const kt = toKnots(raw, units.windspeed);
-      if (kt !== null) return { kt, est: false };
+      if (kt !== null) {
+        const src = data.gust3h ? data.gust3h[i] : null;
+        return { kt, est: false, from3hKt: (src !== null && src !== undefined) ? toKnots(src, units.windspeed) : null };
+      }
     }
     const base = data.windspeed ? toKnots(data.windspeed[i], units.windspeed) : null;
     if (base !== null && base !== undefined) return { kt: Math.round(base * GUST_ESTIMATE_FACTOR), est: true };
@@ -2235,6 +2255,10 @@
   function gustCellHtml(gust) {
     if (gust.kt === null) return '<span class="no-data" title="No gust data">\u2013</span>';
     if (gust.est) return `<span data-est="1" style="font-weight:400; font-size:0.75rem;" title="Estimated from wind speed (no gust data in the forecast)">${gust.kt}</span>`;
+    if (gust.from3hKt !== null && gust.from3hKt !== undefined) {
+      const peak = Math.round(gust.from3hKt);
+      return `<span style="font-weight:400; font-size:0.75rem;" title="Modeled from the hourly wind. Meteoblue's gust for this 3-hour block is ${peak} kts.">${gust.kt}</span>`;
+    }
     return `<span style="font-weight:400; font-size:0.75rem;">${gust.kt}</span>`;
   }
 
@@ -2967,6 +2991,7 @@
       h.winddirection[i] = row.dirDeg;
       h.gust[i] = row.gustMs === null ? null : metersPerSecondTo(row.gustMs, units.windspeed);
       h.source[i] = 'rrfs';
+      if (Array.isArray(h.gust3h)) h.gust3h[i] = null;
     });
 
     recomputeDailyFromHourly(json);
