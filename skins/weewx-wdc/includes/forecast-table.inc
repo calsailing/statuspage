@@ -2281,7 +2281,8 @@
   function popCellHtml(p) {
     if (p.pop === null) return '<span class="no-data" title="No data">\u2013</span>';
     if (!(p.pop > 0)) return '-';
-    const text = `${Math.round(p.pop)}%`;
+    // The % sign is drawn at half size so two-digit values aren't cramped.
+    const text = `${Math.round(p.pop)}<span class="pct-sign" style="font-size:0.5em; margin-left:1px;">%</span>`;
     return p.est ? `<span data-est="1" title="Daily chance (no hourly value in the forecast)">${text}</span>` : text;
   }
 
