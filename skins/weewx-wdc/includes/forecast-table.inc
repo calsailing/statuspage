@@ -1178,6 +1178,7 @@
   const clubFailedAt = {};          // dateStr -> timestamp of the last failed request
   const defaultScheduleCache = {};  // dateStr -> standard schedule
   let lastClubDefaultsKey = '';       // so the standard-schedule console warning isn't repeated
+  let rrfsIssuedDate = null;        // when the RRFS file was imported (falls back to the model run), for the footer
   let rrfsRunDate = null;           // newest RRFS model run actually used, for the footer
   let rrfsCache = null;             // last RRFS file received: { records }
   const noticeState = { error: null, refreshFailed: false, stale: null, rrfsStale: null };
@@ -1407,7 +1408,7 @@
     }
     if (!el) return;
     let newest = d;
-    if (rrfsRunDate && (!newest || rrfsRunDate.getTime() > newest.getTime())) newest = rrfsRunDate;
+    if (rrfsIssuedDate && (!newest || rrfsIssuedDate.getTime() > newest.getTime())) newest = rrfsIssuedDate;
     el.textContent = newest ? `Issued: ${formatIssued(newest)}` : (weatherData ? 'Issued: unknown' : (loadState === 'error' ? 'No forecast available' : 'Updated: Loading...'));
   }
 
@@ -2944,6 +2945,7 @@
     const rows = [];
     const seen = new Set();
     let newestRunMs = null;
+    let newestImportMs = null;
     ordered.forEach(({ r, run, valid }) => {
 
       // No usable wind: leave this hour to Meteoblue.
@@ -2966,8 +2968,10 @@
       seen.add(wall);
       rows.push({ wall, windMs, gustMs, dirDeg });
       if (newestRunMs === null || run.getTime() > newestRunMs) newestRunMs = run.getTime();
+      const imp = parseUtcTimestamp(r.imported_at);
+      if (imp && (newestImportMs === null || imp.getTime() > newestImportMs)) newestImportMs = imp.getTime();
     });
-    return rows.length ? { runDate: new Date(newestRunMs), rows } : null;
+    return rows.length ? { runDate: new Date(newestRunMs), importedDate: newestImportMs === null ? null : new Date(newestImportMs), rows } : null;
   }
 
   // Overlays RRFS hours on the Meteoblue hourly data. Returns a summary, or null
@@ -3005,7 +3009,8 @@
       used: matches.length,
       firstWall: h.time[matches[0][0]],
       lastWall: h.time[matches[matches.length - 1][0]],
-      runDate: rrfs.runDate
+      runDate: rrfs.runDate,
+      importedDate: rrfs.importedDate
     };
   }
 
@@ -3076,6 +3081,7 @@
   // If this refresh failed but an earlier copy exists, the earlier copy is used.
   function applyRrfsResult(json, result) {
     rrfsRunDate = null;
+    rrfsIssuedDate = null;
     try { applyRrfsResultInner(json, result); } finally { updateFooter(); }
   }
 
@@ -3099,12 +3105,13 @@
     }
 
     rrfsRunDate = info.runDate;
+    rrfsIssuedDate = info.importedDate || info.runDate;
     const ageHours = (Date.now() - info.runDate.getTime()) / 3600000;
     const isStale = ageHours > RRFS_STALE_AFTER_HOURS;
     if (isStale) noticeState.rrfsStale = { ageHours };
     const lastDay = String(info.lastWall).substring(0, 10);
     const through = `${formatDayLabel(lastDay, { weekday: 'short', month: 'short', day: 'numeric' })} ${String(info.lastWall).substring(11, 16)}`;
-    let title = `NOAA RRFS, newest model run ${formatIssued(info.runDate)}. Used through ${through}; Meteoblue after that. Click for the RRFS page.`;
+    let title = `NOAA RRFS, newest model run ${formatIssued(info.runDate)}${info.importedDate ? `, imported ${formatIssued(info.importedDate)}` : ''}. Used through ${through}; Meteoblue after that. Click for the RRFS page.`;
     if (fromCache) title = `Couldn't refresh RRFS, so the last copy received is shown. ${title}`;
     setRrfsPill(isStale || fromCache ? 'stale' : 'live', 'RRFS', title);
   }
@@ -3438,23 +3445,4 @@
       }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     } catch (_) {}
 
-    // Keep the forecast (and the "now" column) fresh while the page stays open.
-    setInterval(() => {
-      if (document.visibilityState === 'visible') loadWeatherData({ silent: true });
-    }, REFRESH_INTERVAL_MS);
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible' && lastLoadAt && (Date.now() - lastLoadAt) > RESUME_REFRESH_AFTER_MS) {
-        loadWeatherData({ silent: true });
-      }
-    });
-
-    loadWeatherData();
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initForecastApp);
-  } else {
-    initForecastApp();
-  }
-/* #end raw */
-</script>
+    // Keep the forecast (and the "now" column) fresh while the page st
