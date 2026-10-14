@@ -2480,14 +2480,19 @@
     const units = weatherData.units || {};
     if (!data || !data.time || !data.time.length) return;
 
-    const numDays = Math.min(data.time.length, 7);
+    // Skip days that are already over (the feed can start yesterday) so the
+    // first column is always today.
+    const todayStr = wallMsToString(getSiteWallMs()).substring(0, 10);
+    let first = 0;
+    while (first < data.time.length - 1 && data.time[first].substring(0, 10) < todayStr) first++;
+    const last = Math.min(data.time.length, first + 7);
     thead.innerHTML = '';
     tbody.innerHTML = '';
 
     // Date Header Row
     const headerRow = document.createElement('tr');
     headerRow.innerHTML = `<th></th>`;
-    for (let i = 0; i < numDays; i++) {
+    for (let i = first; i < last; i++) {
       const th = document.createElement('th');
       th.id = `col-day-${i}`;
       const dayName = formatDayLabel(data.time[i].substring(0, 10), { weekday: 'short' });
@@ -2511,7 +2516,7 @@
     // 1. Wind (kts) Row
     const windRow = document.createElement('tr');
     windRow.innerHTML = `<td>Wind<span class="unit-label">(kts)</span></td>`;
-    for (let i = 0; i < numDays; i++) {
+    for (let i = first; i < last; i++) {
       const minKt = toKnots(data.windspeed_min ? data.windspeed_min[i] : null, units.windspeed);
       const maxKt = toKnots(data.windspeed_max ? data.windspeed_max[i] : null, units.windspeed);
       const dirDeg = (data.winddirection && data.winddirection[i] !== undefined && data.winddirection[i] !== null) ? data.winddirection[i] : null;
@@ -2533,7 +2538,7 @@
     // 2. Gust Row
     const gustRow = document.createElement('tr');
     gustRow.innerHTML = `<td>Gust</td>`;
-    for (let i = 0; i < numDays; i++) {
+    for (let i = first; i < last; i++) {
       const gust = getDailyGust(data, units, i);
       const td = document.createElement('td');
       td.className = getWindClass(gust.kt);
@@ -2545,7 +2550,7 @@
     // 3. Sky Row
     const outlookRow = document.createElement('tr');
     outlookRow.innerHTML = `<td>Sky</td>`;
-    for (let i = 0; i < numDays; i++) {
+    for (let i = first; i < last; i++) {
       const td = document.createElement('td');
       if (hasPictocode(data.pictocode, i)) {
         const code = data.pictocode[i];
@@ -2561,7 +2566,7 @@
     // 4. Temp Row
     const tempRow = document.createElement('tr');
     tempRow.innerHTML = `<td>Temp<span class="unit-label">in °F</span></td>`;
-    for (let i = 0; i < numDays; i++) {
+    for (let i = first; i < last; i++) {
       const maxF = toFahrenheit(data.temperature_max ? data.temperature_max[i] : null, units.temperature);
       const minF = toFahrenheit(data.temperature_min ? data.temperature_min[i] : null, units.temperature);
       const hiColor = getTemperatureColor(maxF);
@@ -2578,7 +2583,7 @@
     // 5. Sunrise & Sunset Row (same sunset the Daily view shades with)
     const sunRow = document.createElement('tr');
     sunRow.innerHTML = `<td title="Computed for the club's location (approximate)">Sunrise<br/>Sunset</td>`;
-    for (let i = 0; i < numDays; i++) {
+    for (let i = first; i < last; i++) {
       const sched = getClubSchedule(data.time[i].substring(0, 10));
       const td = document.createElement('td');
       td.innerHTML = `<span style="font-size:0.62rem; line-height:1.2; display:block;">${sched.sunriseTime || '--:--'}<br/>${sched.sunsetTime || '--:--'}</span>`;
@@ -2589,7 +2594,7 @@
     // 6. Rain % Row
     const popRow = document.createElement('tr');
     popRow.innerHTML = `<td>Rain %</td>`;
-    for (let i = 0; i < numDays; i++) {
+    for (let i = first; i < last; i++) {
       const td = document.createElement('td');
       const raw = data.precipitation_probability ? data.precipitation_probability[i] : null;
       td.innerHTML = popCellHtml({ pop: (raw === undefined ? null : raw), est: false });
