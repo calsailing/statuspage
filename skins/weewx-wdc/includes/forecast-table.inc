@@ -3445,4 +3445,23 @@
       }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     } catch (_) {}
 
-    // Keep the forecast (and the "now" column) fresh while the page st
+    // Keep the forecast (and the "now" column) fresh while the page stays open.
+    setInterval(() => {
+      if (document.visibilityState === 'visible') loadWeatherData({ silent: true });
+    }, REFRESH_INTERVAL_MS);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && lastLoadAt && (Date.now() - lastLoadAt) > RESUME_REFRESH_AFTER_MS) {
+        loadWeatherData({ silent: true });
+      }
+    });
+
+    loadWeatherData();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initForecastApp);
+  } else {
+    initForecastApp();
+  }
+/* #end raw */
+</script>
