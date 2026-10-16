@@ -1169,7 +1169,7 @@
                         const isClosed = clubData.clubclosed === true || clubData.clubclosed === 'true';
                         const sunsetTime = parseClubTime(clubData.sunsettime, date);
                         if (isClosed) {
-                            const result = { isClosed: true, alertMessage: 'Club Closed Due To Tide', sunsetTime };
+                            const result = { isClosed: true, alertMessage: 'Club Closed', sunsetTime };
                             clubStatusCache[cacheKey] = result;
                             return result;
                         }
@@ -1180,11 +1180,11 @@
                         const alerts = new Set();
                         
                         if (clubData.restriction) {
-                            if (clubData.restriction.toUpperCase().includes('EARLY CLOSE')) alerts.add('Early Close Due To Tide');
-                            if (clubData.restriction.toUpperCase().includes('LATE OPEN')) alerts.add('Late Open Due To Tide');
+                            if (clubData.restriction.toUpperCase().includes('EARLY CLOSE')) alerts.add('Early Close');
+                            if (clubData.restriction.toUpperCase().includes('LATE OPEN')) alerts.add('Late Open');
                         }
                         if (clubData.middayclosetext && clubData.middayclosetext !== 'null') {
-                            alerts.add('Mid-Day Closure Due To Tide');
+                            alerts.add('Mid-Day Closure');
                             const times = clubData.middayclosetext.match(/(\d{1,2}:\d{2}\s*(am|pm))/gi);
                             if (times && times.length >= 2) {
                                 midDayDockTime = parseClubTime(times[0], date);
